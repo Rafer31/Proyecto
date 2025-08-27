@@ -18,10 +18,6 @@ export const userRoutes: Routes = [
     component: UsersLayout,
     children: [
       {
-        path: 'toolbar',
-        component: UserToolbar,
-      },
-      {
         path: 'admin',
         component: AdminPage,
         children: [
@@ -41,6 +37,11 @@ export const userRoutes: Routes = [
             path: 'manage-users',
             component: ManageUsersPage,
           },
+          {
+            path: '',
+            redirectTo: 'charts',
+            pathMatch: 'full',
+          },
         ],
       },
       {
@@ -51,15 +52,25 @@ export const userRoutes: Routes = [
             path: 'available-trips',
             component: AvailableTrips,
           },
+          {
+            path: '',
+            redirectTo: 'available-trips',
+            pathMatch: 'full'
+          },
         ],
       },
       {
         path: 'visitant',
         component: VisitantPage,
-          children: [
+        children: [
           {
             path: 'available-trips',
             component: AvailableTrips,
+          },
+           {
+            path: '',
+            redirectTo: 'available-trips',
+            pathMatch: 'full'
           },
         ],
       },
@@ -70,6 +81,11 @@ export const userRoutes: Routes = [
           {
             path: 'assigned-trips',
             component: AssignedTrips,
+          },
+           {
+            path: '',
+            redirectTo: 'assigned-trips',
+            pathMatch: 'full'
           },
         ],
       },

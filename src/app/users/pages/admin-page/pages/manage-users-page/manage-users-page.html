@@ -1,1 +1,9 @@
-<p>manage-users-page works!</p>
+@if(!data()){
+    <app-emptystate
+    [imageSrc]="'no-users.svg'"
+    [title]="'Todavía no hay usuarios registrados'"
+    [description]="'No se han registrado usuarios aún'"
+    />
+}@else{
+    <h1>hola ahora si hay data</h1>
+}
