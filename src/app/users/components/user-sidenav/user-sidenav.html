@@ -1,0 +1,44 @@
+<mat-sidenav-container class="shell">
+<mat-sidenav class="sidenav"
+             [mode]="drawerMode()"
+             [opened]="drawerMode() === 'side'"
+             [style.width]="drawerWidth()"
+             [style.minWidth]="drawerWidth()"
+             [class.collapsed]="collapsed()"
+             [attr.aria-label]="collapsed() ? 'Navegación colapsada' : 'Navegación'">
+
+
+    <!-- Branding -->
+    <a class="brand" [routerLink]="routeBrand()" matTooltip="{{ appName() }}" [matTooltipDisabled]="showText()">
+      <mat-icon class="brand-icon">{{ appLogo() }}</mat-icon>
+      @if (showText()) { <span class="brand-text">{{ appName() }}</span> }
+    </a>
+
+    <!-- Menú -->
+    <mat-nav-list class="nav-list">
+      @for (item of items(); track item.route) {
+        <a mat-list-item
+           [routerLink]="item.route"
+           routerLinkActive="active"
+           [disabled]="item.disabled"
+           [matTooltip]="collapsed() ? item.label : ''"
+           matTooltipPosition="right"
+           class="nav-item">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          @if (showText()) { <span matListItemTitle>{{ item.label }}</span> }
+          @if (item.badge && showText()) {
+            <span class="badge">{{ item.badge }}</span>
+          }
+        </a>
+      }
+    </mat-nav-list>
+
+    <!-- Footer: botón para colapsar/expandir -->
+
+  </mat-sidenav>
+
+  <!-- Contenido de la página -->
+  <mat-sidenav-content class="content">
+    <ng-content />
+  </mat-sidenav-content>
+</mat-sidenav-container>

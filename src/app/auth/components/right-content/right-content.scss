@@ -1,0 +1,92 @@
+.right-content {
+  width: 50vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: -10px;
+  position: relative;
+  z-index: 2;
+  overflow: hidden;
+  color: white;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-image: url("../../../../../public/logo2.png");
+    background-size: cover;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    filter: blur(9px);
+    transform: scale(1.15);
+  }
+
+  h1 {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+      sans-serif;
+    font-size: 60px;
+    color: white;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.8);
+    text-align: center;
+  }
+  img {
+    width: auto;
+    height: auto;
+    position: relative;
+    max-width: 200px;
+  }
+  box-shadow: inset -5px 0 10px rgba(255, 255, 255, 0.1);
+}
+@media (max-width: 1000px) {
+  .right-content {
+    width: 100vw;
+    height: 15vh;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: -2px;
+    h1 {
+      font-size: 22px;
+      text-align: center;
+    }
+    img {
+      max-width: 100px;
+      height: auto;
+    }
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 1460px) {
+  .right-content {
+
+    h1 {
+      font-size: 45px;
+      text-align: center;
+    }
+  }
+}
+@media (max-width: 1200px) {
+  .right-content {
+    h1 {
+      font-size: 30px;
+      text-align: center;
+    }
+  }
+}
+@media (max-width: 370px) {
+  .right-content {
+
+    h1 {
+      font-size: 20px;
+      text-align: center;
+    }
+  }
+}

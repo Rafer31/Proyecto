@@ -1,0 +1,8 @@
+<div class="p-6 text-center">
+      <mat-icon class="text-green-600 text-5xl mb-4">{{ data.icon ?? 'check_circle' }}</mat-icon>
+      <h2 class="text-xl font-bold mb-2">{{ data.title ?? 'Éxito' }}</h2>
+      <p class="text-gray-600 mb-6">{{ data.message }}</p>
+      <button mat-flat-button color="primary" (click)="close()">
+        {{ data.buttonText ?? 'Aceptar' }}
+      </button>
+    </div>

@@ -1,0 +1,93 @@
+.shell,
+.content {
+  height: 100dvh;
+}
+
+.sidenav {
+  border: 0;
+  padding: 0.5rem 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: width 0.3s ease, min-width 0.3s ease;
+  will-change: width;
+  background: #fff8f4;
+  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.08);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  text-decoration: none;
+
+  border-radius: 16px;
+  margin: 0.25rem 0.25rem 0.5rem;
+  transition: background 0.2s ease, color 0.3s ease;
+
+  .brand-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+  }
+  .brand-text {
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.2px;
+  }
+
+  &:hover {
+    background: rgba(255, 112, 67, 0.1);
+    color: #e64a19;
+  }
+}
+
+:host-context(.collapsed) .brand-text,
+:host-context(.collapsed) .nav-item span {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.nav-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-top: 0.5rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.nav-list::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-item {
+  border-radius: 12px;
+  margin-top: 15px;
+  transition: background 0.2s ease, padding 0.25s ease;
+  &:hover {
+    background: rgba(255, 112, 67, 0.08);
+    .mat-icon {
+      color: #ff7043;
+    }
+  }
+
+  &.active {
+    background: rgba(255, 112, 67, 0.16);
+    font-weight: 600;
+    .mat-icon {
+      color: #ff7043;
+    }
+  }
+
+  .badge {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255, 112, 67, 0.15);
+    color: #e64a19;
+    font-weight: 600;
+  }
+}

@@ -1,0 +1,15 @@
+<app-user-toolbar appTitle="Bienvenido {{userName()}}">
+  <div toolbar-actions>
+    <button mat-icon-button matTooltip="Notificaciones"><mat-icon>notifications</mat-icon></button>
+  </div>
+</app-user-toolbar>
+
+<app-user-sidenav
+  [appName]="'Transporte Illapa'"
+  [appLogo]="'directions_bus'"
+  [items]="menu"
+  [routeBrand]="'/users/admin'"
+  >
+
+  <router-outlet />
+</app-user-sidenav>

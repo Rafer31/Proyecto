@@ -1,0 +1,71 @@
+.login-card {
+  max-width: 450px;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 20px 30px 20px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-bottom: 150px;
+}
+.input-form {
+  width: 100%;
+  min-width: 20vw;
+}
+
+.header-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-icon {
+  font-size: 120px;
+  width: auto;
+  height: auto;
+}
+
+.btn-ingresar {
+  padding: 25px 0 25px 0;
+  font-size: 20px;
+  height: 20px;
+  width: 100%;
+  margin-bottom: 5px;
+}
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  width: 100%;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #ccc;
+}
+
+.divider:not(:empty)::before {
+  margin-right: 0.75em;
+}
+
+.divider:not(:empty)::after {
+  margin-left: 0.75em;
+}
+@media (max-width: 1000px) {
+  .input-form {
+    width: 100%;
+    margin-left: 10px;
+  }
+  .btn-ingresar {
+    font-size: 16px;
+  }
+  .login-card {
+    margin-top: 50px;
+      background-color: rgba(255, 255, 255, 0.9);
+  }
+}

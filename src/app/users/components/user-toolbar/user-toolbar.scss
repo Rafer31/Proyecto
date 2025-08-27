@@ -1,0 +1,31 @@
+.toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: linear-gradient(90deg, #ff7043 0%, #ffa270 100%);
+  color: #fff;
+  border-bottom: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+
+  .title {
+    margin-left: .75rem;
+    font-weight:  500;
+    font-size: 23px;
+    letter-spacing: .3px;
+    color: black;
+  }
+  .spacer { flex: 1 1 auto; }
+
+  .avatar-btn { margin-left: .25rem; }
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    transition: transform 0.25s ease;
+  }
+  .avatar-btn:hover .avatar {
+    transform: scale(1.05);
+  }
+}

@@ -1,0 +1,112 @@
+<mat-card class="login-card" appearance="outlined">
+  <mat-card-header class="header-login">
+    <mat-icon
+      class="login-icon"
+      aria-hidden="false"
+      aria-label="login icon"
+      fontIcon="account_circle"
+    >
+    </mat-icon>
+    <h1 class="text-3xl font-bold mt-4 mb-4">Registro de datos</h1>
+    <p class="text-sm text-gray-500 mt-1 text-center">
+      Registrate con un correo y una contraseña
+    </p>
+  </mat-card-header>
+
+  <mat-card-content>
+    <form [formGroup]="form" (ngSubmit)="signUp()">
+      <mat-form-field class="input-form mt-7 mb-3" appearance="outline">
+        <mat-label>Ingrese su E-mail</mat-label>
+        <input
+          type="email"
+          matInput
+          formControlName="email"
+          #email
+          maxlength="45"
+          placeholder="ejemplo@outlook.com"
+          required
+        />
+        <mat-hint align="end">{{ email.value.length }} / 45</mat-hint>
+        @if (form.controls.email.errors?. ['required'] && email.value == '') {
+        <mat-error>El correo es obligatorio</mat-error>
+        } @if (form.controls.email.errors?.['email']) {
+        <mat-error>Ingrese un correo válido</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="input-form mb-3" appearance="outline">
+        <mat-label>Ingrese su contraseña</mat-label>
+        <input
+          maxlength="45"
+          #password
+          matInput
+          formControlName="password"
+          [type]="hide() ? 'password' : 'text'"
+        />
+        <button
+          type="button"
+          matIconButton
+          matSuffix
+          (click)="clickEvent($event)"
+          [attr.aria-label]="'Hide password'"
+          [attr.aria-pressed]="hide()"
+        >
+          <mat-icon>{{ hide() ? "visibility_off" : "visibility" }}</mat-icon>
+        </button>
+
+        <mat-hint align="end">{{ password.value.length }} / 45</mat-hint>
+        @if (form.controls.password.errors?. ['required'] && password.value == '') {
+        <mat-error>La contraseña es obligatoria</mat-error>
+        } @if (form.controls.password.errors?.['minlength'] && password.value != '') {
+        <mat-error>La contraseña tiene que tener 8 o más caracteres</mat-error>
+        }
+      </mat-form-field>
+      <mat-form-field class="input-form mb-3" appearance="outline">
+        <mat-label>Confirme su contraseña</mat-label>
+        <input
+          maxlength="45"
+          #confirmPassword
+          matInput
+          formControlName="confirmPassword"
+          [type]="hideConfirmPassword() ? 'password' : 'text'"
+        />
+        <button
+          type="button"
+          matIconButton
+          matSuffix
+          (click)="clickEventConfirm($event)"
+          [attr.aria-label]="'Hide confirm Password'"
+          [attr.aria-pressed]="hideConfirmPassword()"
+        >
+          <mat-icon
+            >{{ hideConfirmPassword() ? "visibility_off" : "visibility"
+            }}</mat-icon
+          >
+        </button>
+
+        <mat-hint align="end">{{ confirmPassword.value.length }} / 45</mat-hint>
+         @if (form.controls.confirmPassword.errors?. ['required'] && confirmPassword.value == '') {
+        <mat-error>Confirmar contraseña es obligatorio</mat-error>
+        }
+      </mat-form-field>
+      <mat-card-actions>
+        <button
+          type="submit"
+          matButton="elevated"
+          class="btn-ingresar mt-1"
+          [disabled]="form.invalid"
+        >
+          Registrar datos
+        </button>
+      </mat-card-actions>
+    </form>
+    <div class="divider"></div>
+  </mat-card-content>
+  <div class="text-center mt-6 text-gray-500">
+    Ya tienes una cuenta?
+    <a
+      (click)="changeValue.emit()"
+      class="text-blue-700 underline font-bold cursor-pointer"
+      >Inicia sesión.</a
+    >
+  </div>
+</mat-card>
