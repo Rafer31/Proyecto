@@ -5,7 +5,6 @@ import { UserSidenav } from '../../components/user-sidenav/user-sidenav';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterOutlet } from '@angular/router';
-import { Emptystate } from '../../components/emptystate/emptystate';
 
 @Component({
   selector: 'app-admin-page',
@@ -15,7 +14,6 @@ import { Emptystate } from '../../components/emptystate/emptystate';
     MatButtonModule,
     MatIconModule,
     RouterOutlet,
-    Emptystate
   ],
   templateUrl: './admin-page.html',
   styleUrl: './admin-page.scss',
