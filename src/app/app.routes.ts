@@ -7,7 +7,15 @@ export const routes: Routes = [
   },
   {
     path: 'users',
-    loadChildren: () => import('./users/users.routes')
+    loadChildren: () => import('./users/users.routes'),
+  },
+  {
+    path: 'auth/callback',
+    loadComponent: () => import('./auth/pages/auth-callback/auth-callback'),
+  },
+    {
+    path: 'register-user',
+    loadComponent: () => import('./auth/pages/register-user/register-user'),
   },
   {
     path: '',

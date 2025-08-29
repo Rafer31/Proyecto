@@ -1,9 +1,9 @@
-@if(!data()){
-    <app-emptystate
+<app-list-users (totalChange)="updateUserCount($event)"></app-list-users>
+
+@if(isDataLoaded() && userCount() === 0) {
+  <app-emptystate
     [imageSrc]="'no-users.svg'"
     [title]="'Todavía no hay usuarios registrados'"
     [description]="'No se han registrado usuarios aún'"
-    />
-}@else{
-    <h1>hola ahora si hay data</h1>
+  />
 }

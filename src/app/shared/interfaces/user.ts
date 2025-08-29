@@ -3,6 +3,24 @@ export interface Rol {
   nomrol: string;
 }
 
+export interface Personal {
+  nroficha: string;
+  idusuario: string;
+  operacion: string;
+  direccion: string;
+}
+
+export interface Visitante {
+  idvisitante: string;
+  idusuario: string;
+  informacion: string;
+}
+
+export interface Conductor {
+  idconductor: string;
+  idusuario: string;
+}
+
 export interface Usuario {
   idusuario: string;
   numcelular: string;
@@ -12,5 +30,11 @@ export interface Usuario {
   ci: string;
   idrol: string;
   auth_id: string;
+
   roles: Rol[];
+  personal?: Personal | null;
+  visitante?: Visitante | null;
+  conductor?: Conductor | null;
+
+  extraInfo?: string; // campo calculado para mostrar en UI
 }

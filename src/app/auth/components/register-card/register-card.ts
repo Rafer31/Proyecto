@@ -83,6 +83,9 @@ export class RegisterCard {
       const { data, error } = await this.supabaseClient.auth.signUp({
         email: this.form.value.email!,
         password: this.form.value.password!,
+        options:{
+          emailRedirectTo: 'http://localhost:4200/auth/callback'
+        }
       });
 
       this.dialogService.closeAll();

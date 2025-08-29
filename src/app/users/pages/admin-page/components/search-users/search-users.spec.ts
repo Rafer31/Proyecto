@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { RolDialog } from './rol-dialog';
+import { SearchUsers } from './search-users';
 
-describe('RolDialog', () => {
-  let component: RolDialog;
-  let fixture: ComponentFixture<RolDialog>;
+describe('SearchUsers', () => {
+  let component: SearchUsers;
+  let fixture: ComponentFixture<SearchUsers>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RolDialog]
+      imports: [SearchUsers]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(RolDialog);
+    fixture = TestBed.createComponent(SearchUsers);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

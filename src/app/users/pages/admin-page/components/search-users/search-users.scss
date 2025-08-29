@@ -1,0 +1,9 @@
+:host {
+  display: block;
+  flex: 2; // Más ancho que el filtro
+}
+
+mat-form-field {
+  min-width: 250px;
+  width: 100%;
+}

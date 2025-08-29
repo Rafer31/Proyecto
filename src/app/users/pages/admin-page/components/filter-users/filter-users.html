@@ -1,0 +1,9 @@
+<mat-form-field appearance="outline" class="w-full">
+      <mat-label>Filtrar por rol</mat-label>
+      <mat-select [value]="selectedRole()" (selectionChange)="roleChange.emit($event.value)">
+        <mat-option value="">Todos</mat-option>
+        @for (rol of roles(); track rol.idrol) {
+          <mat-option [value]="rol.nomrol">{{ rol.nomrol }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>

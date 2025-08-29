@@ -1,0 +1,113 @@
+<div class="register-container">
+  <form [formGroup]="formUser">
+    <mat-horizontal-stepper linear>
+      <!-- Paso 1: Datos básicos -->
+      <mat-step [stepControl]="step1Form">
+        <form [formGroup]="step1Form">
+          <ng-template matStepLabel>Datos básicos</ng-template>
+
+          <mat-form-field appearance="outline" class="full-width mt-2">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" required />
+            @if (formUser.get('step1.nombre')?.hasError('required')) {
+            <mat-error>El nombre es requerido</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Apellido Paterno</mat-label>
+            <input matInput formControlName="paterno" required />
+            @if (formUser.get('step1.paterno')?.hasError('required')) {
+            <mat-error>El apellido paterno es requerido</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Apellido Materno</mat-label>
+            <input matInput formControlName="materno" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>CI</mat-label>
+            <input matInput formControlName="ci" required />
+            @if (formUser.get('step1.ci')?.hasError('required')) {
+            <mat-error>El CI es requerido</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Número de celular</mat-label>
+            <input matInput formControlName="numcelular" required />
+            @if (formUser.get('step1.numcelular')?.hasError('required')) {
+            <mat-error>El número de celular es requerido</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Rol</mat-label>
+            <mat-select formControlName="rol" required>
+              <mat-option value="Personal">Personal</mat-option>
+              <mat-option value="Visitante">Visitante</mat-option>
+            </mat-select>
+            @if (formUser.get('step1.rol')?.hasError('required')) {
+            <mat-error>Debe seleccionar un rol</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="actions">
+            <button mat-button matStepperNext>Siguiente</button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Paso 2: Datos adicionales -->
+
+      <mat-step [stepControl]="step2Form">
+        <form [formGroup]="step2Form">
+          <ng-template matStepLabel>Datos adicionales</ng-template>
+
+          @if (selectedRole() === 'Personal') {
+          <mat-form-field appearance="outline" class="full-width mt-2">
+            <mat-label>Nro de Ficha</mat-label>
+            <input matInput formControlName="nroficha" required />
+            @if (formUser.get('step2.nroficha')?.hasError('required')) {
+            <mat-error>El número de ficha es requerido para Personal</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Operación</mat-label>
+            <input matInput formControlName="operacion" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Dirección</mat-label>
+            <input matInput formControlName="direccion" />
+          </mat-form-field>
+          } @if (selectedRole() === 'Visitante') {
+          <mat-form-field appearance="outline" class="full-width mt-2">
+            <mat-label>Información adicional</mat-label>
+            <textarea
+              matInput
+              formControlName="informacion"
+              rows="4"
+              required
+              placeholder="Empresa minera Bolívar"
+            ></textarea>
+            @if (formUser.get('step2.informacion')?.hasError('required')) {
+            <mat-error>La información es requerida para Visitante</mat-error>
+            }
+          </mat-form-field>
+          }
+
+          <div class="actions">
+            <button mat-button matStepperPrevious>Volver</button>
+            <button mat-flat-button color="primary" (click)="onSubmit()">
+              Finalizar Registro
+            </button>
+          </div>
+        </form>
+      </mat-step>
+    </mat-horizontal-stepper>
+  </form>
+</div>

@@ -8,6 +8,8 @@ import { NavStateService } from '../../../shared/services/nav-state.service';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-user-toolbar',
@@ -25,6 +27,7 @@ export class UserToolbar {
   private dialog = inject(MatDialog);
   private readonly nav = inject(NavStateService);
   private supabaseService = inject(SupabaseService);
+  private router = inject(Router);
   appTitle = input<string>('Mi App');
   userName = input<string>('Usuario');
   showNavBtn = input<boolean>(true);
@@ -43,9 +46,11 @@ export class UserToolbar {
       },
     });
 
-    const result = await dialogRef.afterClosed().toPromise();
+    const result = await firstValueFrom(dialogRef.afterClosed());
+
     if (result) {
       await this.supabaseService.supabase.auth.signOut();
+      this.router.navigate(['/login']);
     }
   }
 }
