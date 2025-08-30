@@ -84,7 +84,7 @@ export class RegisterCard {
         email: this.form.value.email!,
         password: this.form.value.password!,
         options:{
-          emailRedirectTo: 'http://localhost:4200/auth/callback'
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 

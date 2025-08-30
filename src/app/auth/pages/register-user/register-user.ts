@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { Router } from '@angular/router';
-import { MatDialog } from '@angular/material/dialog'; // 👈 para dialogs
+import { MatDialog } from '@angular/material/dialog';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { UserDataService } from '../../services/userdata.service';
 import { LoadingDialog } from '../../../shared/components/loading-dialog/loading-dialog';
@@ -50,12 +50,12 @@ export default class RegisterUser {
   private initializeForm() {
     this.formUser = this.fb.group({
       step1: this.fb.group({
-        nombre: ['', Validators.required],
-        paterno: ['', Validators.required],
+        nombre: ['', [Validators.required, Validators.minLength(2)]],
+        paterno: ['', [Validators.required, Validators.minLength(2)]],
         materno: [''],
-        ci: ['', Validators.required],
+        ci: ['', [Validators.required, Validators.pattern(/^\d{7,10}$/)]],
+        numcelular: ['', [Validators.required, Validators.pattern(/^[67]\d{7}$/)]],
         rol: ['', Validators.required],
-        numcelular: ['', Validators.required],
       }),
       step2: this.fb.group({
         nroficha: [''],
@@ -76,6 +76,7 @@ export default class RegisterUser {
   private updateValidators(rol: string) {
     const step2 = this.formUser.get('step2') as FormGroup;
 
+    // limpiar primero
     step2.get('nroficha')?.clearValidators();
     step2.get('operacion')?.clearValidators();
     step2.get('direccion')?.clearValidators();
@@ -83,7 +84,10 @@ export default class RegisterUser {
 
     if (rol === 'Personal') {
       step2.get('nroficha')?.setValidators([Validators.required]);
+      step2.get('operacion')?.setValidators([Validators.required]);
+      step2.get('direccion')?.setValidators([Validators.required]);
     }
+
     if (rol === 'Visitante') {
       step2.get('informacion')?.setValidators([Validators.required]);
     }
@@ -109,26 +113,22 @@ export default class RegisterUser {
       return;
     }
 
-    // 👇 Abrimos el diálogo de loading
     const loadingDialog = this.dialog.open(LoadingDialog, {
       disableClose: true,
     });
 
     try {
-      const result = await this.userDataService.registerUser({
+      await this.userDataService.registerUser({
         ...step1,
         ...step2,
         authId,
       });
-      console.log('Usuario registrado exitosamente:', result);
 
-      // Cerramos el loading y mostramos éxito
       loadingDialog.close();
       this.dialog.open(SuccessDialog, {
         data: { message: 'Registro exitoso!' },
       });
 
-      // Redirigir según rol
       switch (step1.rol) {
         case 'Visitante':
           this.router.navigate(['/users/visitant']);

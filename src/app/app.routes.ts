@@ -13,6 +13,10 @@ export const routes: Routes = [
     path: 'auth/callback',
     loadComponent: () => import('./auth/pages/auth-callback/auth-callback'),
   },
+  {
+    path:'auth/change-password',
+    loadComponent: () => import('./auth/pages/change-password/change-password'),
+  },
     {
     path: 'register-user',
     loadComponent: () => import('./auth/pages/register-user/register-user'),

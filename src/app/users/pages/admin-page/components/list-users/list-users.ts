@@ -7,6 +7,7 @@ import {
   EventEmitter,
   output,
   signal,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -24,6 +25,7 @@ import { UserService } from '../../../../services/user.service';
 import { Usuario } from '../../../../../shared/interfaces/user';
 import { SearchUsers } from '../search-users/search-users';
 import { FilterUsers } from '../filter-users/filter-users';
+import { AddUsers } from '../add-users/add-users';
 
 @Component({
   selector: 'app-list-users',
@@ -46,12 +48,14 @@ import { FilterUsers } from '../filter-users/filter-users';
 export default class ListUsers implements OnInit, AfterViewInit {
   private userService = inject(UserService);
   private dialog = inject(MatDialog);
+  private cdr = inject(ChangeDetectorRef);
+
   totalChange = output<number>();
 
   users = signal<any[]>([]);
   totalItems = 0;
   pageSize = 10;
-  pageIndex = 0;
+  pageIndex = 0; // Inicializar en 0
   displayedColumns: string[] = [
     'ci',
     'nomusuario',
@@ -59,8 +63,8 @@ export default class ListUsers implements OnInit, AfterViewInit {
     'matusuario',
     'numcelular',
     'rol',
-    'extraInfo', // información visitante
-    'nroficha', // ficha personal/admin
+    'extraInfo',
+    'nroficha',
     'acciones',
   ];
 
@@ -83,19 +87,29 @@ export default class ListUsers implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.paginator) {
-      this.dataSource.paginator = this.paginator;
-      this.paginator.page.subscribe((event: PageEvent) =>
-        this.onPageChange(event)
-      );
-    }
-    if (this.sort) {
-      this.dataSource.sort = this.sort;
-    }
+    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
+    setTimeout(() => {
+      if (this.paginator) {
+        this.dataSource.paginator = this.paginator;
+        // Inicializar pageIndex en 0 para evitar el error -1
+        this.paginator.pageIndex = 0;
+        this.pageIndex = 0;
+
+        this.paginator.page.subscribe((event: PageEvent) => {
+          this.onPageChange(event);
+        });
+      }
+      if (this.sort) {
+        this.dataSource.sort = this.sort;
+      }
+      this.cdr.detectChanges();
+    }, 0);
   }
 
   loadUsers(page: number = 1, limit: number = this.pageSize) {
     this.loading = true;
+    this.cdr.detectChanges();
+
     this.userService
       .getUsers(page, limit)
       .then(({ data, count }) => {
@@ -105,15 +119,21 @@ export default class ListUsers implements OnInit, AfterViewInit {
 
         this.applyCombinedFilter();
 
-        if (this.paginator) {
-          this.paginator.length = this.totalItems;
-          this.paginator.pageIndex = page - 1;
-        }
-        this.loading = false;
+        // Usar setTimeout para evitar errores de cambio de expresión
+        setTimeout(() => {
+          if (this.paginator) {
+            this.paginator.length = this.totalItems;
+            this.paginator.pageIndex = Math.max(0, page - 1); // Asegurar que no sea -1
+            this.pageIndex = Math.max(0, page - 1);
+          }
+          this.loading = false;
+          this.cdr.detectChanges();
+        }, 0);
       })
       .catch((err) => {
         console.error('Error cargando usuarios', err);
         this.loading = false;
+        this.cdr.detectChanges();
       });
   }
 
@@ -174,6 +194,22 @@ export default class ListUsers implements OnInit, AfterViewInit {
       this.dataSource.paginator.firstPage();
     }
   }
+  get safePageIndex(): number {
+    return Math.max(0, this.pageIndex);
+  }
+
+  openAddUserDialog() {
+    this.dialog
+      .open(AddUsers)
+      .afterClosed()
+      .subscribe((result) => {
+        if (result) {
+          // Recargar en la página actual
+          const currentPage = Math.max(1, this.pageIndex + 1);
+          this.loadUsers(currentPage, this.pageSize);
+        }
+      });
+  }
 
   // 🔹 Eventos de hijos
   onSearchChange(search: string) {
@@ -189,11 +225,11 @@ export default class ListUsers implements OnInit, AfterViewInit {
   onPageChange(event: PageEvent) {
     this.pageSize = event.pageSize;
     this.pageIndex = event.pageIndex;
-    this.loadUsers(this.pageIndex + 1, this.pageSize);
-  }
 
-  addUser() {
-    console.log('Abrir diálogo para agregar usuario');
+    // Usar setTimeout para evitar errores
+    setTimeout(() => {
+      this.loadUsers(this.pageIndex + 1, this.pageSize);
+    }, 0);
   }
 
   editUser(user: Usuario) {

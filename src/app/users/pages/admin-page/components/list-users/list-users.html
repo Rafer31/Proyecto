@@ -14,9 +14,8 @@
     </app-filter-users>
 
     <!-- Botón agregar -->
-    <button mat-flat-button color="primary" (click)="addUser()">
-      <mat-icon>person_add</mat-icon>
-      Nuevo Usuario
+    <button mat-flat-button color="primary" (click)="openAddUserDialog()">
+      <mat-icon>person_add</mat-icon> Nuevo Usuario
     </button>
   </div>
 
@@ -43,21 +42,19 @@
         <!-- Nombre -->
         <ng-container matColumnDef="nomusuario">
           <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
-          <td mat-cell *matCellDef="let user">
-            {{ user.nomusuario }}
-          </td>
+          <td mat-cell *matCellDef="let user">{{ user.nomusuario }}</td>
         </ng-container>
-      <ng-container matColumnDef="patusuario">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Apellido Paterno</th>
-          <td mat-cell *matCellDef="let user">
-          {{ user.patusuario }}
-          </td>
+        <ng-container matColumnDef="patusuario">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            Apellido Paterno
+          </th>
+          <td mat-cell *matCellDef="let user">{{ user.patusuario }}</td>
         </ng-container>
-              <ng-container matColumnDef="matusuario">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header>Apellido Materno</th>
-          <td mat-cell *matCellDef="let user">
-           {{ user.matusuario }}
-          </td>
+        <ng-container matColumnDef="matusuario">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            Apellido Materno
+          </th>
+          <td mat-cell *matCellDef="let user">{{ user.matusuario }}</td>
         </ng-container>
         <!-- Celular -->
         <ng-container matColumnDef="numcelular">
@@ -120,13 +117,15 @@
       </div>
       }
 
+      <!-- Paginador corregido -->
       <mat-paginator
         [length]="totalItems"
         [pageSize]="pageSize"
-        [pageIndex]="pageIndex"
+        [pageIndex]="safePageIndex"
         [pageSizeOptions]="[5, 10, 25, 50]"
         (page)="onPageChange($event)"
         [disabled]="loading"
+        showFirstLastButtons="true"
       >
       </mat-paginator>
     </div>
