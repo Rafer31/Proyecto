@@ -39,7 +39,6 @@ export class AddUsers implements OnInit {
   loading = false;
 
   form = this.fb.group({
-    // Datos básicos del usuario
     ci: ['', [Validators.required, Validators.pattern(/^\d{7,10}$/)]],
     nombre: ['', [Validators.required, Validators.minLength(2)]],
     paterno: ['', [Validators.required, Validators.minLength(2)]],
@@ -48,13 +47,9 @@ export class AddUsers implements OnInit {
     email: ['', [Validators.required, Validators.email]],
     rol: ['', Validators.required],
 
-    // Campos específicos por rol
-    // Para Personal y Administrador
     nroficha: [''],
     operacion: [''],
     direccion: [''],
-
-    // Para Visitante
     informacion: ['']
   });
 
@@ -68,7 +63,7 @@ export class AddUsers implements OnInit {
       this.roles = await this.registerUserService.getRoles();
     } catch (error) {
       console.error('Error cargando roles:', error);
-      await this.dialogService.showErrorDialog(
+       this.dialogService.showErrorDialog(
         'Error al cargar los roles disponibles',
         'Error'
       );
@@ -110,8 +105,6 @@ export class AddUsers implements OnInit {
       this.markFormGroupTouched();
       return;
     }
-
-    // Evitar múltiples envíos
     if (this.loading) {
       return;
     }
@@ -122,7 +115,6 @@ export class AddUsers implements OnInit {
 
       const formValue = this.form.value;
 
-      // Validar CI único antes de continuar
       const ciExists = await this.registerUserService.checkCIExists(formValue.ci!);
       if (ciExists) {
         this.loading = false;
@@ -134,7 +126,6 @@ export class AddUsers implements OnInit {
         return;
       }
 
-      // Validar formatos
       if (!this.registerUserService.validateCIFormat(formValue.ci!)) {
         this.loading = false;
         this.cdr.markForCheck();
@@ -155,7 +146,6 @@ export class AddUsers implements OnInit {
         return;
       }
 
-      // Preparar datos del usuario
       const userData = {
         ci: formValue.ci!,
         nombre: formValue.nombre!,
@@ -164,27 +154,21 @@ export class AddUsers implements OnInit {
         numcelular: formValue.numcelular!,
         email: formValue.email!,
         rol: formValue.rol!,
-        // Campos específicos por rol
         nroficha: formValue.nroficha || '',
         operacion: formValue.operacion || '',
         direccion: formValue.direccion || '',
         informacion: formValue.informacion || ''
       };
 
-      // Registrar usuario completo
       const result = await this.registerUserService.registerUserFromAdmin(userData);
 
-      // Finalizar loading antes del diálogo de éxito
       this.loading = false;
       this.cdr.markForCheck();
 
-      // Mostrar mensaje de éxito
-      await this.dialogService.showSuccessDialog(
+      this.dialogService.showSuccessDialog(
         `Usuario ${userData.nombre} ${userData.paterno} creado exitosamente.\n\nSe ha enviado un correo de confirmación a ${userData.email}. El usuario deberá confirmar su email y establecer una nueva contraseña para acceder al sistema.`,
         'Usuario Creado'
       );
-
-      // Cerrar el diálogo
       this.dialogRef.close(true);
 
     } catch (error: any) {
@@ -210,7 +194,6 @@ export class AddUsers implements OnInit {
     this.dialogRef.close(false);
   }
 
-  // Validaciones personalizadas para mostrar errores
   getErrorMessage(fieldName: string): string {
     const field = this.form.get(fieldName);
 

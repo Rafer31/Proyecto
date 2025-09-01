@@ -54,7 +54,10 @@ export default class RegisterUser {
         paterno: ['', [Validators.required, Validators.minLength(2)]],
         materno: [''],
         ci: ['', [Validators.required, Validators.pattern(/^\d{7,10}$/)]],
-        numcelular: ['', [Validators.required, Validators.pattern(/^[67]\d{7}$/)]],
+        numcelular: [
+          '',
+          [Validators.required, Validators.pattern(/^[67]\d{7}$/)],
+        ],
         rol: ['', Validators.required],
       }),
       step2: this.fb.group({
@@ -72,15 +75,15 @@ export default class RegisterUser {
       this.updateValidators(rol);
     });
   }
-
   private updateValidators(rol: string) {
     const step2 = this.formUser.get('step2') as FormGroup;
 
-    // limpiar primero
-    step2.get('nroficha')?.clearValidators();
-    step2.get('operacion')?.clearValidators();
-    step2.get('direccion')?.clearValidators();
-    step2.get('informacion')?.clearValidators();
+    step2.reset();
+
+    Object.keys(step2.controls).forEach((key) => {
+      step2.get(key)?.clearValidators();
+      step2.get(key)?.setErrors(null);
+    });
 
     if (rol === 'Personal') {
       step2.get('nroficha')?.setValidators([Validators.required]);
@@ -91,6 +94,10 @@ export default class RegisterUser {
     if (rol === 'Visitante') {
       step2.get('informacion')?.setValidators([Validators.required]);
     }
+
+    Object.keys(step2.controls).forEach((key) => {
+      step2.get(key)?.updateValueAndValidity();
+    });
 
     step2.updateValueAndValidity();
   }
@@ -125,20 +132,31 @@ export default class RegisterUser {
       });
 
       loadingDialog.close();
-      this.dialog.open(SuccessDialog, {
+      const successDialog = this.dialog.open(SuccessDialog, {
         data: { message: 'Registro exitoso!' },
       });
 
-      switch (step1.rol) {
-        case 'Visitante':
-          this.router.navigate(['/users/visitant']);
-          break;
-        case 'Personal':
-          this.router.navigate(['/users/staff']);
-          break;
-        default:
-          this.router.navigate(['/login']);
-      }
+      successDialog.afterClosed().subscribe(() => {
+
+        const redirectDialog = this.dialog.open(LoadingDialog, {
+          disableClose: true,
+        });
+
+        let target = '/login';
+        switch (step1.rol) {
+          case 'Visitante':
+            target = '/users/visitant';
+            break;
+          case 'Personal':
+            target = '/users/staff';
+            break;
+        }
+
+        this.router.navigate([target]).then(() => {
+          redirectDialog.close();
+          this.formUser.reset();
+        });
+      });
     } catch (error) {
       console.error('Error al registrar usuario:', error);
       loadingDialog.close();

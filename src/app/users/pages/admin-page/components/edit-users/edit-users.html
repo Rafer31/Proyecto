@@ -1,1 +1,137 @@
-<p>edit-users works!</p>
+<div class="edit-user-dialog">
+  <h2 mat-dialog-title>
+    <mat-icon>edit</mat-icon>
+    Editar Usuario
+  </h2>
+
+  <mat-dialog-content>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Datos básicos del usuario -->
+      <div class="form-section">
+        <h3 class="mb-3">Información Personal</h3>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width mt-2 mb-3">
+            <mat-label>Cédula de Identidad</mat-label>
+            <input matInput formControlName="ci" />
+            <mat-hint>Entre 7 y 10 dígitos</mat-hint>
+            <mat-error>{{ getErrorMessage('ci') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="half-width mt-2 mb-3">
+            <mat-label>Número de Celular</mat-label>
+            <input matInput formControlName="numcelular" />
+            <mat-hint>8 dígitos, debe empezar con 6 o 7</mat-hint>
+            <mat-error>{{ getErrorMessage('numcelular') }}</mat-error>
+          </mat-form-field>
+        </div>
+
+        <mat-form-field appearance="outline" class="full-width mt-3">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="nombre" />
+          <mat-error>{{ getErrorMessage('nombre') }}</mat-error>
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width mt-2">
+            <mat-label>Apellido Paterno</mat-label>
+            <input matInput formControlName="paterno" />
+            <mat-error>{{ getErrorMessage('paterno') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="half-width mt-2">
+            <mat-label>Apellido Materno</mat-label>
+            <input matInput formControlName="materno" />
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width mt-2">
+            <mat-label>Email</mat-label>
+            <input matInput type="email" formControlName="email" readonly />
+            <mat-hint>El email no se puede modificar (gestionado por autenticación)</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="half-width mt-2">
+            <mat-label>Rol</mat-label>
+            <mat-select formControlName="rol">
+              @for (role of roles; track role.idrol) {
+              <mat-option [value]="role.nomrol">{{ role.nomrol }}</mat-option>
+              }
+            </mat-select>
+            <mat-error>{{ getErrorMessage('rol') }}</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Campos específicos por rol -->
+      @if (selectedRole === 'Personal' || selectedRole === 'Administrador') {
+      <div class="form-section">
+        <h3 class="mt-7">Información de {{ selectedRole }}</h3>
+
+        <mat-form-field appearance="outline" class="full-width mt-3">
+          <mat-label>Dirección</mat-label>
+          <input matInput formControlName="direccion" />
+          <mat-error>{{ getErrorMessage('direccion') }}</mat-error>
+        </mat-form-field>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width mt-3">
+            <mat-label>Operación</mat-label>
+            <input matInput formControlName="operacion" />
+            <mat-error>{{ getErrorMessage('operacion') }}</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="half-width mt-3">
+            <mat-label>Número de Ficha</mat-label>
+            <input matInput formControlName="nroficha" />
+            <mat-error>{{ getErrorMessage('nroficha') }}</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+      } @if (selectedRole === 'Visitante') {
+      <div class="form-section mt-5">
+        <h3 class="mt-7">Información del Visitante</h3>
+
+        <mat-form-field appearance="outline" class="full-width mt-2">
+          <mat-label>Información Adicional</mat-label>
+          <textarea
+            matInput
+            formControlName="informacion"
+            rows="3"
+            placeholder="Empresa, motivo de visita, etc."
+          ></textarea>
+          <mat-error>{{ getErrorMessage('informacion') }}</mat-error>
+        </mat-form-field>
+      </div>
+      } @if (selectedRole === 'Conductor') {
+      <div class="form-section mt-2">
+        <h3 class="mt-7">Información del Conductor</h3>
+        <p class="info-text flex flex-row items-center mt-3">
+          <mat-icon class="me-1">info</mat-icon>
+          El conductor no cuenta con información extra
+        </p>
+      </div>
+      }
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()" [disabled]="loading">
+      Cancelar
+    </button>
+
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="onSubmit()"
+      [disabled]="form.invalid || loading"
+    >
+      @if (loading) {
+      <mat-spinner diameter="20"></mat-spinner>
+      } @else {
+      <mat-icon>save</mat-icon>
+      } {{ loading ? 'Actualizando...' : 'Actualizar Usuario' }}
+    </button>
+  </mat-dialog-actions>
+</div>

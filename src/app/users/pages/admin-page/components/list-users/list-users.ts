@@ -26,6 +26,8 @@ import { Usuario } from '../../../../../shared/interfaces/user';
 import { SearchUsers } from '../search-users/search-users';
 import { FilterUsers } from '../filter-users/filter-users';
 import { AddUsers } from '../add-users/add-users';
+import { EditUserData, EditUsers } from '../edit-users/edit-users';
+import { DialogService } from '../../../../../shared/services/dialog.service';
 
 @Component({
   selector: 'app-list-users',
@@ -48,6 +50,7 @@ import { AddUsers } from '../add-users/add-users';
 export default class ListUsers implements OnInit, AfterViewInit {
   private userService = inject(UserService);
   private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService); // 🔹 Inyectar DialogService
   private cdr = inject(ChangeDetectorRef);
 
   totalChange = output<number>();
@@ -55,7 +58,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
   users = signal<any[]>([]);
   totalItems = 0;
   pageSize = 10;
-  pageIndex = 0; // Inicializar en 0
+  pageIndex = 0;
   displayedColumns: string[] = [
     'ci',
     'nomusuario',
@@ -194,6 +197,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
       this.dataSource.paginator.firstPage();
     }
   }
+
   get safePageIndex(): number {
     return Math.max(0, this.pageIndex);
   }
@@ -232,8 +236,56 @@ export default class ListUsers implements OnInit, AfterViewInit {
     }, 0);
   }
 
-  editUser(user: Usuario) {
-    console.log('Editar usuario', user);
+  // 🔹 MÉTODO CORREGIDO
+  async editUser(user: Usuario) {
+
+
+    try {
+      // 1. Preparar los datos para el dialog de edición
+      const editUserData: EditUserData = {
+        idusuario: user.idusuario,
+        ci: user.ci,
+        nombre: user.nomusuario,
+        paterno: user.patusuario,
+        materno: user.matusuario || '',
+        numcelular: user.numcelular,
+        email: '', // 🔹 Email se obtendrá desde auth, por ahora vacío
+        rol: user.roles && user.roles.length > 0 ? user.roles[0].nomrol : '', // 🔹 Obtener rol correctamente
+        idrol: user.idrol, // 🔹 Usar idrol directo del usuario
+        // Campos específicos por rol - extraer de las relaciones
+        nroficha: user.personal?.nroficha || '',
+        operacion: user.personal?.operacion || '',
+        direccion: user.personal?.direccion || '',
+        informacion: user.visitante?.informacion || '',
+      };
+
+      // 2. Abrir el dialog de edición
+      const dialogRef = this.dialog.open(EditUsers, { // 🔹 Usar EditUsersComponent, no this.editUser
+        width: '600px',
+        maxWidth: '90vw',
+        panelClass: 'rounded-xl',
+        data: editUserData,
+        disableClose: false,
+      });
+
+      // 3. Escuchar el resultado del dialog
+      dialogRef.afterClosed().subscribe((result) => {
+        if (result) {
+          // El usuario fue actualizado exitosamente
+          console.log('Usuario actualizado exitosamente');
+          // Recargar la lista de usuarios
+          const currentPage = Math.max(1, this.pageIndex + 1);
+          this.loadUsers(currentPage, this.pageSize);
+        }
+      });
+
+    } catch (error) {
+      console.error('Error al abrir dialog de edición:', error);
+      this.dialogService.showErrorDialog(
+        'Error al abrir el formulario de edición',
+        'Error'
+      );
+    }
   }
 
   deleteUser(user: Usuario) {
