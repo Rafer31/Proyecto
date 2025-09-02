@@ -17,6 +17,7 @@ import { UserDataService } from '../../services/userdata.service';
 import { LoadingDialog } from '../../../shared/components/loading-dialog/loading-dialog';
 import { SuccessDialog } from '../../../shared/components/success-dialog/success-dialog';
 import { ErrorDialog } from '../../../shared/components/error-dialog/error-dialog';
+import { DestinyService } from '../../../shared/services/destiny.service';
 
 @Component({
   selector: 'app-register-user',
@@ -36,8 +37,10 @@ export default class RegisterUser {
   private fb = inject(FormBuilder);
   private supabase = inject(SupabaseService).supabase;
   private userDataService = inject(UserDataService);
+  private destinyService = inject(DestinyService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
+  destinos = signal<any[]>([]);
 
   formUser: FormGroup = this.fb.group({});
   selectedRole = signal<string | null>(null);
@@ -45,8 +48,16 @@ export default class RegisterUser {
   ngOnInit() {
     this.initializeForm();
     this.setupValidationListeners();
+    this.loadDestinos();
   }
-
+  private async loadDestinos() {
+    try {
+      const data = await this.destinyService.getDestinos();
+      this.destinos.set(data);
+    } catch (error) {
+      console.error('No se pudieron cargar los destinos', error);
+    }
+  }
   private initializeForm() {
     this.formUser = this.fb.group({
       step1: this.fb.group({
@@ -63,7 +74,7 @@ export default class RegisterUser {
       step2: this.fb.group({
         nroficha: [''],
         operacion: [''],
-        direccion: [''],
+        iddestino: ['', Validators.required], // <- aquí
         informacion: [''],
       }),
     });
@@ -88,7 +99,7 @@ export default class RegisterUser {
     if (rol === 'Personal') {
       step2.get('nroficha')?.setValidators([Validators.required]);
       step2.get('operacion')?.setValidators([Validators.required]);
-      step2.get('direccion')?.setValidators([Validators.required]);
+      step2.get('iddestino')?.setValidators([Validators.required]);
     }
 
     if (rol === 'Visitante') {
@@ -137,7 +148,6 @@ export default class RegisterUser {
       });
 
       successDialog.afterClosed().subscribe(() => {
-
         const redirectDialog = this.dialog.open(LoadingDialog, {
           disableClose: true,
         });

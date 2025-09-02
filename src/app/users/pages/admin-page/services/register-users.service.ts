@@ -2,32 +2,34 @@ import { Injectable, inject } from '@angular/core';
 import { SupabaseService } from '../../../../shared/services/supabase.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class RegisterUserService {
   private supabaseClient = inject(SupabaseService).supabase;
 
   async registerUserFromAdmin(userData: any) {
     try {
-
-      const { data: authData, error: authError } = await this.supabaseClient.auth.signUp({
-        email: userData.email,
-        password: 'temporal1234',
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-          data: {
-            needs_password_change: true,
-            created_from_admin: true,
-            admin_created: true
+      const { data: authData, error: authError } =
+        await this.supabaseClient.auth.signUp({
+          email: userData.email,
+          password: 'temporal1234',
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            data: {
+              needs_password_change: true,
+              created_from_admin: true,
+              admin_created: true,
+            },
           },
-        },
-      });
+        });
 
       if (authError) {
         if (authError.message.includes('already registered')) {
           throw new Error('Este email ya está registrado en el sistema');
         }
-        throw new Error(authError.message || 'Error al crear el usuario en autenticación');
+        throw new Error(
+          authError.message || 'Error al crear el usuario en autenticación'
+        );
       }
 
       if (!authData.user) {
@@ -54,6 +56,7 @@ export class RegisterUserService {
             ci: userData.ci,
             idrol: rolData.idrol,
             auth_id: authData.user.id,
+            estado:'Activo'
           },
         ])
         .select()
@@ -63,21 +66,29 @@ export class RegisterUserService {
         throw new Error('No se pudo insertar el usuario en la base de datos');
       }
 
-      await this.insertRoleSpecificData(userData.rol, usuarioData.idusuario, userData);
+      await this.insertRoleSpecificData(
+        userData.rol,
+        usuarioData.idusuario,
+        userData
+      );
 
       return {
         usuario: usuarioData,
-        authUser: authData.user
+        authUser: authData.user,
       };
-
     } catch (error: any) {
       console.error('Error registrando usuario desde admin:', error);
       throw new Error(error.message || 'Error al registrar el usuario');
     }
   }
-  private async insertRoleSpecificData(rol: string, idusuario: string, userData: any) {
+  private async insertRoleSpecificData(
+    rol: string,
+    idusuario: string,
+    userData: any
+  ) {
     switch (rol) {
       case 'Personal':
+      case 'Administrador':
         const { error: personalError } = await this.supabaseClient
           .from('personal')
           .insert([
@@ -85,31 +96,34 @@ export class RegisterUserService {
               nroficha: userData.nroficha,
               idusuario: idusuario,
               operacion: userData.operacion,
-              direccion: userData.direccion,
             },
           ]);
 
         if (personalError) {
-          throw new Error(`Error insertando datos de Personal: ${personalError.message}`);
+          throw new Error(
+            `Error insertando datos de ${rol}: ${personalError.message}`
+          );
         }
-        break;
 
-      case 'Administrador':
+        // Insertar asignacion_destino si iddestino existe
+        if (userData.iddestino && userData.nroficha) {
+          const { error: asignacionError } = await this.supabaseClient
+            .from('asignacion_destino')
+            .insert([
+              {
+                nroficha: userData.nroficha,
+                iddestino: userData.iddestino,
+                fechainicio: new Date().toISOString(),
+              },
+            ]);
 
-        const { error: adminError } = await this.supabaseClient
-          .from('personal')
-          .insert([
-            {
-              nroficha: userData.nroficha,
-              idusuario: idusuario,
-              operacion: userData.operacion,
-              direccion: userData.direccion,
-            },
-          ]);
-
-        if (adminError) {
-          throw new Error(`Error insertando datos de Administrador: ${adminError.message}`);
+          if (asignacionError) {
+            throw new Error(
+              `Error insertando asignación de destino: ${asignacionError.message}`
+            );
+          }
         }
+
         break;
 
       case 'Visitante':
@@ -123,22 +137,21 @@ export class RegisterUserService {
           ]);
 
         if (visitanteError) {
-          throw new Error(`Error insertando datos de Visitante: ${visitanteError.message}`);
+          throw new Error(
+            `Error insertando datos de Visitante: ${visitanteError.message}`
+          );
         }
         break;
 
       case 'Conductor':
-
         const { error: conductorError } = await this.supabaseClient
           .from('conductor')
-          .insert([
-            {
-              idusuario: idusuario,
-            },
-          ]);
+          .insert([{ idusuario: idusuario }]);
 
         if (conductorError) {
-          throw new Error(`Error insertando datos de Conductor: ${conductorError.message}`);
+          throw new Error(
+            `Error insertando datos de Conductor: ${conductorError.message}`
+          );
         }
         break;
 
@@ -192,13 +205,15 @@ export class RegisterUserService {
   async getUserByAuthId(authId: string) {
     const { data, error } = await this.supabaseClient
       .from('usuario')
-      .select(`
+      .select(
+        `
         *,
         roles(idrol, nomrol),
-        personal(nroficha, operacion, direccion),
+        personal(nroficha, operacion),
         visitante(informacion),
         conductor(idconductor)
-      `)
+      `
+      )
       .eq('auth_id', authId)
       .maybeSingle();
 
@@ -222,7 +237,6 @@ export class RegisterUserService {
       }
     } catch (error) {
       console.warn('Error limpiando usuario incompleto:', error);
-
     }
   }
 

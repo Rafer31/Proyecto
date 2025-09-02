@@ -1,4 +1,10 @@
-import { ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -10,6 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import { RegisterUserService } from '../../services/register-users.service';
+import { DestinyService } from '../../../../../shared/services/destiny.service';
 
 @Component({
   selector: 'app-add-users',
@@ -23,10 +30,10 @@ import { RegisterUserService } from '../../services/register-users.service';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './add-users.html',
-  styleUrls: ['./add-users.scss']
+  styleUrls: ['./add-users.scss'],
 })
 export class AddUsers implements OnInit {
   private fb = inject(FormBuilder);
@@ -34,7 +41,8 @@ export class AddUsers implements OnInit {
   private registerUserService = inject(RegisterUserService);
   private dialogService = inject(DialogService);
   private cdr = inject(ChangeDetectorRef);
-
+  private destinyService = inject(DestinyService);
+  destinos = signal<any[]>([]);
   roles: Array<{ idrol: string; nomrol: string }> = [];
   loading = false;
 
@@ -49,21 +57,29 @@ export class AddUsers implements OnInit {
 
     nroficha: [''],
     operacion: [''],
-    direccion: [''],
-    informacion: ['']
+    iddestino: ['', Validators.required],
+    informacion: [''],
   });
 
   ngOnInit(): void {
     this.loadRoles();
     this.setupRoleValidation();
+    this.loadDestinos();
   }
-
+  private async loadDestinos() {
+    try {
+      const data = await this.destinyService.getDestinos();
+      this.destinos.set(data);
+    } catch (error) {
+      console.error('No se pudieron cargar los destinos', error);
+    }
+  }
   private async loadRoles() {
     try {
       this.roles = await this.registerUserService.getRoles();
     } catch (error) {
       console.error('Error cargando roles:', error);
-       this.dialogService.showErrorDialog(
+      this.dialogService.showErrorDialog(
         'Error al cargar los roles disponibles',
         'Error'
       );
@@ -71,20 +87,20 @@ export class AddUsers implements OnInit {
   }
 
   private setupRoleValidation() {
-    this.form.get('rol')?.valueChanges.subscribe(role => {
+    this.form.get('rol')?.valueChanges.subscribe((role) => {
       this.clearRoleSpecificValidators();
 
       if (role === 'Personal' || role === 'Administrador') {
         this.form.get('nroficha')?.setValidators([Validators.required]);
         this.form.get('operacion')?.setValidators([Validators.required]);
-        this.form.get('direccion')?.setValidators([Validators.required]);
+        this.form.get('iddestino')?.setValidators([Validators.required]);
       } else if (role === 'Visitante') {
         this.form.get('informacion')?.setValidators([Validators.required]);
       }
 
       this.form.get('nroficha')?.updateValueAndValidity();
       this.form.get('operacion')?.updateValueAndValidity();
-      this.form.get('direccion')?.updateValueAndValidity();
+      this.form.get('iddestino')?.updateValueAndValidity();
       this.form.get('informacion')?.updateValueAndValidity();
     });
   }
@@ -92,7 +108,7 @@ export class AddUsers implements OnInit {
   private clearRoleSpecificValidators() {
     this.form.get('nroficha')?.clearValidators();
     this.form.get('operacion')?.clearValidators();
-    this.form.get('direccion')?.clearValidators();
+    this.form.get('iddestino')?.clearValidators();
     this.form.get('informacion')?.clearValidators();
   }
 
@@ -115,7 +131,9 @@ export class AddUsers implements OnInit {
 
       const formValue = this.form.value;
 
-      const ciExists = await this.registerUserService.checkCIExists(formValue.ci!);
+      const ciExists = await this.registerUserService.checkCIExists(
+        formValue.ci!
+      );
       if (ciExists) {
         this.loading = false;
         this.cdr.markForCheck();
@@ -129,17 +147,19 @@ export class AddUsers implements OnInit {
       if (!this.registerUserService.validateCIFormat(formValue.ci!)) {
         this.loading = false;
         this.cdr.markForCheck();
-        await this.dialogService.showErrorDialog(
+        this.dialogService.showErrorDialog(
           'El formato de CI no es válido. Debe tener entre 7 y 10 dígitos.',
           'CI Inválida'
         );
         return;
       }
 
-      if (!this.registerUserService.validateCelularFormat(formValue.numcelular!)) {
+      if (
+        !this.registerUserService.validateCelularFormat(formValue.numcelular!)
+      ) {
         this.loading = false;
         this.cdr.markForCheck();
-        await this.dialogService.showErrorDialog(
+        this.dialogService.showErrorDialog(
           'El formato de celular no es válido. Debe tener 8 dígitos y empezar con 6 o 7.',
           'Celular Inválido'
         );
@@ -156,11 +176,13 @@ export class AddUsers implements OnInit {
         rol: formValue.rol!,
         nroficha: formValue.nroficha || '',
         operacion: formValue.operacion || '',
-        direccion: formValue.direccion || '',
-        informacion: formValue.informacion || ''
+        iddestino: formValue.iddestino || '',
+        informacion: formValue.informacion || '',
       };
 
-      const result = await this.registerUserService.registerUserFromAdmin(userData);
+      const result = await this.registerUserService.registerUserFromAdmin(
+        userData
+      );
 
       this.loading = false;
       this.cdr.markForCheck();
@@ -170,21 +192,21 @@ export class AddUsers implements OnInit {
         'Usuario Creado'
       );
       this.dialogRef.close(true);
-
     } catch (error: any) {
       console.error('Error creando usuario:', error);
       this.loading = false;
       this.cdr.markForCheck();
 
       await this.dialogService.showErrorDialog(
-        error.message || 'Error al crear el usuario. Por favor, inténtelo nuevamente.',
+        error.message ||
+          'Error al crear el usuario. Por favor, inténtelo nuevamente.',
         'Error'
       );
     }
   }
 
   private markFormGroupTouched() {
-    Object.keys(this.form.controls).forEach(key => {
+    Object.keys(this.form.controls).forEach((key) => {
       const control = this.form.get(key);
       control?.markAsTouched();
     });

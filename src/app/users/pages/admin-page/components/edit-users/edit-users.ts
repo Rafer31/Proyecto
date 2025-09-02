@@ -1,7 +1,18 @@
-import { ChangeDetectorRef, Component, inject, OnInit, Inject } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnInit,
+  Inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatDialogRef, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import {
+  MatDialogRef,
+  MatDialogModule,
+  MAT_DIALOG_DATA,
+} from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -11,6 +22,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import { EditUsersService } from '../../services/edit-users.service';
 import { RegisterUserService } from '../../services/register-users.service';
+import { DestinyService } from '../../../../../shared/services/destiny.service';
 
 export interface EditUserData {
   idusuario: string;
@@ -25,7 +37,7 @@ export interface EditUserData {
   // Campos específicos por rol
   nroficha?: string; // Para Personal/Administrador
   operacion?: string; // Para Personal/Administrador
-  direccion?: string; // Para Personal/Administrador
+  iddestino?: string; // Para Personal/Administrador
   informacion?: string; // Para Visitante
 }
 
@@ -41,10 +53,10 @@ export interface EditUserData {
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './edit-users.html',
-  styleUrls: ['./edit-users.scss']
+  styleUrls: ['./edit-users.scss'],
 })
 export class EditUsers {
   private fb = inject(FormBuilder);
@@ -53,10 +65,12 @@ export class EditUsers {
   private registerUserService = inject(RegisterUserService);
   private dialogService = inject(DialogService);
   private cdr = inject(ChangeDetectorRef);
-
+  private destinyService = inject(DestinyService);
+  destinos = signal<any[]>([]);
   roles: Array<{ idrol: string; nomrol: string }> = [];
   loading = false;
   originalCi: string;
+  currentDestinyId: string | null = null;
 
   form = this.fb.group({
     ci: ['', [Validators.required, Validators.pattern(/^\d{7,10}$/)]],
@@ -69,8 +83,8 @@ export class EditUsers {
 
     nroficha: [''],
     operacion: [''],
-    direccion: [''],
-    informacion: ['']
+    iddestino: ['', Validators.required],
+    informacion: [''],
   });
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: EditUserData) {
@@ -80,7 +94,35 @@ export class EditUsers {
   ngOnInit(): void {
     this.loadRoles();
     this.setupRoleValidation();
-    this.populateForm();
+    this.loadDestinos();
+    this.loadUserData();
+  }
+
+  private async loadDestinos() {
+    try {
+      const data = await this.destinyService.getDestinos();
+      this.destinos.set(data);
+    } catch (error) {
+    }
+  }
+
+  private async loadUserData() {
+    try {
+      // Cargar la asignación de destino actual del usuario si tiene nroficha
+      if (this.data.nroficha) {
+        const assignedDestiny = await this.editUsersService.getUserAssignedDestiny(this.data.nroficha);
+        if (assignedDestiny) {
+          this.currentDestinyId = assignedDestiny.iddestino;
+          this.data.iddestino = assignedDestiny.iddestino;
+        }
+      }
+
+      // Poblar el formulario con todos los datos
+      this.populateForm();
+
+    } catch (error) {
+      console.error('Error cargando datos del usuario:', error);
+    }
   }
 
   private populateForm() {
@@ -94,9 +136,10 @@ export class EditUsers {
       rol: this.data.rol,
       nroficha: this.data.nroficha || '',
       operacion: this.data.operacion || '',
-      direccion: this.data.direccion || '',
-      informacion: this.data.informacion || ''
+      iddestino: this.data.iddestino || '',
+      informacion: this.data.informacion || '',
     });
+    this.form.get('rol')?.updateValueAndValidity();
   }
 
   private async loadRoles() {
@@ -112,20 +155,25 @@ export class EditUsers {
   }
 
   private setupRoleValidation() {
-    this.form.get('rol')?.valueChanges.subscribe(role => {
+    this.form.get('rol')?.valueChanges.subscribe((role) => {
       this.clearRoleSpecificValidators();
 
       if (role === 'Personal' || role === 'Administrador') {
         this.form.get('nroficha')?.setValidators([Validators.required]);
         this.form.get('operacion')?.setValidators([Validators.required]);
-        this.form.get('direccion')?.setValidators([Validators.required]);
+        this.form.get('iddestino')?.setValidators([Validators.required]);
       } else if (role === 'Visitante') {
         this.form.get('informacion')?.setValidators([Validators.required]);
+        // Limpiar el campo de destino si cambia a visitante
+        this.form.get('iddestino')?.setValue('');
+      } else if (role === 'Conductor') {
+        // Limpiar el campo de destino si cambia a conductor
+        this.form.get('iddestino')?.setValue('');
       }
 
       this.form.get('nroficha')?.updateValueAndValidity();
       this.form.get('operacion')?.updateValueAndValidity();
-      this.form.get('direccion')?.updateValueAndValidity();
+      this.form.get('iddestino')?.updateValueAndValidity();
       this.form.get('informacion')?.updateValueAndValidity();
     });
   }
@@ -133,7 +181,7 @@ export class EditUsers {
   private clearRoleSpecificValidators() {
     this.form.get('nroficha')?.clearValidators();
     this.form.get('operacion')?.clearValidators();
-    this.form.get('direccion')?.clearValidators();
+    this.form.get('iddestino')?.clearValidators();
     this.form.get('informacion')?.clearValidators();
   }
 
@@ -142,6 +190,7 @@ export class EditUsers {
   }
 
   async onSubmit() {
+
     if (this.form.invalid) {
       this.markFormGroupTouched();
       return;
@@ -158,14 +207,18 @@ export class EditUsers {
 
       // Validar CI solo si cambió
       if (formValue.ci !== this.originalCi) {
-        const ciExists = await this.registerUserService.checkCIExists(formValue.ci!);
+        const ciExists = await this.registerUserService.checkCIExists(
+          formValue.ci!
+        );
         if (ciExists) {
           this.loading = false;
           this.cdr.markForCheck();
-          await this.dialogService.showErrorDialog(
-            'Ya existe un usuario con esta cédula de identidad',
-            'CI Duplicada'
-          ).afterClosed();
+          this.dialogService
+            .showErrorDialog(
+              'Ya existe un usuario con esta cédula de identidad',
+              'CI Duplicada'
+            )
+            .afterClosed();
           return;
         }
       }
@@ -173,14 +226,16 @@ export class EditUsers {
       if (!this.registerUserService.validateCIFormat(formValue.ci!)) {
         this.loading = false;
         this.cdr.markForCheck();
-        await this.dialogService.showErrorDialog(
+        this.dialogService.showErrorDialog(
           'El formato de CI no es válido. Debe tener entre 7 y 10 dígitos.',
           'CI Inválida'
         );
         return;
       }
 
-      if (!this.registerUserService.validateCelularFormat(formValue.numcelular!)) {
+      if (
+        !this.registerUserService.validateCelularFormat(formValue.numcelular!)
+      ) {
         this.loading = false;
         this.cdr.markForCheck();
         await this.dialogService.showErrorDialog(
@@ -191,7 +246,9 @@ export class EditUsers {
       }
 
       // Buscar el idrol basado en el nombre del rol seleccionado
-      const selectedRoleObj = this.roles.find(role => role.nomrol === formValue.rol);
+      const selectedRoleObj = this.roles.find(
+        (role) => role.nomrol === formValue.rol
+      );
       if (!selectedRoleObj) {
         this.loading = false;
         this.cdr.markForCheck();
@@ -212,35 +269,40 @@ export class EditUsers {
         idrol: selectedRoleObj.idrol,
         nroficha: formValue.nroficha || '',
         operacion: formValue.operacion || '',
-        direccion: formValue.direccion || '',
-        informacion: formValue.informacion || ''
+        iddestino: formValue.iddestino || '',
+        informacion: formValue.informacion || '',
       };
+
+
 
       await this.editUsersService.updateUser(this.data.idusuario, userData);
 
       this.loading = false;
       this.cdr.markForCheck();
 
-      await this.dialogService.showSuccessDialog(
-        `Usuario ${userData.nombre} ${userData.paterno} actualizado exitosamente.`,
-        'Usuario Actualizado'
-      ).afterClosed();
+      await this.dialogService
+        .showSuccessDialog(
+          `Usuario ${userData.nombre} ${userData.paterno} actualizado exitosamente.`,
+          'Usuario Actualizado'
+        )
+        .afterClosed();
       this.dialogRef.close(true);
-
     } catch (error: any) {
-      console.error('Error actualizando usuario:', error);
       this.loading = false;
       this.cdr.markForCheck();
 
-      await this.dialogService.showErrorDialog(
-        error.message || 'Error al actualizar el usuario. Por favor, inténtelo nuevamente.',
-        'Error'
-      ).afterClosed();
+      await this.dialogService
+        .showErrorDialog(
+          error.message ||
+            'Error al actualizar el usuario. Por favor, inténtelo nuevamente.',
+          'Error'
+        )
+        .afterClosed();
     }
   }
 
   private markFormGroupTouched() {
-    Object.keys(this.form.controls).forEach(key => {
+    Object.keys(this.form.controls).forEach((key) => {
       const control = this.form.get(key);
       control?.markAsTouched();
     });

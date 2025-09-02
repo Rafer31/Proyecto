@@ -91,17 +91,35 @@
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Operación</mat-label>
-            <input matInput formControlName="operacion" required />
+            <mat-select formControlName="operacion" required>
+              <mat-option value="Bolívar">Bolívar</mat-option>
+              <mat-option value="Porco">Porco</mat-option>
+              <mat-option value="La Paz">La Paz</mat-option>
+              <mat-option value="Tres Amigos">Tres Amigos</mat-option>
+              <mat-option value="Caballo Blanco">Caballo Blanco</mat-option>
+              <mat-option value="Colquechaquita">Colquechaquita</mat-option>
+            </mat-select>
             @if (step2Form.get('operacion')?.hasError('required')) {
             <mat-error>La operación es requerida</mat-error>
             }
           </mat-form-field>
 
+          <p class="text-sm text-orange-700 mb-2">
+            Ten en cuenta que el destino que selecciones no podrás cambiarlo
+            después. Si necesitas modificarlo, deberás solicitar otra asignación
+            a administración.
+          </p>
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Dirección</mat-label>
-            <input matInput formControlName="direccion" required />
-            @if (step2Form.get('direccion')?.hasError('required')) {
-            <mat-error>La dirección es requerida</mat-error>
+            <mat-label>Destino</mat-label>
+            <mat-select formControlName="iddestino" required>
+              @for (d of destinos(); track d.iddestino) {
+              <mat-option [value]="d.iddestino">
+                {{ d.nomdestino }}
+              </mat-option>
+              }
+            </mat-select>
+            @if (step2Form.get('iddestino')?.hasError('required')) {
+            <mat-error>Debe seleccionar un destino</mat-error>
             }
           </mat-form-field>
           }

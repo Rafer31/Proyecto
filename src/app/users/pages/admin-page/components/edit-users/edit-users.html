@@ -49,7 +49,10 @@
           <mat-form-field appearance="outline" class="half-width mt-2">
             <mat-label>Email</mat-label>
             <input matInput type="email" formControlName="email" readonly />
-            <mat-hint>El email no se puede modificar (gestionado por autenticación)</mat-hint>
+            <mat-hint
+              >El email no se puede modificar (gestionado por
+              autenticación)</mat-hint
+            >
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="half-width mt-2">
@@ -69,17 +72,32 @@
       <div class="form-section">
         <h3 class="mt-7">Información de {{ selectedRole }}</h3>
 
-        <mat-form-field appearance="outline" class="full-width mt-3">
-          <mat-label>Dirección</mat-label>
-          <input matInput formControlName="direccion" />
-          <mat-error>{{ getErrorMessage('direccion') }}</mat-error>
+        <mat-form-field appearance="outline" class="full-width mt-4">
+          <mat-label>Destino</mat-label>
+          <mat-select formControlName="iddestino" required>
+            @for (d of destinos(); track d.iddestino) {
+            <mat-option [value]="d.iddestino"> {{ d.nomdestino }} </mat-option>
+            }
+          </mat-select>
+          @if (form.get('iddestino')?.hasError('required')) {
+          <mat-error>Debe seleccionar un destino</mat-error>
+          }
         </mat-form-field>
 
         <div class="form-row">
           <mat-form-field appearance="outline" class="half-width mt-3">
             <mat-label>Operación</mat-label>
-            <input matInput formControlName="operacion" />
-            <mat-error>{{ getErrorMessage('operacion') }}</mat-error>
+            <mat-select formControlName="operacion" required>
+              <mat-option value="Bolívar">Bolívar</mat-option>
+              <mat-option value="Porco">Porco</mat-option>
+              <mat-option value="La Paz">La Paz</mat-option>
+              <mat-option value="Tres Amigos">Tres Amigos</mat-option>
+              <mat-option value="Caballo Blanco">Caballo Blanco</mat-option>
+              <mat-option value="Colquechaquita">Colquechaquita</mat-option>
+            </mat-select>
+            @if (getErrorMessage('operacion')) {
+            <mat-error>La operación es requerida</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="half-width mt-3">

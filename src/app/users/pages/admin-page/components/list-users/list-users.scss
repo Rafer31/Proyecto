@@ -1,206 +1,80 @@
 .user-list-container {
-  padding: 16px;
-
-  .filters {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-
-    mat-form-field {
-      min-width: 250px;
-      flex: 1;
-
-      &:first-child {
-        flex: 2; // El buscador es más ancho
-      }
-    }
-
-  }
-
-  .mat-elevation-z8 {
-    position: relative;
-    border-radius: 8px;
-    overflow: hidden;
-
-    .loading-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: rgba(255, 255, 255, 0.9);
-      z-index: 10;
-      gap: 16px;
-
-      p {
-        margin: 0;
-        color: #666;
-        font-weight: 500;
-      }
-    }
-
-    table {
-      width: 100%;
-
-      th {
-        font-weight: 600;
-        color: #333;
-      }
-
-      td {
-        padding: 12px 8px;
-      }
-
-      .mat-column-ci {
-        width: 100px;
-      }
-
-      .mat-column-numcelular {
-        width: 120px;
-      }
-
-      .mat-column-rol {
-        width: 160px;
-
-        .role-badge {
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 14px;
-          font-weight: 500;
-          &.role-personal {
-            background-color: #e3f2fd;
-            color: #1976d2;
-          }
-
-          &.role-conductor {
-            background-color: #f3e5f5;
-            color: #7b1fa2;
-          }
-
-          &.role-visitante {
-            background-color: #e8f5e8;
-            color: #388e3c;
-          }
-
-          &.role-administrador {
-            background-color: #fff3e0;
-            color: #f57c00;
-          }
-
-          &.role-sin-rol {
-            background-color: #f5f5f5;
-            color: #757575;
-          }
-        }
-      }
-
-      .mat-column-informacion {
-        width: 200px;
-
-        .info-cell {
-          .info-text {
-            font-size: 13px;
-            color: #666;
-            line-height: 1.2;
-          }
-        }
-      }
-
-      .mat-column-destino {
-        width: 180px;
-
-        .destino-cell {
-          .destino-info {
-            font-size: 12px;
-            padding: 4px 8px;
-            border-radius: 8px;
-            display: inline-block;
-
-            &.assignable {
-              background-color: #e8f5e8;
-              color: #2e7d32;
-              border: 1px solid #c8e6c9;
-            }
-
-            &.not-assignable {
-              background-color: #f5f5f5;
-              color: #757575;
-              border: 1px solid #e0e0e0;
-            }
-          }
-        }
-      }
-
-      .mat-column-acciones {
-        width: 150px;
-        text-align: center;
-
-        button {
-          margin: 0 2px;
-        }
-      }
-    }
-
-    .no-data {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 16px;
-      color: #666;
-
-      mat-icon {
-        font-size: 48px;
-        width: 48px;
-        height: 48px;
-        margin-bottom: 16px;
-        opacity: 0.5;
-      }
-
-      p {
-        margin: 0;
-        font-size: 16px;
-      }
-    }
-  }
+  padding: 20px;
 }
 
-// Responsive
+.filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+}
+
+.no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  gap: 16px;
+  color: #666;
+}
+
+.no-data mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+.role-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.role-personal {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.role-conductor {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.role-visitante {
+  background-color: #e8f5e8;
+  color: #388e3c;
+}
+
+.role-administrador {
+  background-color: #fff3e0;
+  color: #f57c00;
+}
+
+.role-sin-rol {
+  background-color: #f5f5f5;
+  color: #757575;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
+  .filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   .user-list-container {
-    .filters {
-      flex-direction: column;
-      align-items: stretch;
-
-      mat-form-field {
-        min-width: auto;
-        width: 100%;
-      }
-
-      button {
-        width: 100%;
-      }
-    }
-
-    .mat-elevation-z8 {
-      table {
-        .mat-column-nombre {
-          min-width: 200px;
-        }
-
-        .mat-column-acciones {
-          position: sticky;
-          right: 0;
-          background: white;
-          border-left: 1px solid #e0e0e0;
-        }
-      }
-    }
+    padding: 10px;
   }
 }

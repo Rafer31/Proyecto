@@ -4,10 +4,9 @@ import {
   AfterViewInit,
   ViewChild,
   inject,
-  EventEmitter,
-  output,
-  signal,
   ChangeDetectorRef,
+  Output,
+  EventEmitter,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -28,6 +27,7 @@ import { FilterUsers } from '../filter-users/filter-users';
 import { AddUsers } from '../add-users/add-users';
 import { EditUserData, EditUsers } from '../edit-users/edit-users';
 import { DialogService } from '../../../../../shared/services/dialog.service';
+import { ObservationDialog } from '../../observation-dialog/observation-dialog';
 
 @Component({
   selector: 'app-list-users',
@@ -50,15 +50,12 @@ import { DialogService } from '../../../../../shared/services/dialog.service';
 export default class ListUsers implements OnInit, AfterViewInit {
   private userService = inject(UserService);
   private dialog = inject(MatDialog);
-  private dialogService = inject(DialogService); // 🔹 Inyectar DialogService
+  private dialogService = inject(DialogService);
   private cdr = inject(ChangeDetectorRef);
 
-  totalChange = output<number>();
+  // ✅ Agregar el @Output que falta
+  @Output() totalChange = new EventEmitter<number>();
 
-  users = signal<any[]>([]);
-  totalItems = 0;
-  pageSize = 10;
-  pageIndex = 0;
   displayedColumns: string[] = [
     'ci',
     'nomusuario',
@@ -72,74 +69,86 @@ export default class ListUsers implements OnInit, AfterViewInit {
   ];
 
   dataSource = new MatTableDataSource<Usuario>([]);
-  allUsers: Usuario[] = []; // Para filtrado local
-
-  roles: Array<{ idrol: string; nomrol: string }> = [];
   loading = false;
 
+  // Filtros activo
   private searchValue = '';
   roleControlValue = '';
+
+  // Paginación
+  totalItems = 0;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
+  // Roles para filtro
+  roles: Array<{ idrol: string; nomrol: string }> = [];
+
   ngOnInit(): void {
     this.loadRoles();
-    this.setupFilterPredicate();
-    this.loadUsers(1, this.pageSize);
   }
 
   ngAfterViewInit(): void {
-    // Usar setTimeout para evitar ExpressionChangedAfterItHasBeenCheckedError
-    setTimeout(() => {
-      if (this.paginator) {
-        this.dataSource.paginator = this.paginator;
-        // Inicializar pageIndex en 0 para evitar el error -1
-        this.paginator.pageIndex = 0;
-        this.pageIndex = 0;
-
-        this.paginator.page.subscribe((event: PageEvent) => {
-          this.onPageChange(event);
-        });
-      }
-      if (this.sort) {
-        this.dataSource.sort = this.sort;
-      }
-      this.cdr.detectChanges();
-    }, 0);
+    if (this.paginator) {
+      this.paginator.page.subscribe((event: PageEvent) => {
+        this.loadPage(event.pageIndex, event.pageSize);
+      });
+    }
+    // primera carga
+    this.loadPage(0, 10);
   }
 
-  loadUsers(page: number = 1, limit: number = this.pageSize) {
+  /** Carga una página de usuarios desde Supabase */
+  async loadPage(pageIndex: number, pageSize: number) {
     this.loading = true;
     this.cdr.detectChanges();
+    try {
+      const { data, count } = await this.userService.getUsers(
+        pageIndex,
+        pageSize
+      );
+      let usuarios = data || [];
 
-    this.userService
-      .getUsers(page, limit)
-      .then(({ data, count }) => {
-        this.allUsers = data;
-        this.dataSource.data = [...data];
-        this.totalItems = count || data.length;
+      // 🔹 aplicar filtros en memoria (simple, para no complicar SQL dinámico)
+      if (this.searchValue) {
+        const s = this.searchValue.toLowerCase();
+        usuarios = usuarios.filter(
+          (u) =>
+            `${u.nomusuario} ${u.patusuario} ${u.matusuario}`
+              .toLowerCase()
+              .includes(s) ||
+            (u.ci || '').toLowerCase().includes(s) ||
+            (u.numcelular || '').toLowerCase().includes(s)
+        );
+      }
+      if (this.roleControlValue) {
+        usuarios = usuarios.filter(
+          (u) =>
+            u.roles &&
+            u.roles.length > 0 &&
+            u.roles[0].nomrol === this.roleControlValue
+        );
+      }
 
-        this.applyCombinedFilter();
+      this.dataSource.data = usuarios;
+      this.totalItems = count || 0;
 
-        // Usar setTimeout para evitar errores de cambio de expresión
-        setTimeout(() => {
-          if (this.paginator) {
-            this.paginator.length = this.totalItems;
-            this.paginator.pageIndex = Math.max(0, page - 1); // Asegurar que no sea -1
-            this.pageIndex = Math.max(0, page - 1);
-          }
-          this.loading = false;
-          this.cdr.detectChanges();
-        }, 0);
-      })
-      .catch((err) => {
-        console.error('Error cargando usuarios', err);
-        this.loading = false;
-        this.cdr.detectChanges();
-      });
+      // ✅ Emitir el total de usuarios al componente padre
+      this.totalChange.emit(usuarios.length);
+
+      this.loading = false;
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('Error cargando usuarios', err);
+      this.loading = false;
+      this.cdr.detectChanges();
+
+      // ✅ En caso de error, emitir 0
+      this.totalChange.emit(0);
+    }
   }
 
+  /** Carga los roles para el filtro */
   private async loadRoles() {
     try {
       this.roles = await this.userService.getRoles();
@@ -148,100 +157,32 @@ export default class ListUsers implements OnInit, AfterViewInit {
     }
   }
 
-  private setupFilterPredicate() {
-    this.dataSource.filterPredicate = (data: Usuario, filter: string) => {
-      let parsed = { search: '', role: '' };
-      try {
-        parsed = JSON.parse(filter);
-      } catch {
-        parsed.search = (filter || '').toString().toLowerCase();
-      }
-
-      const search = parsed.search.trim().toLowerCase();
-      const role = parsed.role;
-
-      const fullName = `${data.nomusuario || ''} ${data.patusuario || ''} ${
-        data.matusuario || ''
-      }`
-        .toLowerCase()
-        .trim();
-
-      const ci = (data.ci || '').toString().toLowerCase();
-      const celular = (data.numcelular || '').toString().toLowerCase();
-
-      const rolNombre =
-        data.roles && data.roles.length > 0
-          ? (data.roles[0].nomrol || '').toString()
-          : '';
-
-      const matchesSearch =
-        !search ||
-        fullName.includes(search) ||
-        ci.includes(search) ||
-        celular.includes(search);
-
-      const matchesRole = !role || rolNombre === role;
-
-      return matchesSearch && matchesRole;
-    };
+  // --- Filtros de hijos ---
+  onSearchChange(search: string) {
+    this.searchValue = search;
+    if (this.paginator) this.paginator.firstPage();
+    this.loadPage(0, this.paginator?.pageSize || 10);
   }
 
-  private applyCombinedFilter() {
-    const filterValue = JSON.stringify({
-      search: this.searchValue.trim().toLowerCase(),
-      role: this.roleControlValue,
-    });
-    this.dataSource.filter = filterValue;
-
-    if (this.dataSource.paginator) {
-      this.dataSource.paginator.firstPage();
-    }
+  onRoleChange(role: string) {
+    this.roleControlValue = role;
+    if (this.paginator) this.paginator.firstPage();
+    this.loadPage(0, this.paginator?.pageSize || 10);
   }
 
-  get safePageIndex(): number {
-    return Math.max(0, this.pageIndex);
-  }
-
+  // --- Dialogs ---
   openAddUserDialog() {
     this.dialog
       .open(AddUsers)
       .afterClosed()
       .subscribe((result) => {
-        if (result) {
-          // Recargar en la página actual
-          const currentPage = Math.max(1, this.pageIndex + 1);
-          this.loadUsers(currentPage, this.pageSize);
-        }
+        if (result)
+          this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
       });
   }
 
-  // 🔹 Eventos de hijos
-  onSearchChange(search: string) {
-    this.searchValue = search;
-    this.applyCombinedFilter();
-  }
-
-  onRoleChange(role: string) {
-    this.roleControlValue = role;
-    this.applyCombinedFilter();
-  }
-
-  onPageChange(event: PageEvent) {
-    this.pageSize = event.pageSize;
-    this.pageIndex = event.pageIndex;
-
-    // Usar setTimeout para evitar errores
-    setTimeout(() => {
-      this.loadUsers(this.pageIndex + 1, this.pageSize);
-    }, 0);
-  }
-
-  // 🔹 MÉTODO CORREGIDO
   async editUser(user: Usuario) {
-
-
     try {
-      // 1. Preparar los datos para el dialog de edición
       const editUserData: EditUserData = {
         idusuario: user.idusuario,
         ci: user.ci,
@@ -249,18 +190,15 @@ export default class ListUsers implements OnInit, AfterViewInit {
         paterno: user.patusuario,
         materno: user.matusuario || '',
         numcelular: user.numcelular,
-        email: '', // 🔹 Email se obtendrá desde auth, por ahora vacío
-        rol: user.roles && user.roles.length > 0 ? user.roles[0].nomrol : '', // 🔹 Obtener rol correctamente
-        idrol: user.idrol, // 🔹 Usar idrol directo del usuario
-        // Campos específicos por rol - extraer de las relaciones
+        email: '', // viene de auth
+        rol: user.roles && user.roles.length > 0 ? user.roles[0].nomrol : '',
+        idrol: user.idrol,
         nroficha: user.personal?.nroficha || '',
         operacion: user.personal?.operacion || '',
-        direccion: user.personal?.direccion || '',
         informacion: user.visitante?.informacion || '',
       };
 
-      // 2. Abrir el dialog de edición
-      const dialogRef = this.dialog.open(EditUsers, { // 🔹 Usar EditUsersComponent, no this.editUser
+      const dialogRef = this.dialog.open(EditUsers, {
         width: '600px',
         maxWidth: '90vw',
         panelClass: 'rounded-xl',
@@ -268,17 +206,11 @@ export default class ListUsers implements OnInit, AfterViewInit {
         disableClose: false,
       });
 
-      // 3. Escuchar el resultado del dialog
       dialogRef.afterClosed().subscribe((result) => {
         if (result) {
-          // El usuario fue actualizado exitosamente
-          console.log('Usuario actualizado exitosamente');
-          // Recargar la lista de usuarios
-          const currentPage = Math.max(1, this.pageIndex + 1);
-          this.loadUsers(currentPage, this.pageSize);
+          this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
         }
       });
-
     } catch (error) {
       console.error('Error al abrir dialog de edición:', error);
       this.dialogService.showErrorDialog(
@@ -287,8 +219,39 @@ export default class ListUsers implements OnInit, AfterViewInit {
       );
     }
   }
+  async addObservation(user: Usuario) {
+  try {
+    const dialogRef = this.dialog.open(ObservationDialog, {
+      width: '500px',
+      data: {
+        idusuario: user.idusuario,
+        destino: user.asignacion_destino?.iddestino || '',
+        observacion: user.asignacion_destino?.observacion || '',
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        try {
+          await this.userService.updateObservation(user.idusuario, result.observacion);
+          this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
+        } catch (err) {
+          console.error('Error guardando observación', err);
+          this.dialogService.showErrorDialog(
+            'No se pudo guardar la observación',
+            'Error'
+          );
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error abriendo dialog observación:', error);
+  }
+}
+
 
   deleteUser(user: Usuario) {
     console.log('Eliminar usuario', user);
+    // TODO: implementar eliminación en Supabase
   }
 }

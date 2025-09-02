@@ -30,6 +30,7 @@ export class UserDataService {
 
     return rol.nomrol;
   }
+
   async getUserByAuthId(authId: string) {
     const { data, error } = await this.supabaseClient
       .from('usuario')
@@ -44,6 +45,7 @@ export class UserDataService {
 
     return data;
   }
+
   async registerUser(userData: any) {
     try {
       // 1. Buscar el id del rol
@@ -69,6 +71,7 @@ export class UserDataService {
             ci: userData.ci,
             idrol: rolData.idrol,
             auth_id: userData.authId,
+            estado: 'Activo'
           },
         ])
         .select()
@@ -78,42 +81,55 @@ export class UserDataService {
         throw new Error('No se pudo insertar usuario');
       }
 
-      // 3. Insertar en tabla hija según rol (solo Personal y Visitante)
-      switch (userData.rol) {
-        case 'Personal':
-          const { error: personalError } = await this.supabaseClient
+      // 3. Insertar en tabla hija según rol
+      if (userData.rol === 'Personal') {
+        // Insertar en personal
+        const { data: personalData, error: personalError } =
+          await this.supabaseClient
             .from('personal')
             .insert([
               {
                 nroficha: userData.nroficha,
                 idusuario: usuarioData.idusuario,
                 operacion: userData.operacion,
-                direccion: userData.direccion,
               },
-            ]);
+            ])
+            .select()
+            .maybeSingle();
 
-          if (personalError) {
-            throw new Error('No se pudo insertar datos de Personal');
-          }
-          break;
+        if (personalError || !personalData) {
+          throw new Error('No se pudo insertar datos de Personal');
+        }
 
-        case 'Visitante':
-          const { error: visitanteError } = await this.supabaseClient
-            .from('visitante')
-            .insert([
-              {
-                idusuario: usuarioData.idusuario,
-                informacion: userData.informacion,
-              },
-            ]);
+        // Insertar en asignacion_destino
+        const { error: asignacionError } = await this.supabaseClient
+          .from('asignacion_destino')
+          .insert([
+            {
+              nroficha: userData.nroficha,
+              iddestino: userData.iddestino,
+              fechainicio: new Date().toISOString(),
+            },
+          ]);
 
-          if (visitanteError) {
-            throw new Error('No se pudo insertar datos de Visitante');
-          }
-          break;
+        if (asignacionError) {
+          throw new Error('No se pudo insertar asignación de destino');
+        }
+      }
 
-        default:
-          throw new Error(`Rol ${userData.rol} no soportado`);
+      if (userData.rol === 'Visitante') {
+        const { error: visitanteError } = await this.supabaseClient
+          .from('visitante')
+          .insert([
+            {
+              idusuario: usuarioData.idusuario,
+              informacion: userData.informacion,
+            },
+          ]);
+
+        if (visitanteError) {
+          throw new Error('No se pudo insertar datos de Visitante');
+        }
       }
 
       return usuarioData;
