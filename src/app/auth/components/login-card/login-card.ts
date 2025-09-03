@@ -65,25 +65,33 @@ export class LoginCard {
       this.isLoading.set(true);
       this.dialogService.showLoadingDialog();
 
-      const { data, error } = await this.supabaseClient.auth.signInWithPassword({
-        email: this.form.value.email!,
-        password: this.form.value.password!,
-      });
+      const { data, error } = await this.supabaseClient.auth.signInWithPassword(
+        {
+          email: this.form.value.email!,
+          password: this.form.value.password!,
+        }
+      );
 
       this.dialogService.closeAll();
 
       if (error) {
-        let errorMessage = 'Error durante el inicio de sesión. Por favor, inténtalo de nuevo.';
+        let errorMessage =
+          'Error durante el inicio de sesión. Por favor, inténtalo de nuevo.';
 
         if (error.message?.includes('Invalid login credentials')) {
-          errorMessage = 'Credenciales incorrectas. Verifica tu email y contraseña.';
+          errorMessage =
+            'Credenciales incorrectas. Verifica tu email y contraseña.';
         } else if (error.message?.includes('Email not confirmed')) {
-          errorMessage = 'Por favor, confirma tu email antes de iniciar sesión.';
+          errorMessage =
+            'Por favor, confirma tu email antes de iniciar sesión.';
         } else if (error.message?.includes('Too many requests')) {
           errorMessage = 'Demasiados intentos. Por favor, espera unos minutos.';
         }
 
-        this.dialogService.showErrorDialog(errorMessage, 'Error de Inicio de Sesión');
+        this.dialogService.showErrorDialog(
+          errorMessage,
+          'Error de Inicio de Sesión'
+        );
         return;
       }
 
@@ -91,6 +99,18 @@ export class LoginCard {
       const authId = data.user.id;
       const role = await this.userDataService.getUserRole(authId);
 
+      const usuario = await this.userDataService.getActiveUserByAuthId(authId);
+      if (!usuario) {
+        // Usuario inactivo o no encontrado
+        this.dialogService.showErrorDialog(
+          'Tu usuario ha sido deshabilitado. Contacta al administrador.',
+          'Acceso Denegado'
+        );
+
+        // Opcional: cerrar sesión Auth
+        await this.supabaseClient.auth.signOut();
+        return;
+      }
       if (!role) {
         this.dialogService.showErrorDialog(
           'No se pudo determinar el rol del usuario.',
@@ -98,7 +118,6 @@ export class LoginCard {
         );
         return;
       }
-
       const dialogRef = this.dialogService.showSuccessDialog(
         `¡Bienvenido! Has iniciado sesión correctamente.`,
         'Inicio de Sesión Exitoso'
@@ -128,7 +147,6 @@ export class LoginCard {
           this.form.reset();
         });
       });
-
     } catch (error: any) {
       console.error('Error inesperado:', error);
       this.dialogService.closeAll();

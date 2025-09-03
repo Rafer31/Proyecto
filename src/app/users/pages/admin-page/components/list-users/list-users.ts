@@ -27,7 +27,8 @@ import { FilterUsers } from '../filter-users/filter-users';
 import { AddUsers } from '../add-users/add-users';
 import { EditUserData, EditUsers } from '../edit-users/edit-users';
 import { DialogService } from '../../../../../shared/services/dialog.service';
-import { ObservationDialog } from '../../observation-dialog/observation-dialog';
+import { ObservationDialog } from '../observation-dialog/observation-dialog';
+import { DeleteUsers } from '../delete-users/delete-users';
 
 @Component({
   selector: 'app-list-users',
@@ -220,38 +221,50 @@ export default class ListUsers implements OnInit, AfterViewInit {
     }
   }
   async addObservation(user: Usuario) {
-  try {
-    const dialogRef = this.dialog.open(ObservationDialog, {
-      width: '500px',
-      data: {
-        idusuario: user.idusuario,
-        destino: user.asignacion_destino?.iddestino || '',
-        observacion: user.asignacion_destino?.observacion || '',
-      },
-    });
+    try {
+      const asignacion = user.personal?.asignacion_destino?.[0]; // 👈 primera asignación activa
+      const dialogRef = this.dialog.open(ObservationDialog, {
+        width: '500px',
+        data: {
+          idusuario: user.idusuario,
+          nroficha: user.personal?.nroficha || null,
+          destino: asignacion?.destino?.nomdestino || '',
+          observacion: asignacion?.observacion || '',
+        },
+      });
 
-    dialogRef.afterClosed().subscribe(async (result) => {
-      if (result) {
-        try {
-          await this.userService.updateObservation(user.idusuario, result.observacion);
-          this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
-        } catch (err) {
-          console.error('Error guardando observación', err);
-          this.dialogService.showErrorDialog(
-            'No se pudo guardar la observación',
-            'Error'
-          );
+      dialogRef.afterClosed().subscribe(async (result) => {
+        if (result) {
+          try {
+            await this.userService.updateObservation(
+              user.idusuario,
+              result.observacion
+            );
+            this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
+          } catch (err) {
+            console.error('Error guardando observación', err);
+            this.dialogService.showErrorDialog(
+              'No se pudo guardar la observación',
+              'Error'
+            );
+          }
         }
-      }
-    });
-  } catch (error) {
-    console.error('Error abriendo dialog observación:', error);
+      });
+    } catch (error) {
+      console.error('Error abriendo dialog observación:', error);
+    }
   }
-}
-
 
   deleteUser(user: Usuario) {
-    console.log('Eliminar usuario', user);
-    // TODO: implementar eliminación en Supabase
+    const dialogRef = this.dialog.open(DeleteUsers, {
+      width: '400px',
+      data: { idusuario: user.idusuario, nomusuario: user.nomusuario },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result) {
+        this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
+      }
+    });
   }
 }

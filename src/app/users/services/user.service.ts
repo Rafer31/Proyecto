@@ -5,7 +5,6 @@ import { SupabaseService } from '../../shared/services/supabase.service';
 export class UserService {
   private supabaseClient = inject(SupabaseService).supabase;
 
-  // 🔹 CAMBIO PRINCIPAL: Traer TODOS los usuarios activos de una vez
   async getAllUsers() {
     const { data, count, error } = await this.supabaseClient
       .from('usuario')
@@ -24,12 +23,11 @@ export class UserService {
         personal ( nroficha, operacion ),
         visitante ( idvisitante, informacion ),
         conductor ( idconductor )
-         asignacion_destino ( idasignacion, iddestino, observacion, fechainicio, fechafin, destino )
       `,
         { count: 'exact' }
       )
       .eq('estado', 'Activo')
-      .order('idusuario', { ascending: true }); // Ordenar consistentemente
+      .order('idusuario', { ascending: true });
 
     if (error) throw error;
 
@@ -60,7 +58,6 @@ export class UserService {
     return { data: usuarios, count };
   }
 
-  // 🔹 Mantener método legacy para compatibilidad (pero usar getAllUsers internamente)
   async getUsers(page: number, limit: number) {
     const from = page * limit;
     const to = from + limit - 1;
@@ -69,25 +66,36 @@ export class UserService {
       .from('usuario')
       .select(
         `
-      idusuario,
-      numcelular,
-      nomusuario,
-      patusuario,
-      matusuario,
-      ci,
-      idrol,
-      auth_id,
-      estado,
-      roles!usuario_idrol_fkey ( idrol, nomrol ),
-      personal ( nroficha, operacion ),
-      visitante ( idvisitante, informacion ),
-      conductor ( idconductor )
-    `,
-        { count: 'exact' }
+  idusuario,
+  numcelular,
+  nomusuario,
+  patusuario,
+  matusuario,
+  ci,
+  idrol,
+  auth_id,
+  estado,
+  roles!usuario_idrol_fkey ( idrol, nomrol ),
+  personal (
+    nroficha,
+    operacion,
+    asignacion_destino (
+      idasignaciondestino,
+      fechainicio,
+      fechafin,
+      observacion,
+      nroficha,
+      destino ( iddestino, nomdestino )
+    )
+  ),
+  visitante ( idvisitante, informacion ),
+  conductor ( idconductor )
+`
       )
+
       .eq('estado', 'Activo')
       .order('idusuario', { ascending: true })
-      .range(from, to); // 👈 aquí está la magia
+      .range(from, to);
 
     if (error) throw error;
 
@@ -124,7 +132,7 @@ export class UserService {
       .select(
         'idusuario, nomusuario, patusuario, matusuario, numcelular, idrol'
       )
-      .eq('estado', 'Activo') // 🔹 Solo activos
+      .eq('estado', 'Activo')
       .eq('idrol', roleId);
 
     if (error) {
@@ -145,9 +153,7 @@ export class UserService {
     }
     return data;
   }
-  // ✅ Nuevo método en UserService
   async updateObservation(userId: string, observacion: string) {
-    // Asumimos que un usuario solo tiene una asignación activa
     const { data, error } = await this.supabaseClient
       .from('asignacion_destino')
       .update({ observacion })
@@ -161,7 +167,7 @@ export class UserService {
             .maybeSingle()
         ).data?.nroficha || null
       )
-      .is('fechafin', null) // 👈 solo la asignación activa
+      .is('fechafin', null)
       .select()
       .maybeSingle();
 

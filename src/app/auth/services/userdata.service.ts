@@ -71,7 +71,7 @@ export class UserDataService {
             ci: userData.ci,
             idrol: rolData.idrol,
             auth_id: userData.authId,
-            estado: 'Activo'
+            estado: 'Activo',
           },
         ])
         .select()
@@ -137,5 +137,23 @@ export class UserDataService {
       console.error('Error registrando usuario:', error);
       throw error;
     }
+  }
+  async getActiveUserByAuthId(authId: string) {
+    const { data: usuario, error } = await this.supabaseClient
+      .from('usuario')
+      .select('*')
+      .eq('auth_id', authId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error buscando usuario:', error);
+      throw error;
+    }
+
+    if (!usuario || usuario.estado !== 'Activo') {
+      return null; // usuario inactivo o no encontrado
+    }
+
+    return usuario;
   }
 }

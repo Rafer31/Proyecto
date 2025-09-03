@@ -95,8 +95,9 @@
             @if (user.roles?.[0]?.nomrol === 'Visitante') { {{
             user.visitante?.informacion || 'Sin info' }} } @else if
             (user.roles?.[0]?.nomrol === 'Personal' || user.roles?.[0]?.nomrol
-            === 'Administrador') { {{ user.asignacion_destino?.destino || 'Sin
-            destino' }} } @else { Sin datos }
+            === 'Administrador') { {{
+            user.personal?.asignacion_destino?.[0]?.observacion || 'Sin
+            observación' }} } @else { Sin datos }
           </td>
         </ng-container>
 

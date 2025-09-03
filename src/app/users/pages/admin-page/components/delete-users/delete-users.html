@@ -1,1 +1,30 @@
-<p>delete-users works!</p>
+<h2 mat-dialog-title>Eliminar usuario</h2>
+
+<mat-dialog-content>
+  @if (!loading) {
+    <p>
+      ¿Estás seguro que deseas eliminar al usuario
+      <strong>{{ data.nomusuario }}</strong>?
+    </p>
+    @if (error) {
+      <p class="text-red-500 mt-2">{{ error }}</p>
+    }
+  } @else {
+    <div class="flex items-center space-x-2">
+      <mat-progress-spinner diameter="24" mode="indeterminate"></mat-progress-spinner>
+      <span>Eliminando usuario...</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()" [disabled]="loading">Cancelar</button>
+  <button
+    mat-raised-button
+    color="warn"
+    (click)="confirmDelete()"
+    [disabled]="loading"
+  >
+    Eliminar
+  </button>
+</mat-dialog-actions>
