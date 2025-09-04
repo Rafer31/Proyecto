@@ -56,7 +56,7 @@ export class RegisterUserService {
             ci: userData.ci,
             idrol: rolData.idrol,
             auth_id: authData.user.id,
-            estado:'Activo'
+            estado: 'Activo',
           },
         ])
         .select()
@@ -105,7 +105,6 @@ export class RegisterUserService {
           );
         }
 
-        // Insertar asignacion_destino si iddestino existe
         if (userData.iddestino && userData.nroficha) {
           const { error: asignacionError } = await this.supabaseClient
             .from('asignacion_destino')

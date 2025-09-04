@@ -137,8 +137,6 @@
     }
   }
 }
-
-// Responsive design
 @media (max-width: 480px) {
   .reset-container {
     padding: 16px;
@@ -170,15 +168,15 @@
 
 .form-row {
   display: flex;
-  gap: 1rem; // separador entre inputs
+  gap: 1rem;
   width: 100%;
 }
 
 .half-width {
-  flex: 1; // cada uno ocupa la mitad de la fila
+  flex: 1;
 }
 
 .full-width {
-  flex: 2; // ocupa el mismo espacio que dos half-width
+  flex: 2;
   width: 100%;
 }

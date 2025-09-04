@@ -31,14 +31,14 @@ export interface EditUserData {
   paterno: string;
   materno: string;
   numcelular: string;
-  email: string; // Solo informativo, no se edita
-  rol: string; // Nombre del rol
-  idrol: string; // ID del rol
-  // Campos específicos por rol
-  nroficha?: string; // Para Personal/Administrador
-  operacion?: string; // Para Personal/Administrador
-  iddestino?: string; // Para Personal/Administrador
-  informacion?: string; // Para Visitante
+  email: string;
+  rol: string;
+  idrol: string;
+
+  nroficha?: string;
+  operacion?: string;
+  iddestino?: string;
+  informacion?: string;
 }
 
 @Component({
@@ -78,7 +78,7 @@ export class EditUsers {
     paterno: ['', [Validators.required, Validators.minLength(2)]],
     materno: [''],
     numcelular: ['', [Validators.required, Validators.pattern(/^[67]\d{7}$/)]],
-    email: [{ value: '', disabled: true }], // Email solo informativo - NO se actualiza
+    email: [{ value: '', disabled: true }],
     rol: ['', Validators.required],
 
     nroficha: [''],
@@ -102,24 +102,23 @@ export class EditUsers {
     try {
       const data = await this.destinyService.getDestinos();
       this.destinos.set(data);
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   private async loadUserData() {
     try {
-      // Cargar la asignación de destino actual del usuario si tiene nroficha
       if (this.data.nroficha) {
-        const assignedDestiny = await this.editUsersService.getUserAssignedDestiny(this.data.nroficha);
+        const assignedDestiny =
+          await this.editUsersService.getUserAssignedDestiny(
+            this.data.nroficha
+          );
         if (assignedDestiny) {
           this.currentDestinyId = assignedDestiny.iddestino;
           this.data.iddestino = assignedDestiny.iddestino;
         }
       }
 
-      // Poblar el formulario con todos los datos
       this.populateForm();
-
     } catch (error) {
       console.error('Error cargando datos del usuario:', error);
     }
@@ -164,10 +163,9 @@ export class EditUsers {
         this.form.get('iddestino')?.setValidators([Validators.required]);
       } else if (role === 'Visitante') {
         this.form.get('informacion')?.setValidators([Validators.required]);
-        // Limpiar el campo de destino si cambia a visitante
+
         this.form.get('iddestino')?.setValue('');
       } else if (role === 'Conductor') {
-        // Limpiar el campo de destino si cambia a conductor
         this.form.get('iddestino')?.setValue('');
       }
 
@@ -190,7 +188,6 @@ export class EditUsers {
   }
 
   async onSubmit() {
-
     if (this.form.invalid) {
       this.markFormGroupTouched();
       return;
@@ -205,7 +202,6 @@ export class EditUsers {
 
       const formValue = this.form.value;
 
-      // Validar CI solo si cambió
       if (formValue.ci !== this.originalCi) {
         const ciExists = await this.registerUserService.checkCIExists(
           formValue.ci!
@@ -245,7 +241,6 @@ export class EditUsers {
         return;
       }
 
-      // Buscar el idrol basado en el nombre del rol seleccionado
       const selectedRoleObj = this.roles.find(
         (role) => role.nomrol === formValue.rol
       );
@@ -272,8 +267,6 @@ export class EditUsers {
         iddestino: formValue.iddestino || '',
         informacion: formValue.informacion || '',
       };
-
-
 
       await this.editUsersService.updateUser(this.data.idusuario, userData);
 

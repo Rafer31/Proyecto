@@ -95,19 +95,16 @@ export class LoginCard {
         return;
       }
 
-      // Login exitoso
       const authId = data.user.id;
       const role = await this.userDataService.getUserRole(authId);
 
       const usuario = await this.userDataService.getActiveUserByAuthId(authId);
       if (!usuario) {
-        // Usuario inactivo o no encontrado
         this.dialogService.showErrorDialog(
           'Tu usuario ha sido deshabilitado. Contacta al administrador.',
           'Acceso Denegado'
         );
 
-        // Opcional: cerrar sesión Auth
         await this.supabaseClient.auth.signOut();
         return;
       }

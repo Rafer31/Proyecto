@@ -25,33 +25,26 @@ export default class AuthCallback {
 
     const user = session.user;
 
-    // 🔑 NUEVO: Verificar si fue creado desde el admin
-    const createdFromAdmin = user.user_metadata?.['created_from_admin'] ||
-                           user.user_metadata?.['admin_created'];
+    const createdFromAdmin =
+      user.user_metadata?.['created_from_admin'] ||
+      user.user_metadata?.['admin_created'];
 
-    // Si tiene flag de cambiar contraseña Y fue creado desde admin,
-    // lo mandamos directo a change-password
     if (user.user_metadata?.['needs_password_change'] && createdFromAdmin) {
       this.router.navigate(['/auth/change-password']);
       return;
     }
 
-    // 🔑 Si tiene flag de cambiar contraseña pero NO fue creado desde admin,
-    // lo mandamos a change-password (flujo normal de registro público)
     if (user.user_metadata?.['needs_password_change']) {
       this.router.navigate(['/auth/change-password']);
       return;
     }
 
-    // Caso normal: verificamos rol en la DB (usuarios ya existentes)
     const authId = user.id;
     const usuario = await this.userDataService.getUserByAuthId(authId);
 
     if (!usuario) {
-      // Si no existe usuario en BD, redirigir a registro
       this.router.navigate(['/register-user']);
     } else {
-      // Redirigir según el rol del usuario
       switch (usuario.rol) {
         case 'Administrador':
           this.router.navigate(['/users/admin']);

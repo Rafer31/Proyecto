@@ -54,7 +54,6 @@ export default class ListUsers implements OnInit, AfterViewInit {
   private dialogService = inject(DialogService);
   private cdr = inject(ChangeDetectorRef);
 
-  // ✅ Agregar el @Output que falta
   @Output() totalChange = new EventEmitter<number>();
 
   displayedColumns: string[] = [
@@ -72,17 +71,14 @@ export default class ListUsers implements OnInit, AfterViewInit {
   dataSource = new MatTableDataSource<Usuario>([]);
   loading = false;
 
-  // Filtros activo
   private searchValue = '';
   roleControlValue = '';
 
-  // Paginación
   totalItems = 0;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
 
-  // Roles para filtro
   roles: Array<{ idrol: string; nomrol: string }> = [];
 
   ngOnInit(): void {
@@ -95,7 +91,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
         this.loadPage(event.pageIndex, event.pageSize);
       });
     }
-    // primera carga
+
     this.loadPage(0, 10);
   }
 
@@ -110,7 +106,6 @@ export default class ListUsers implements OnInit, AfterViewInit {
       );
       let usuarios = data || [];
 
-      // 🔹 aplicar filtros en memoria (simple, para no complicar SQL dinámico)
       if (this.searchValue) {
         const s = this.searchValue.toLowerCase();
         usuarios = usuarios.filter(
@@ -134,7 +129,6 @@ export default class ListUsers implements OnInit, AfterViewInit {
       this.dataSource.data = usuarios;
       this.totalItems = count || 0;
 
-      // ✅ Emitir el total de usuarios al componente padre
       this.totalChange.emit(usuarios.length);
 
       this.loading = false;
@@ -144,7 +138,6 @@ export default class ListUsers implements OnInit, AfterViewInit {
       this.loading = false;
       this.cdr.detectChanges();
 
-      // ✅ En caso de error, emitir 0
       this.totalChange.emit(0);
     }
   }
@@ -158,7 +151,6 @@ export default class ListUsers implements OnInit, AfterViewInit {
     }
   }
 
-  // --- Filtros de hijos ---
   onSearchChange(search: string) {
     this.searchValue = search;
     if (this.paginator) this.paginator.firstPage();
@@ -171,7 +163,6 @@ export default class ListUsers implements OnInit, AfterViewInit {
     this.loadPage(0, this.paginator?.pageSize || 10);
   }
 
-  // --- Dialogs ---
   openAddUserDialog() {
     this.dialog
       .open(AddUsers)
@@ -191,7 +182,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
         paterno: user.patusuario,
         materno: user.matusuario || '',
         numcelular: user.numcelular,
-        email: '', // viene de auth
+        email: '',
         rol: user.roles && user.roles.length > 0 ? user.roles[0].nomrol : '',
         idrol: user.idrol,
         nroficha: user.personal?.nroficha || '',
@@ -222,7 +213,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
   }
   async addObservation(user: Usuario) {
     try {
-      const asignacion = user.personal?.asignacion_destino?.[0]; // 👈 primera asignación activa
+      const asignacion = user.personal?.asignacion_destino?.[0];
       const dialogRef = this.dialog.open(ObservationDialog, {
         width: '500px',
         data: {

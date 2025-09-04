@@ -74,7 +74,7 @@ export default class RegisterUser {
       step2: this.fb.group({
         nroficha: [''],
         operacion: [''],
-        iddestino: ['', Validators.required], // <- aquí
+        iddestino: ['', Validators.required],
         informacion: [''],
       }),
     });

@@ -48,7 +48,6 @@ export class UserDataService {
 
   async registerUser(userData: any) {
     try {
-      // 1. Buscar el id del rol
       const { data: rolData, error: rolError } = await this.supabaseClient
         .from('roles')
         .select('idrol')
@@ -59,7 +58,6 @@ export class UserDataService {
         throw new Error('No se pudo obtener el rol para el usuario');
       }
 
-      // 2. Insertar en usuario
       const { data: usuarioData, error: userError } = await this.supabaseClient
         .from('usuario')
         .insert([
@@ -81,9 +79,7 @@ export class UserDataService {
         throw new Error('No se pudo insertar usuario');
       }
 
-      // 3. Insertar en tabla hija según rol
       if (userData.rol === 'Personal') {
-        // Insertar en personal
         const { data: personalData, error: personalError } =
           await this.supabaseClient
             .from('personal')
@@ -101,7 +97,6 @@ export class UserDataService {
           throw new Error('No se pudo insertar datos de Personal');
         }
 
-        // Insertar en asignacion_destino
         const { error: asignacionError } = await this.supabaseClient
           .from('asignacion_destino')
           .insert([
@@ -151,7 +146,7 @@ export class UserDataService {
     }
 
     if (!usuario || usuario.estado !== 'Activo') {
-      return null; // usuario inactivo o no encontrado
+      return null;
     }
 
     return usuario;

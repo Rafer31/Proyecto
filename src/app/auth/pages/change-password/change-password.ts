@@ -64,7 +64,7 @@ export default class ChangePassword {
       return;
     }
 
-    // ✅ Recuperar el usuario activo tras actualizar contraseña
+    
     const {
       data: { user },
       error: userErr,
@@ -79,7 +79,7 @@ export default class ChangePassword {
       return;
     }
 
-    // ✅ Buscar el usuario en tu base de datos
+    
     const usuario = await this.userDataService.getUserByAuthId(user.id);
 
     if (!usuario) {

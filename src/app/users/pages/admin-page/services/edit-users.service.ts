@@ -5,10 +5,8 @@ import { SupabaseService } from '../../../../shared/services/supabase.service';
 export class EditUsersService {
   private supabaseClient = inject(SupabaseService).supabase;
 
-  // ========= PÚBLICO =========
   async updateUser(userId: string, userData: any) {
     try {
-      // 1) Actualizar tabla USUARIO
       const { error: userError } = await this.supabaseClient
         .from('usuario')
         .update({
@@ -25,12 +23,18 @@ export class EditUsersService {
         throw new Error('Error actualizando usuario: ' + userError.message);
       }
 
-      // 2) Manipular datos por ROL
       switch (userData.rol) {
         case 'Personal':
         case 'Administrador':
-          await this.upsertPersonal(userId, userData.nroficha, userData.operacion);
-          await this.ensureDestinyAssignment(userData.nroficha, userData.iddestino);
+          await this.upsertPersonal(
+            userId,
+            userData.nroficha,
+            userData.operacion
+          );
+          await this.ensureDestinyAssignment(
+            userData.nroficha,
+            userData.iddestino
+          );
           break;
 
         case 'Visitante':
@@ -53,8 +57,11 @@ export class EditUsersService {
     }
   }
 
-  // ========= UPSERTS POR ROL =========
-  private async upsertPersonal(idusuario: string, nroficha: string, operacion: string) {
+  private async upsertPersonal(
+    idusuario: string,
+    nroficha: string,
+    operacion: string
+  ) {
     const { data: exists, error } = await this.supabaseClient
       .from('personal')
       .select('idusuario')
@@ -68,12 +75,14 @@ export class EditUsersService {
         .from('personal')
         .update({ nroficha, operacion })
         .eq('idusuario', idusuario);
-      if (updErr) throw new Error('Error actualizando personal: ' + updErr.message);
+      if (updErr)
+        throw new Error('Error actualizando personal: ' + updErr.message);
     } else {
       const { error: insErr } = await this.supabaseClient
         .from('personal')
         .insert([{ idusuario, nroficha, operacion }]);
-      if (insErr) throw new Error('Error insertando personal: ' + insErr.message);
+      if (insErr)
+        throw new Error('Error insertando personal: ' + insErr.message);
     }
   }
 
@@ -91,12 +100,14 @@ export class EditUsersService {
         .from('visitante')
         .update({ informacion })
         .eq('idusuario', idusuario);
-      if (updErr) throw new Error('Error actualizando visitante: ' + updErr.message);
+      if (updErr)
+        throw new Error('Error actualizando visitante: ' + updErr.message);
     } else {
       const { error: insErr } = await this.supabaseClient
         .from('visitante')
         .insert([{ idusuario, informacion }]);
-      if (insErr) throw new Error('Error insertando visitante: ' + insErr.message);
+      if (insErr)
+        throw new Error('Error insertando visitante: ' + insErr.message);
     }
   }
 
@@ -113,20 +124,28 @@ export class EditUsersService {
       const { error: insErr } = await this.supabaseClient
         .from('conductor')
         .insert([{ idusuario }]);
-      if (insErr) throw new Error('Error insertando conductor: ' + insErr.message);
+      if (insErr)
+        throw new Error('Error insertando conductor: ' + insErr.message);
     }
   }
 
-  private async deleteIfExists(table: 'personal' | 'visitante' | 'conductor', where: Record<string, any>) {
-    const { error } = await this.supabaseClient.from(table).delete().match(where);
+  private async deleteIfExists(
+    table: 'personal' | 'visitante' | 'conductor',
+    where: Record<string, any>
+  ) {
+    const { error } = await this.supabaseClient
+      .from(table)
+      .delete()
+      .match(where);
     if (error) throw new Error(`Error borrando en ${table}: ${error.message}`);
   }
 
-  // ========= ASIGNACIÓN DE DESTINO =========
-  private async ensureDestinyAssignment(nroficha: string, newDestinyId: string) {
+  private async ensureDestinyAssignment(
+    nroficha: string,
+    newDestinyId: string
+  ) {
     if (!nroficha || !newDestinyId) return;
 
-    // 1) Buscar asignación activa
     const { data: current, error } = await this.supabaseClient
       .from('asignacion_destino')
       .select('idasignaciondestino, iddestino')
@@ -138,10 +157,8 @@ export class EditUsersService {
       throw new Error('Error buscando asignación activa: ' + error.message);
     }
 
-    // 2) Si ya está asignado al mismo destino, no hacer nada
     if (current && current.iddestino === newDestinyId) return;
 
-    // 3) Cerrar asignación activa
     if (current) {
       const { error: closeErr } = await this.supabaseClient
         .from('asignacion_destino')
@@ -149,7 +166,10 @@ export class EditUsersService {
         .eq('idasignaciondestino', current.idasignaciondestino)
         .is('fechafin', null);
 
-      if (closeErr) throw new Error('Error cerrando asignación activa: ' + closeErr.message);
+      if (closeErr)
+        throw new Error(
+          'Error cerrando asignación activa: ' + closeErr.message
+        );
     } else {
       await this.supabaseClient
         .from('asignacion_destino')
@@ -158,15 +178,20 @@ export class EditUsersService {
         .is('fechafin', null);
     }
 
-    // 4) Crear nueva asignación
     const { error: insErr } = await this.supabaseClient
       .from('asignacion_destino')
-      .insert([{ nroficha, iddestino: newDestinyId, fechainicio: new Date().toISOString() }]);
+      .insert([
+        {
+          nroficha,
+          iddestino: newDestinyId,
+          fechainicio: new Date().toISOString(),
+        },
+      ]);
 
-    if (insErr) throw new Error('Error creando nueva asignación: ' + insErr.message);
+    if (insErr)
+      throw new Error('Error creando nueva asignación: ' + insErr.message);
   }
 
-  // ========= UTILIDAD =========
   async getUserAssignedDestiny(nroficha: string) {
     const { data, error } = await this.supabaseClient
       .from('asignacion_destino')
@@ -178,7 +203,9 @@ export class EditUsersService {
       .maybeSingle();
 
     if (error && error.code !== 'PGRST116') {
-      throw new Error('Error obteniendo asignación de destino: ' + error.message);
+      throw new Error(
+        'Error obteniendo asignación de destino: ' + error.message
+      );
     }
     return data;
   }

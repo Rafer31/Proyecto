@@ -27,7 +27,7 @@ export class DeleteUsers {
 
     try {
       await this.deleteUserService.softDeleteUser(this.data.idusuario);
-      this.dialogRef.close(true); // <- devolvemos "true" si se eliminó
+      this.dialogRef.close(true);
     } catch (err: any) {
       this.error = err.message || 'Error eliminando usuario';
     } finally {

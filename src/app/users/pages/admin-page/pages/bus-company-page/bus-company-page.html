@@ -1,9 +1,29 @@
-@if(!data()){
-    <app-emptystate
-    [imageSrc]="'no-company.svg'"
-    [title]="'Todavía no hay empresas contratistas'"
-    [description]="'No se han registrado empresas aún'"
-    />
-}@else{
-    <h1>hola ahora si hay data</h1>
+@if (companies().length === 0) {
+<app-emptystate
+  [imageSrc]="'no-company.svg'"
+  [title]="'Todavía no hay empresas contratistas'"
+  [description]="'No se han registrado empresas aún'"
+/>
+} @else {
+<div class="companies-container">
+  <div class="header">
+    <h1>Empresas Contratistas</h1>
+    <button
+      mat-fab
+      color="primary"
+      (click)="openCreateDialog()"
+      class="add-button"
+    >
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+
+  <app-companies-card
+    [companies]="companies()"
+    (onEdit)="openEditDialog($event)"
+    (onCompanyUpdated)="onCompanyUpdated($event)"
+  >
+  </app-companies-card>
+</div>
+
 }

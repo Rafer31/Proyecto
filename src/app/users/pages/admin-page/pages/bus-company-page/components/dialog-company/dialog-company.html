@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>
+      <mat-icon>{{ data.isEdit ? 'edit' : 'add' }}</mat-icon>
+      {{ data.isEdit ? 'Editar' : 'Nueva' }} Empresa
+    </h2>
+    
+    <mat-dialog-content>
+      <form [formGroup]="companyForm" class="company-form">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre de la empresa</mat-label>
+          <input matInput formControlName="nomempresa" placeholder="Ingrese el nombre">
+          <mat-icon matSuffix>business</mat-icon>
+          @if (companyForm.get('nomempresa')?.hasError('required') && companyForm.get('nomempresa')?.touched) {
+            <mat-error>El nombre es requerido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre del contacto</mat-label>
+          <input matInput formControlName="nomcontacto" placeholder="Ingrese el contacto">
+          <mat-icon matSuffix>person</mat-icon>
+          @if (companyForm.get('nomcontacto')?.hasError('required') && companyForm.get('nomcontacto')?.touched) {
+            <mat-error>El contacto es requerido</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input matInput formControlName="celcontacto" placeholder="Ingrese el teléfono">
+          <mat-icon matSuffix>phone</mat-icon>
+          @if (companyForm.get('celcontacto')?.hasError('required') && companyForm.get('celcontacto')?.touched) {
+            <mat-error>El teléfono es requerido</mat-error>
+          }
+        </mat-form-field>
+
+        @if (selectedFile) {
+          <div class="file-preview">
+            <mat-icon>image</mat-icon>
+            <span>{{ selectedFile.name }}</span>
+            <button mat-icon-button (click)="removeFile()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        }
+
+        <div class="file-upload">
+          <button 
+            type="button" 
+            mat-stroked-button 
+            (click)="fileInput.click()">
+            <mat-icon>upload</mat-icon>
+            {{ selectedFile ? 'Cambiar imagen' : 'Subir imagen' }}
+          </button>
+          <input 
+            #fileInput 
+            type="file" 
+            hidden 
+            accept="image/*"
+            (change)="onFileSelected($event)">
+        </div>
+      </form>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="onCancel()">Cancelar</button>
+      <button 
+        mat-raised-button 
+        color="primary" 
+        [disabled]="!companyForm.valid || isLoading"
+        (click)="onSave()">
+        @if (isLoading) {
+          Guardando...
+        } @else {
+          {{ data.isEdit ? 'Actualizar' : 'Crear' }}
+        }
+      </button>
+    </mat-dialog-actions>

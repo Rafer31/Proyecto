@@ -5,10 +5,8 @@ import { SupabaseService } from '../../../../shared/services/supabase.service';
 export class DeleteUserService {
   private supabaseClient = inject(SupabaseService).supabase;
 
-  // ========= PÚBLICO =========
   async softDeleteUser(userId: string) {
     try {
-      // 1) Traer usuario básico
       const { data: userData, error: userError } = await this.supabaseClient
         .from('usuario')
         .select('idusuario, estado, idrol')
@@ -18,7 +16,6 @@ export class DeleteUserService {
       if (userError) throw new Error(userError.message);
       if (!userData) throw new Error('No se pudo obtener el usuario');
 
-      // 2) Traer rol
       const { data: roleData, error: roleError } = await this.supabaseClient
         .from('roles')
         .select('idrol, nomrol')
@@ -28,7 +25,6 @@ export class DeleteUserService {
       if (roleError) throw new Error(roleError.message);
       const rol = roleData ? roleData.nomrol : undefined;
 
-      // 3) Traer tablas hijas
       const { data: personal } = await this.supabaseClient
         .from('personal')
         .select('nroficha')
@@ -47,7 +43,6 @@ export class DeleteUserService {
         .eq('idusuario', userId)
         .maybeSingle();
 
-      // 4) Cambiar estado a INACTIVO
       const { error: userUpdateError } = await this.supabaseClient
         .from('usuario')
         .update({ estado: 'Inactivo' })
@@ -55,7 +50,6 @@ export class DeleteUserService {
 
       if (userUpdateError) throw new Error(userUpdateError.message);
 
-      // 5) Borrar datos de tablas hijas según rol
       switch (rol) {
         case 'Personal':
         case 'Administrador':
@@ -81,7 +75,6 @@ export class DeleteUserService {
     }
   }
 
-  // ========= UTILIDAD =========
   private async deleteIfExists(
     table: 'personal' | 'visitante' | 'conductor',
     where: Record<string, any>

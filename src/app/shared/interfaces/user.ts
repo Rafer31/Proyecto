@@ -46,5 +46,5 @@ export interface Usuario {
   personal?: Personal | null;
   visitante?: Visitante | null;
   conductor?: Conductor | null;
-  extraInfo?: string; // campo calculado para mostrar en UI
+  extraInfo?: string;
 }

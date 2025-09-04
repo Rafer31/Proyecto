@@ -99,7 +99,6 @@ mat-dialog-actions {
   }
 }
 
-// Estilos específicos para campos deshabilitados
 mat-form-field.mat-form-field-disabled {
   .mat-form-field-wrapper {
     background-color: #f5f5f5;
@@ -115,7 +114,6 @@ mat-form-field.mat-form-field-disabled {
   }
 }
 
-// Responsive design
 @media (max-width: 600px) {
   .edit-user-dialog {
     min-width: auto;
@@ -131,7 +129,6 @@ mat-form-field.mat-form-field-disabled {
   }
 }
 
-// Mejoras visuales para los hints
 mat-hint {
   font-size: 0.75rem;
   color: #666;
