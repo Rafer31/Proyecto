@@ -1,11 +1,11 @@
-.companies-grid {
+.vehicles-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 24px;
   padding: 16px 0;
 }
 
-.company-card {
+.vehicle-card {
   max-width: 400px;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 
@@ -15,22 +15,22 @@
   }
 }
 
-.company-card mat-card-header {
+.vehicle-card mat-card-header {
   padding-bottom: 16px;
 }
 
-.company-card mat-card-title {
+.vehicle-card mat-card-title {
   font-size: 1.2em;
   font-weight: 600;
   color: #333;
 }
 
-.company-card mat-card-subtitle {
+.vehicle-card mat-card-subtitle {
   color: #666;
   margin-top: 4px;
 }
 
-.company-card img {
+.vehicle-card img {
   height: 200px;
   object-fit: contain;
 
@@ -63,7 +63,7 @@
   }
 }
 
-.company-card mat-card-content {
+.vehicle-card mat-card-content {
   padding-top: 16px;
 
   p {
@@ -75,7 +75,7 @@
   }
 }
 
-.company-card mat-card-actions {
+.vehicle-card mat-card-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -96,12 +96,12 @@
 
 /* Responsive design */
 @media (max-width: 768px) {
-  .companies-grid {
+  .vehicles-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  .company-card mat-card-actions {
+  .vehicle-card mat-card-actions {
     flex-direction: column;
 
     button {
@@ -111,11 +111,11 @@
 }
 
 @media (max-width: 480px) {
-  .companies-grid {
+  .vehicles-grid {
     padding: 8px;
   }
 
-  .company-card {
+  .vehicle-card {
     margin: 0 8px;
   }
 }

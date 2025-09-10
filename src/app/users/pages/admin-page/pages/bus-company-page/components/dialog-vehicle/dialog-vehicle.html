@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>{{ data.isEdit ? 'Editar vehículo' : 'Nuevo vehículo' }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="dialog-form">
+    <mat-form-field appearance="outline" class="w-full mt-4">
+      <mat-label>Placa</mat-label>
+      <input matInput formControlName="nroplaca" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Color</mat-label>
+      <input matInput formControlName="color" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Nro. Asientos</mat-label>
+      <input matInput type="number" formControlName="nroasientos" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Tipo de vehículo</mat-label>
+      <mat-select formControlName="tipovehiculo">
+        <mat-option value="bus">Bus</mat-option>
+        <mat-option value="minibus">Minibus</mat-option>
+        <mat-option value="mini">Mini</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="save()">
+    {{ data.isEdit ? 'Guardar cambios' : 'Crear' }}
+  </button>
+</mat-dialog-actions>

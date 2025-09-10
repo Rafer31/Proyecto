@@ -1,20 +1,21 @@
 <mat-sidenav-container class="shell">
-<mat-sidenav class="sidenav"
-             [mode]="drawerMode()"
-             [opened]="drawerMode() === 'side'"
-             [style.width]="drawerWidth()"
-             [style.minWidth]="drawerWidth()"
-             [class.collapsed]="collapsed()"
-             [attr.aria-label]="collapsed() ? 'Navegación colapsada' : 'Navegación'">
-
-
+  <mat-sidenav
+    class="sidenav"
+    [mode]="drawerMode()"
+    [opened]="drawerMode() === 'side'"
+    [style.width.px]="collapsed() ? 80 : 260"
+    [style.minWidth.px]="collapsed() ? 80 : 260"
+    [class.collapsed]="collapsed()"
+    [attr.aria-label]="collapsed() ? 'Navegación colapsada' : 'Navegación'"
+    fixedInViewport="true"
+  >
     <!-- Branding -->
     <a class="brand" [routerLink]="routeBrand()" matTooltip="{{ appName() }}" [matTooltipDisabled]="showText()">
       <mat-icon class="brand-icon">{{ appLogo() }}</mat-icon>
       @if (showText()) { <span class="brand-text">{{ appName() }}</span> }
     </a>
 
-    <!-- Menú -->
+    <!-- Menú con scroll independiente -->
     <mat-nav-list class="nav-list">
       @for (item of items(); track item.route) {
         <a mat-list-item
@@ -32,13 +33,14 @@
         </a>
       }
     </mat-nav-list>
-
-    <!-- Footer: botón para colapsar/expandir -->
-
   </mat-sidenav>
 
-  <!-- Contenido de la página -->
-  <mat-sidenav-content class="content">
-    <ng-content />
+  <!-- Contenido -->
+  <mat-sidenav-content 
+    class="content"
+    [style.margin-left.px]="collapsed() ? 80 : 260">
+    <div class="content-inner">
+      <ng-content />
+    </div>
   </mat-sidenav-content>
 </mat-sidenav-container>

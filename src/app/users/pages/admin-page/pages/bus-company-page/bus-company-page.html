@@ -1,30 +1,42 @@
-@if (companies().length === 0) {
-<app-emptystate
-  [imageSrc]="'no-company.svg'"
-  [title]="'Todavía no hay empresas contratistas'"
-  [description]="'No se han registrado empresas aún'"
-/>
-} @else {
-<div class="companies-container">
-  <div class="header">
-    <h1 class="text-2xl font-bold ">Empresas Contratistas</h1>
-    <button
-      mat-fab
-      color="primary"
-      (click)="openCreateDialog()"
-      class="add-button"
-    >
-      <mat-icon>add</mat-icon>
-      Agregar empresa
-    </button>
-  </div>
+<mat-tab-group>
+  <!-- TAB EMPRESAS -->
+  <mat-tab label="Empresas">
+    <ng-template matTabContent>
+      <div class="header mt-6">
+        <h1 class="text-2xl font-bold">Empresas & vehículos</h1>
+        <button
+          mat-fab
+          color="primary"
+          (click)="openCreateDialog()"
+          class="add-button me-6"
+        >
+          <mat-icon>add</mat-icon>
+          Agregar empresa
+        </button>
+      </div>
+      @if (companies().length === 0) {
+      <app-emptystate
+        [imageSrc]="'no-company.svg'"
+        [title]="'Todavía no hay empresas contratistas'"
+        [description]="'No se han registrado empresas aún'"
+      />
+      } @else {
+      <div class="companies-container">
+        <app-companies-card
+          [companies]="companies()"
+          (onEdit)="openEditDialog($event)"
+          (onCompanyUpdated)="onCompanyUpdated($event)"
+        >
+        </app-companies-card>
+      </div>
+      }
+    </ng-template>
+  </mat-tab>
 
-  <app-companies-card
-    [companies]="companies()"
-    (onEdit)="openEditDialog($event)"
-    (onCompanyUpdated)="onCompanyUpdated($event)"
-  >
-  </app-companies-card>
-</div>
-
-}
+  <!-- TAB VEHÍCULOS -->
+  <mat-tab label="Vehículos">
+    <ng-template matTabContent>
+      <app-vehicles-page />
+    </ng-template>
+  </mat-tab>
+</mat-tab-group>

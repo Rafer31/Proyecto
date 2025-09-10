@@ -25,7 +25,7 @@ export class AdminPage {
     { icon: 'bar_chart', label: 'Estadísticas', route: '/users/admin/charts' },
     {
       icon: 'airport_shuttle',
-      label: 'Empresas Contratistas',
+      label: 'Empresas & vehículos',
       route: '/users/admin/bus-company',
     },
     {

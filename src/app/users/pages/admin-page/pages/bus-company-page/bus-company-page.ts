@@ -12,6 +12,8 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import {  MatTabsModule } from '@angular/material/tabs';
+import { VehiclePage } from "./pages/vehicle-page/vehicle-page";
 
 @Component({
   selector: 'app-bus-company-page',
@@ -22,7 +24,9 @@ import { MatButtonModule } from '@angular/material/button';
     CompaniesCard,
     MatIconModule,
     MatButtonModule,
-  ],
+    MatTabsModule,
+    VehiclePage
+],
   templateUrl: './bus-company-page.html',
   styleUrl: './bus-company-page.scss',
 })
