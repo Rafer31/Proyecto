@@ -1,0 +1,28 @@
+.planning-card {
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  margin: 8px;
+  overflow: hidden;
+
+  .card-header {
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    color: white;
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .card-subtitle {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+  }
+
+  mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px;
+  }
+}

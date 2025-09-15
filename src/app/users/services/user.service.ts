@@ -4,7 +4,34 @@ import { SupabaseService } from '../../shared/services/supabase.service';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private supabaseClient = inject(SupabaseService).supabase;
+  // user.service.ts (añadir)
+  async getConductores() {
+    const { data, error } = await this.supabaseClient.from('conductor').select(`
+      idconductor,
+      idusuario,
+      usuario:usuario (
+        idusuario,
+        nomusuario,
+        patusuario,
+        matusuario,
+        ci
+      )
+    `);
 
+    if (error) {
+      console.error('getConductores error', error);
+      throw error;
+    }
+
+    return (data || []).map((c: any) => ({
+      idconductor: c.idconductor,
+      idusuario: c.idusuario,
+      nombre: `${c.usuario?.nomusuario ?? ''} ${c.usuario?.patusuario ?? ''} ${
+        c.usuario?.matusuario ?? ''
+      }`.trim(),
+      ci: c.usuario?.ci ?? null,
+    }));
+  }
   async getAllUsers() {
     const { data, count, error } = await this.supabaseClient
       .from('usuario')

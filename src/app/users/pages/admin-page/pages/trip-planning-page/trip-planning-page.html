@@ -1,9 +1,26 @@
-@if(!data()){
-    <app-emptystate
+<div class="header-actions">
+  <button mat-flat-button color="primary" (click)="openRegisterDialog()">
+    Planificar viaje
+  </button>
+</div>
+
+@if (trips().length === 0) {
+  <app-emptystate
     [imageSrc]="'no-trips.svg'"
     [title]="'Aún no hay viajes planificados'"
     [description]="'No se han planificado viajes aún'"
-    />
-}@else{
-    <h1>hola ahora si hay data</h1>
+  />
+} @else {
+  <div class="cards-grid">
+    @for (trip of trips(); track trip.idviaje) {
+      <app-planning-card
+        [idviaje]="trip.idviaje"
+        [fechaViaje]="trip.fechaViaje"
+        [destino]="trip.destino"
+        (verMas)="abrirDialog($event)"
+        (editar)="editarViaje($event)"
+        (eliminar)="eliminarViaje($event)"
+      ></app-planning-card>
+    }
+  </div>
 }

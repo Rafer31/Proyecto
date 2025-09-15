@@ -1,0 +1,152 @@
+<div class="register-container">
+  <form [formGroup]="formTrip">
+    <mat-horizontal-stepper linear>
+      <!-- Paso 1: Asociación Conductor-Vehículo-Empresa -->
+      <mat-step [stepControl]="step1Form">
+        <form [formGroup]="step1Form">
+          <ng-template matStepLabel>Asociar Conductor</ng-template>
+
+          <!-- Conductor -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Conductor</mat-label>
+            <mat-select formControlName="idconductor" required>
+              @for (c of conductores(); track c.idconductor) {
+              <mat-option [value]="c.idconductor">
+                {{ c.nombre }} <span class="muted">({{ c.ci }})</span>
+              </mat-option>
+              }
+            </mat-select>
+            @if (step1Form.get('idconductor')?.hasError('required')) {
+            <mat-error>Debe seleccionar un conductor</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Vehículo -->
+          <mat-form-field appearance="outline" class="full-width mt-2">
+            <mat-label>Vehículo</mat-label>
+            <mat-select
+              formControlName="nroplaca"
+              required
+              (selectionChange)="onVehiculoSelected($event.value)"
+            >
+              @for (v of vehiculos(); track v.nroplaca) {
+              <mat-option [value]="v.nroplaca"
+                >{{ v.tipovehiculo }} ({{ v.nroasientos }} asientos)</mat-option
+              >
+              }
+            </mat-select>
+            @if (step1Form.get('nroplaca')?.hasError('required')) {
+            <mat-error>Debe seleccionar un vehículo</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Empresa -->
+          <mat-form-field appearance="outline" class="full-width mt-2">
+            <mat-label>Empresa</mat-label>
+            <mat-select formControlName="idempresa" required>
+              @for (e of empresas(); track e.idempresa) {
+              <mat-option [value]="e.idempresa">{{ e.nomempresa }}</mat-option>
+              }
+            </mat-select>
+            @if (step1Form.get('idempresa')?.hasError('required')) {
+            <mat-error>Debe seleccionar una empresa</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="actions">
+            <button mat-button matStepperNext>Siguiente</button>
+          </div>
+        </form>
+      </mat-step>
+
+      <!-- Paso 2: Planificación de Viaje -->
+      <mat-step [stepControl]="step2Form">
+        <form [formGroup]="step2Form">
+          <ng-template matStepLabel>Planificación de Viaje</ng-template>
+
+          <!-- Fechas -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Fecha Partida</mat-label>
+            <input
+              matInput
+              [matDatepicker]="picker1"
+              formControlName="fechapartida"
+              required
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="picker1"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Fecha Llegada</mat-label>
+            <input
+              matInput
+              [matDatepicker]="picker2"
+              formControlName="fechallegada"
+              required
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="picker2"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Horas -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Hora Partida</mat-label>
+            <input
+              matInput
+              type="time"
+              formControlName="horapartida"
+              required
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Hora Llegada</mat-label>
+            <input
+              matInput
+              type="time"
+              formControlName="horallegada"
+              required
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Hora Real Partida</mat-label>
+            <input matInput type="time" formControlName="horarealpartida" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Hora Real Llegada</mat-label>
+            <input matInput type="time" formControlName="horarealllegada" />
+          </mat-form-field>
+
+          <!-- Destino -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Destino</mat-label>
+            <mat-select formControlName="iddestino" required>
+              @for (d of destinos(); track d.iddestino) {
+              <mat-option [value]="d.iddestino">{{ d.nomdestino }}</mat-option>
+              }
+            </mat-select>
+            @if (step2Form.get('iddestino')?.hasError('required')) {
+            <mat-error>Debe seleccionar un destino</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="actions">
+            <button mat-button matStepperPrevious>Volver</button>
+            <button mat-flat-button color="primary" (click)="onSubmit()">
+              Registrar Viaje
+            </button>
+          </div>
+        </form>
+      </mat-step>
+    </mat-horizontal-stepper>
+  </form>
+</div>

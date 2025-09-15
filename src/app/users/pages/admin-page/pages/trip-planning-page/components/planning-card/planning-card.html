@@ -1,0 +1,27 @@
+<mat-card class="planning-card">
+  <!-- Cabecera -->
+  <div class="card-header">
+    <div class="card-text">
+      <div class="card-title">Viaje a {{ destino }}</div>
+      <div class="card-subtitle">Fecha: {{ fechaViaje | date: 'mediumDate' }}</div>
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <mat-card-actions align="end">
+    <button mat-button color="primary" (click)="onVerMas()">
+      <mat-icon>visibility</mat-icon>
+      Ver más
+    </button>
+
+    <button mat-button color="accent" (click)="onEditar()">
+      <mat-icon>edit</mat-icon>
+      Editar
+    </button>
+
+    <button mat-button color="warn" (click)="onEliminar()">
+      <mat-icon>delete</mat-icon>
+      Eliminar
+    </button>
+  </mat-card-actions>
+</mat-card>
