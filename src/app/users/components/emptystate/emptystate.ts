@@ -11,5 +11,5 @@ import { MatIconModule } from '@angular/material/icon';
 export class Emptystate {
   imageSrc = input('no-data.svg')
   title = input('No hay información disponible')
-  description = input('Todavía no se han registrado datos en esta sección')
+  description = input('Aún no se han registrado datos en esta sección')
 }
