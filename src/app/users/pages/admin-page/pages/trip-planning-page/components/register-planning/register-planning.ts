@@ -1,5 +1,10 @@
 import { Component, inject, signal } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+} from '@angular/forms';
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,7 +15,6 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { TripPlanningService } from '../../../../services/trip-planning.service';
 import { UserService } from '../../../../../../services/user.service';
-
 
 @Component({
   selector: 'app-register-trip-dialog',
@@ -31,7 +35,7 @@ export class RegisterTripDialog {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<RegisterTripDialog>);
   private tripService = inject(TripPlanningService);
-  private userService = inject(UserService)
+  private userService = inject(UserService);
   destinos = signal<any[]>([]);
   conductores = signal<any[]>([]);
   vehiculos = signal<any[]>([]);
@@ -57,24 +61,21 @@ export class RegisterTripDialog {
         fechallegada: ['', Validators.required],
         horapartida: ['', Validators.required],
         horallegada: ['', Validators.required],
-        horarealpartida: [''],
-        horarealllegada: [''],
         iddestino: ['', Validators.required],
       }),
     });
   }
 
-// register-trip.dialog.ts -> loadData()
-private async loadData() {
-  this.destinos.set(await this.tripService.getDestinos());
-  // antes: this.conductores.set(await this.tripService.getConductores());
-  this.conductores.set(await this.userService.getConductores());
-  this.vehiculos.set(await this.tripService.getVehiculos());
-  this.empresas.set(await this.tripService.getEmpresas());
+  // register-trip.dialog.ts -> loadData()
+  private async loadData() {
+    this.destinos.set(await this.tripService.getDestinos());
+    // antes: this.conductores.set(await this.tripService.getConductores());
+    this.conductores.set(await this.userService.getConductores());
+    this.vehiculos.set(await this.tripService.getVehiculos());
+    this.empresas.set(await this.tripService.getEmpresas());
 
-  console.log('conductores cargados', this.conductores());
-}
-
+    console.log('conductores cargados', this.conductores());
+  }
 
   get step1Form(): FormGroup {
     return this.formTrip.get('step1') as FormGroup;
@@ -84,7 +85,9 @@ private async loadData() {
   }
 
   onVehiculoSelected(nroplaca: string) {
-    this.selectedVehiculo = this.vehiculos().find(v => v.nroplaca === nroplaca);
+    this.selectedVehiculo = this.vehiculos().find(
+      (v) => v.nroplaca === nroplaca
+    );
   }
 
   async onSubmit() {
@@ -95,7 +98,11 @@ private async loadData() {
     const { step1, step2 } = this.formTrip.value;
 
     try {
-      const viaje = await this.tripService.registrarViaje(step1, step2, this.selectedVehiculo);
+      const viaje = await this.tripService.registrarViaje(
+        step1,
+        step2,
+        this.selectedVehiculo
+      );
       this.dialogRef.close(viaje); // <- devuelve el viaje creado al padre
     } catch (err) {
       console.error('Error al registrar viaje', err);

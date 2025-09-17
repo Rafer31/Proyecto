@@ -1,6 +1,16 @@
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
-  padding: 16px;
+  gap: 10px;
+  padding: 13px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  button {
+    height: 50px;
+    width: 160px;
+    margin-bottom: 20px;
+  }
 }

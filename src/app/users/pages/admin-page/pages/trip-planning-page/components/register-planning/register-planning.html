@@ -1,12 +1,10 @@
 <div class="register-container">
   <form [formGroup]="formTrip">
     <mat-horizontal-stepper linear>
-      <!-- Paso 1: Asociación Conductor-Vehículo-Empresa -->
       <mat-step [stepControl]="step1Form">
         <form [formGroup]="step1Form">
           <ng-template matStepLabel>Asociar Conductor</ng-template>
 
-          <!-- Conductor -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Conductor</mat-label>
             <mat-select formControlName="idconductor" required>
@@ -22,7 +20,7 @@
           </mat-form-field>
 
           <!-- Vehículo -->
-          <mat-form-field appearance="outline" class="full-width mt-2">
+          <mat-form-field appearance="outline" class="full-width mt-2 ms-5">
             <mat-label>Vehículo</mat-label>
             <mat-select
               formControlName="nroplaca"
@@ -54,18 +52,17 @@
           </mat-form-field>
 
           <div class="actions">
-            <button mat-button matStepperNext>Siguiente</button>
+            <button mat-button matStepperNext [disabled]="step1Form.invalid">
+              Siguiente
+            </button>
           </div>
         </form>
       </mat-step>
 
-      <!-- Paso 2: Planificación de Viaje -->
       <mat-step [stepControl]="step2Form">
         <form [formGroup]="step2Form">
           <ng-template matStepLabel>Planificación de Viaje</ng-template>
-
-          <!-- Fechas -->
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width mt-3">
             <mat-label>Fecha Partida</mat-label>
             <input
               matInput
@@ -80,7 +77,7 @@
             <mat-datepicker #picker1></mat-datepicker>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width ms-5 mt-3">
             <mat-label>Fecha Llegada</mat-label>
             <input
               matInput
@@ -95,7 +92,6 @@
             <mat-datepicker #picker2></mat-datepicker>
           </mat-form-field>
 
-          <!-- Horas -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Hora Partida</mat-label>
             <input
@@ -106,7 +102,7 @@
             />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
+          <mat-form-field appearance="outline" class="full-width ms-12">
             <mat-label>Hora Llegada</mat-label>
             <input
               matInput
@@ -116,17 +112,6 @@
             />
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Hora Real Partida</mat-label>
-            <input matInput type="time" formControlName="horarealpartida" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Hora Real Llegada</mat-label>
-            <input matInput type="time" formControlName="horarealllegada" />
-          </mat-form-field>
-
-          <!-- Destino -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Destino</mat-label>
             <mat-select formControlName="iddestino" required>
@@ -139,9 +124,14 @@
             }
           </mat-form-field>
 
-          <div class="actions">
+          <div class="actions mt-4">
             <button mat-button matStepperPrevious>Volver</button>
-            <button mat-flat-button color="primary" (click)="onSubmit()">
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="onSubmit()"
+              [disabled]="step2Form.invalid"
+            >
               Registrar Viaje
             </button>
           </div>

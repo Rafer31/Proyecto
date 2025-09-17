@@ -1,0 +1,23 @@
+.register-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+  .full-width {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+
+    button + button {
+      margin-left: 1rem;
+    }
+  }
+}

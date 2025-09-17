@@ -29,7 +29,9 @@ export class TripPlanningService {
       .select(`
       idplanificacion,
       fechapartida,
-      iddestino: destino(iddestino, nomdestino)
+      horallegada,
+      horapartida,
+      destino: destino(iddestino, nomdestino)
     `);
 
     if (error) throw error;
@@ -65,12 +67,19 @@ export class TripPlanningService {
         fechaplanificacion: now,
         horapartida: step2.horapartida,
         horallegada: step2.horallegada,
-        horarealpartida: step2.horarealpartida,
-        horarealllegada: step2.horarealllegada,
         idconductorvehiculoempresa: cve.idconductorvehiculoempresa,
         iddestino: step2.iddestino,
       })
-      .select()
+      .select(
+        `
+    idplanificacion,
+    fechapartida,
+    fechallegada,
+    horapartida,
+    horallegada,
+    destino:destino(iddestino, nomdestino)
+  `
+      )
       .single();
 
     if (errPlan) throw errPlan;

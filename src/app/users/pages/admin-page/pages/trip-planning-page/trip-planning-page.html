@@ -1,26 +1,27 @@
-<div class="header-actions">
+<div class="header mt-6">
+  <h1 class="text-2xl font-bold">Planificación de los viajes</h1>
   <button mat-flat-button color="primary" (click)="openRegisterDialog()">
+    <mat-icon>add</mat-icon>
     Planificar viaje
   </button>
 </div>
-
 @if (trips().length === 0) {
-  <app-emptystate
-    [imageSrc]="'no-trips.svg'"
-    [title]="'Aún no hay viajes planificados'"
-    [description]="'No se han planificado viajes aún'"
-  />
+<app-emptystate
+  [imageSrc]="'no-trips.svg'"
+  [title]="'Aún no hay viajes planificados'"
+  [description]="'No se han planificado viajes aún'"
+/>
 } @else {
-  <div class="cards-grid">
-    @for (trip of trips(); track trip.idviaje) {
-      <app-planning-card
-        [idviaje]="trip.idviaje"
-        [fechaViaje]="trip.fechaViaje"
-        [destino]="trip.destino"
-        (verMas)="abrirDialog($event)"
-        (editar)="editarViaje($event)"
-        (eliminar)="eliminarViaje($event)"
-      ></app-planning-card>
-    }
-  </div>
+<div class="cards-grid">
+  @for (trip of trips(); track trip.idviaje) {
+  <app-planning-card
+    [idviaje]="trip.idviaje"
+    [fechaViaje]="trip.fechaViaje"
+    [destino]="trip.destino"
+    [horaPartida]="trip.horapartida"
+    [horaLlegada]="trip.horallegada"
+  ></app-planning-card>
+
+  }
+</div>
 }

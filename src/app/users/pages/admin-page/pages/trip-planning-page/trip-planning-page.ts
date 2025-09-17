@@ -5,17 +5,24 @@ import { Emptystate } from '../../../../components/emptystate/emptystate';
 import { TripPlanningService } from '../../services/trip-planning.service';
 import { PlanningCardComponent } from './components/planning-card/planning-card';
 import { RegisterTripDialog } from './components/register-planning/register-planning';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-trip-planning-page',
-  imports: [Emptystate, PlanningCardComponent, MatButtonModule],
+  imports: [Emptystate, PlanningCardComponent, MatButtonModule, MatIconModule],
   templateUrl: './trip-planning-page.html',
   styleUrl: './trip-planning-page.scss',
 })
 export class TripPlanningPage implements OnInit {
-  trips = signal<{ idviaje: number; fechaViaje: string; destino: string }[]>(
-    []
-  );
+  trips = signal<
+    {
+      idviaje: string;
+      fechaViaje: string;
+      destino: string;
+      horallegada: string;
+      horapartida: string;
+    }[]
+  >([]);
 
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
@@ -24,11 +31,16 @@ export class TripPlanningPage implements OnInit {
     try {
       const viajes = await this.tripService.getViajes();
       this.trips.set(
-        viajes.map((v: any) => ({
-          idviaje: v.idviaje,
-          fechaViaje: v.fechapartida,
-          destino: v.destino ?? 'Sin destino',
-        }))
+        viajes.map((v: any) => {
+          const trip = {
+            idviaje: v.idplanificacion,
+            fechaViaje: v.fechapartida,
+            destino: v.destino?.nomdestino ?? 'Sin destino',
+            horallegada: v.horallegada,
+            horapartida: v.horapartida,
+          };
+          return trip;
+        })
       );
     } catch (err) {
       console.error('Error cargando viajes:', err);
@@ -43,9 +55,11 @@ export class TripPlanningPage implements OnInit {
         this.trips.update((list) => [
           ...list,
           {
-            idviaje: newTrip.idviaje,
+            idviaje: newTrip.idplanificacion,
             fechaViaje: newTrip.fechapartida,
-            destino: newTrip.nomdestino,
+            destino: newTrip.destino?.nomdestino ?? 'Sin destino',
+            horapartida: newTrip.horapartida,
+            horallegada: newTrip.horallegada,
           },
         ]);
       }
@@ -60,7 +74,4 @@ export class TripPlanningPage implements OnInit {
     console.log('Editar viaje', idviaje);
   }
 
-  eliminarViaje(idviaje: number) {
-    this.trips.update((list) => list.filter((t) => t.idviaje !== idviaje));
-  }
 }
