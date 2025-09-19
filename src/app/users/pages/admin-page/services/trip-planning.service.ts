@@ -24,6 +24,50 @@ export class TripPlanningService {
     if (error) throw error;
     return data;
   }
+
+  // Nuevo método para obtener conductores
+  async getConductores() {
+    const { data, error } = await this.supabase
+      .from('conductor')
+      .select(`idconductor, usuario:usuario(idusuario, nomusuario, patusuario, matusuario, ci, numcelular)`);
+    if (error) throw error;
+    return data || [];
+  }
+
+  // Método mejorado para obtener un viaje específico
+  async getViaje(idplanificacion: string) {
+    console.log('Obteniendo viaje con ID:', idplanificacion);
+
+    const { data, error } = await this.supabase
+      .from('planificacion_viaje')
+      .select(`
+        idplanificacion,
+        fechapartida,
+        horapartida,
+        horallegada,
+        destino:destino(nomdestino),
+        vehiculo:conductor_vehiculo_empresa(
+          idconductorvehiculoempresa,
+          idconductor,
+          nroplaca,
+          idempresa,
+          vehiculo:vehiculo(nroplaca, nroasientos, tipovehiculo, imageUrl),
+          empresa:empresa_contratista(idempresa, nomempresa, nomcontacto, celcontacto, imageUrl),
+          conductor:conductor(idconductor, usuario:usuario(idusuario, nomusuario, patusuario, matusuario, ci, numcelular))
+        )
+      `)
+      .eq('idplanificacion', idplanificacion)
+      .single();
+
+    if (error) {
+      console.error('Error obteniendo viaje:', error);
+      throw error;
+    }
+
+    console.log('Viaje obtenido:', data);
+    return data;
+  }
+
   async getViajes() {
     const { data, error } = await this.supabase.from('planificacion_viaje')
       .select(`
@@ -33,14 +77,12 @@ export class TripPlanningService {
       horapartida,
       destino: destino(iddestino, nomdestino)
     `);
-
     if (error) throw error;
     return data;
   }
 
   async registrarViaje(step1: any, step2: any, vehiculo: any) {
     const now = new Date().toISOString();
-
     // Insert en conductor_vehiculo_empresa
     const { data: cve, error: errCve } = await this.supabase
       .from('conductor_vehiculo_empresa')
@@ -55,7 +97,6 @@ export class TripPlanningService {
       })
       .select()
       .single();
-
     if (errCve) throw errCve;
 
     // Insert en planificacion_viaje
@@ -81,9 +122,47 @@ export class TripPlanningService {
   `
       )
       .single();
-
     if (errPlan) throw errPlan;
-
     return viaje;
+  }
+
+  async actualizarAsociacion(idplanificacion: string | number, data: any) {
+    const { idconductor, nroplaca, idempresa } = data;
+
+    console.log('Actualizando asociación para:', { idplanificacion, data });
+
+    // Primero buscamos el idconductorvehiculoempresa actual del viaje
+    const { data: viajeData, error: errorViaje } = await this.supabase
+      .from('planificacion_viaje')
+      .select('idconductorvehiculoempresa')
+      .eq('idplanificacion', idplanificacion)
+      .single();
+
+    if (errorViaje) {
+      console.error('Error buscando viaje:', errorViaje);
+      throw errorViaje;
+    }
+
+    if (!viajeData?.idconductorvehiculoempresa) {
+      throw new Error('No se encontró la asociación conductor-vehículo-empresa');
+    }
+
+    console.log('Actualizando asociación ID:', viajeData.idconductorvehiculoempresa);
+
+    // Actualizamos solo la asociación en conductor_vehiculo_empresa
+    const { data: updated, error } = await this.supabase
+      .from('conductor_vehiculo_empresa')
+      .update({ idconductor, nroplaca, idempresa })
+      .eq('idconductorvehiculoempresa', viajeData.idconductorvehiculoempresa)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error actualizando asociación:', error);
+      throw error;
+    }
+
+    console.log('Asociación actualizada:', updated);
+    return updated;
   }
 }

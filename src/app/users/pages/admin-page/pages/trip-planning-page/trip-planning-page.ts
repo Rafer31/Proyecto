@@ -66,11 +66,11 @@ export class TripPlanningPage implements OnInit {
     });
   }
 
-  abrirDialog(idviaje: number) {
+  abrirDialog(idviaje: string) {
     console.log('Ver más viaje', idviaje);
   }
 
-  editarViaje(idviaje: number) {
+  editarViaje(idviaje: string) {
     console.log('Editar viaje', idviaje);
   }
 

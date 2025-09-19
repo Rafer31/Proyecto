@@ -3,11 +3,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
+import { WatchMoreDialog } from '../watch-more-dialog/watch-more-dialog';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-planning-card',
   standalone: true,
-  imports: [MatCardModule, MatIconModule, MatButtonModule, CommonModule],
+  imports: [MatCardModule, MatIconModule, MatButtonModule, CommonModule, MatDialogModule],
   templateUrl: './planning-card.html',
   styleUrl: './planning-card.scss',
 })
@@ -22,8 +24,8 @@ export class PlanningCardComponent {
   @Output() editar = new EventEmitter<string>();
   @Output() eliminar = new EventEmitter<string>();
 
-  cardColor = '#607d8b'; // fallback
-
+  cardColor = '#607d8b';
+  constructor(private dialog: MatDialog) {}
   private destinoColors: Record<string, string> = {
     'La Paz': '#3f51b5',
     Cochabamba: '#009688',
@@ -59,8 +61,11 @@ export class PlanningCardComponent {
     );
   }
 
-  onVerMas() {
-    this.verMas.emit(this.idviaje);
+  onVerMas(idviaje: string) {
+    this.dialog.open(WatchMoreDialog, {
+      width: '900px',
+      data: { idplanificacion: idviaje },
+    });
   }
 
   onEditar() {

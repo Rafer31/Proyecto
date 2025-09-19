@@ -73,8 +73,6 @@ export class RegisterTripDialog {
     this.conductores.set(await this.userService.getConductores());
     this.vehiculos.set(await this.tripService.getVehiculos());
     this.empresas.set(await this.tripService.getEmpresas());
-
-    console.log('conductores cargados', this.conductores());
   }
 
   get step1Form(): FormGroup {
