@@ -4,7 +4,6 @@ import { SupabaseService } from '../../shared/services/supabase.service';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private supabaseClient = inject(SupabaseService).supabase;
-  // user.service.ts (añadir)
   async getConductores() {
     const { data, error } = await this.supabaseClient.from('conductor').select(`
       idconductor,

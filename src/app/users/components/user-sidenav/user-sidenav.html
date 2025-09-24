@@ -9,13 +9,13 @@
     [attr.aria-label]="collapsed() ? 'Navegación colapsada' : 'Navegación'"
     fixedInViewport="true"
   >
-    <!-- Branding -->
+    
     <a class="brand" [routerLink]="routeBrand()" matTooltip="{{ appName() }}" [matTooltipDisabled]="showText()">
       <mat-icon class="brand-icon">{{ appLogo() }}</mat-icon>
       @if (showText()) { <span class="brand-text">{{ appName() }}</span> }
     </a>
 
-    <!-- Menú con scroll independiente -->
+    
     <mat-nav-list class="nav-list">
       @for (item of items(); track item.route) {
         <a mat-list-item
@@ -35,7 +35,7 @@
     </mat-nav-list>
   </mat-sidenav>
 
-  <!-- Contenido -->
+  
   <mat-sidenav-content 
     class="content"
     [style.margin-left.px]="collapsed() ? 80 : 260">

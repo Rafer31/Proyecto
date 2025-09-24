@@ -1,0 +1,50 @@
+<h2 mat-dialog-title>Editar viaje</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="formStep2" class="form-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha de partida</mat-label>
+      <input
+        matInput
+        [matDatepicker]="picker1"
+        formControlName="fechapartida"
+      />
+      <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+      <mat-datepicker #picker1></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Fecha de llegada</mat-label>
+      <input
+        matInput
+        [matDatepicker]="picker2"
+        formControlName="fechallegada"
+      />
+      <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+      <mat-datepicker #picker2></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hora de partida</mat-label>
+      <input matInput type="time" formControlName="horapartida" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Hora de llegada</mat-label>
+      <input matInput type="time" formControlName="horallegada" />
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Destino</mat-label>
+      <mat-select formControlName="iddestino">
+        @for (d of destinos; track d.iddestino) {
+        <mat-option [value]="d.iddestino">{{ d.nomdestino }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="onSubmit()">Guardar</button>
+</mat-dialog-actions>

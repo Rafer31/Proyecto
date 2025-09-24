@@ -6,7 +6,7 @@
 
   <mat-dialog-content>
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
-      <!-- Datos básicos del usuario -->
+      
       <div class="form-section">
         <h3 class="mb-3">Información Personal</h3>
 
@@ -67,7 +67,7 @@
         </div>
       </div>
 
-      <!-- Campos específicos por rol -->
+      
       @if (selectedRole === 'Personal' || selectedRole === 'Administrador') {
       <div class="form-section">
         <h3 class="mt-7">Información de {{ selectedRole }}</h3>

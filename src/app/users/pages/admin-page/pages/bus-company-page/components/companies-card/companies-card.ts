@@ -46,7 +46,7 @@ export class CompaniesCard {
   async onDeleteCompany(company: BusCompany) {
     try {
       await this.busCompanyService.deleteBusCompany(company.idempresa);
-      this.onDelete.emit(company.idempresa); // Emitimos el ID eliminado
+      this.onDelete.emit(company.idempresa); 
     } catch (err) {
       console.error('Error eliminando empresa:', err);
     }

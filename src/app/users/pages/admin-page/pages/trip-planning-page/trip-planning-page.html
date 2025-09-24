@@ -6,31 +6,30 @@
   </button>
 </div>
 
-<!-- Estado cargando -->
 @if (loading()) {
-  <div class="loading-container">
-    <mat-spinner diameter="48"></mat-spinner>
-    <p>Cargando planificaciones...</p>
-  </div>
+<div class="loading-container">
+  <mat-spinner diameter="48"></mat-spinner>
+  <p>Cargando planificaciones...</p>
+</div>
 } @else if (trips().length === 0) {
-  <!-- Vacío -->
-  <app-emptystate
-    [imageSrc]="'no-trips.svg'"
-    [title]="'Aún no hay viajes planificados'"
-    [description]="'No se han planificado viajes aún'"
-  />
+<app-emptystate
+  [imageSrc]="'no-trips.svg'"
+  [title]="'Aún no hay viajes planificados'"
+  [description]="'No se han planificado viajes aún'"
+/>
 } @else {
-  <!-- Lista de viajes -->
-  <div class="cards-grid">
-    @for (trip of trips(); track trip.idviaje) {
-      <app-planning-card
-        [idviaje]="trip.idviaje"
-        [fechaViaje]="trip.fechaViaje"
-        [destino]="trip.destino"
-        [horaPartida]="trip.horapartida"
-        [horaLlegada]="trip.horallegada"
-        (editar)="editarViaje(trip.idviaje)"
-      ></app-planning-card>
-    }
-  </div>
+
+<div class="cards-grid">
+  @for (trip of trips(); track trip.idviaje) {
+  <app-planning-card
+    [idviaje]="trip.idviaje"
+    [fechaViaje]="trip.fechaViaje"
+    [destino]="trip.destino"
+    [horaPartida]="trip.horapartida"
+    [horaLlegada]="trip.horallegada"
+    (editar)="editarViaje(trip.idviaje)"
+    (eliminar)="eliminarViaje(trip.idviaje)"
+  ></app-planning-card>
+  }
+</div>
 }

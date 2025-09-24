@@ -7,10 +7,18 @@ import { PlanningCardComponent } from './components/planning-card/planning-card'
 import { RegisterTripDialog } from './components/register-planning/register-planning';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { EditTripDialog } from './components/edit-trip-dialog/edit-trip-dialog';
+import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-trip-planning-page',
-  imports: [Emptystate, PlanningCardComponent, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [
+    Emptystate,
+    PlanningCardComponent,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './trip-planning-page.html',
   styleUrl: './trip-planning-page.scss',
 })
@@ -25,7 +33,7 @@ export class TripPlanningPage implements OnInit {
     }[]
   >([]);
 
-  loading = signal(true); // 👈 estado de carga
+  loading = signal(true);
 
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
@@ -46,7 +54,7 @@ export class TripPlanningPage implements OnInit {
     } catch (err) {
       console.error('Error cargando viajes:', err);
     } finally {
-      this.loading.set(false); // 👈 terminamos carga
+      this.loading.set(false);
     }
   }
 
@@ -73,7 +81,56 @@ export class TripPlanningPage implements OnInit {
     console.log('Ver más viaje', idviaje);
   }
 
-  editarViaje(idviaje: string) {
-    console.log('Editar viaje', idviaje);
+  async editarViaje(idviaje: string) {
+
+    const viaje = await this.tripService.getViaje(idviaje);
+
+    const dialogRef = this.dialog.open(EditTripDialog, {
+      width: '600px',
+      data: { viaje },
+    });
+
+    dialogRef.afterClosed().subscribe((updatedTrip) => {
+      if (updatedTrip) {
+        this.trips.update((list) =>
+          list.map((t) =>
+            t.idviaje === updatedTrip.idplanificacion
+              ? {
+                  idviaje: updatedTrip.idplanificacion,
+                  fechaViaje: updatedTrip.fechapartida,
+                  destino: updatedTrip.destino?.nomdestino ?? 'Sin destino',
+                  horapartida: updatedTrip.horapartida,
+                  horallegada: updatedTrip.horallegada,
+                }
+              : t
+          )
+        );
+      }
+    });
+  }
+  async eliminarViaje(idviaje: string) {
+    const viaje = this.trips().find((t) => t.idviaje === idviaje);
+    if (!viaje) return;
+
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      width: '400px',
+      data: {
+        title: 'Eliminar viaje',
+        message: `¿Seguro que deseas eliminar el viaje programado a "${viaje.destino}" el día ${viaje.fechaViaje}?`,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(async (confirmed: boolean) => {
+      if (confirmed) {
+        try {
+          await this.tripService.eliminarViaje(idviaje);
+          this.trips.update((list) =>
+            list.filter((t) => t.idviaje !== idviaje)
+          );
+        } catch (err) {
+          console.error('Error eliminando viaje:', err);
+        }
+      }
+    });
   }
 }

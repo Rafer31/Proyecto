@@ -25,27 +25,27 @@ export class TripPlanningService {
     return data;
   }
 
-  // Nuevo método para obtener conductores
   async getConductores() {
     const { data, error } = await this.supabase
       .from('conductor')
-      .select(`idconductor, usuario:usuario(idusuario, nomusuario, patusuario, matusuario, ci, numcelular)`);
+      .select(
+        `idconductor, usuario:usuario(idusuario, nomusuario, patusuario, matusuario, ci, numcelular)`
+      );
     if (error) throw error;
     return data || [];
   }
 
-  // Método mejorado para obtener un viaje específico
   async getViaje(idplanificacion: string) {
-    console.log('Obteniendo viaje con ID:', idplanificacion);
-
     const { data, error } = await this.supabase
       .from('planificacion_viaje')
-      .select(`
+      .select(
+        `
         idplanificacion,
         fechapartida,
         horapartida,
         horallegada,
-        destino:destino(nomdestino),
+        fechallegada,
+        destino:destino(iddestino, nomdestino),
         vehiculo:conductor_vehiculo_empresa(
           idconductorvehiculoempresa,
           idconductor,
@@ -55,7 +55,8 @@ export class TripPlanningService {
           empresa:empresa_contratista(idempresa, nomempresa, nomcontacto, celcontacto, imageUrl),
           conductor:conductor(idconductor, usuario:usuario(idusuario, nomusuario, patusuario, matusuario, ci, numcelular))
         )
-      `)
+      `
+      )
       .eq('idplanificacion', idplanificacion)
       .single();
 
@@ -64,7 +65,6 @@ export class TripPlanningService {
       throw error;
     }
 
-    console.log('Viaje obtenido:', data);
     return data;
   }
 
@@ -83,7 +83,6 @@ export class TripPlanningService {
 
   async registrarViaje(step1: any, step2: any, vehiculo: any) {
     const now = new Date().toISOString();
-    // Insert en conductor_vehiculo_empresa
     const { data: cve, error: errCve } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .insert({
@@ -99,7 +98,6 @@ export class TripPlanningService {
       .single();
     if (errCve) throw errCve;
 
-    // Insert en planificacion_viaje
     const { data: viaje, error: errPlan } = await this.supabase
       .from('planificacion_viaje')
       .insert({
@@ -129,9 +127,7 @@ export class TripPlanningService {
   async actualizarAsociacion(idplanificacion: string | number, data: any) {
     const { idconductor, nroplaca, idempresa } = data;
 
-    console.log('Actualizando asociación para:', { idplanificacion, data });
 
-    // Primero buscamos el idconductorvehiculoempresa actual del viaje
     const { data: viajeData, error: errorViaje } = await this.supabase
       .from('planificacion_viaje')
       .select('idconductorvehiculoempresa')
@@ -144,12 +140,13 @@ export class TripPlanningService {
     }
 
     if (!viajeData?.idconductorvehiculoempresa) {
-      throw new Error('No se encontró la asociación conductor-vehículo-empresa');
+      throw new Error(
+        'No se encontró la asociación conductor-vehículo-empresa'
+      );
     }
 
-    console.log('Actualizando asociación ID:', viajeData.idconductorvehiculoempresa);
+  
 
-    // Actualizamos solo la asociación en conductor_vehiculo_empresa
     const { data: updated, error } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .update({ idconductor, nroplaca, idempresa })
@@ -162,7 +159,47 @@ export class TripPlanningService {
       throw error;
     }
 
-    console.log('Asociación actualizada:', updated);
+
+    return updated;
+  }
+  async eliminarViaje(idplanificacion: string) {
+    const { error } = await this.supabase
+      .from('planificacion_viaje')
+      .delete()
+      .eq('idplanificacion', idplanificacion);
+
+    if (error) {
+      console.error('Error eliminando viaje:', error);
+      throw error;
+    }
+
+    return true;
+  }
+  async actualizarPlanificacion(idplanificacion: string, data: any) {
+    const { fechapartida, fechallegada, horapartida, horallegada, iddestino } =
+      data;
+
+    const { data: updated, error } = await this.supabase
+      .from('planificacion_viaje')
+      .update({
+        fechapartida,
+        fechallegada,
+        horapartida,
+        horallegada,
+        iddestino,
+      })
+      .eq('idplanificacion', idplanificacion)
+      .select(
+        `idplanificacion, fechapartida, fechallegada, horapartida, horallegada,
+         destino:destino(iddestino, nomdestino)`
+      )
+      .single();
+
+    if (error) {
+      console.error('Error actualizando planificación:', error);
+      throw error;
+    }
+
     return updated;
   }
 }

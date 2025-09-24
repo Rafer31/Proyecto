@@ -50,7 +50,7 @@ export class DialogVehicle {
   constructor() {
     if (this.data.isEdit && this.data.vehicle) {
       this.form.patchValue(this.data.vehicle);
-      this.form.get('nroplaca')?.disable(); // no permitir cambiar la placa
+      this.form.get('nroplaca')?.disable();
     }
   }
 

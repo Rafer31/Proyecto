@@ -1,4 +1,4 @@
-// Estilos originales mantenidos
+
 .dialog-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -49,7 +49,6 @@
   }
 }
 
-// ✨ NUEVOS ESTILOS PARA PLACEHOLDERS
 .no-image-placeholder {
   display: flex;
   flex-direction: column;
@@ -110,7 +109,6 @@
   border-top: 1px solid #ddd;
 }
 
-// Estilos nuevos para loading
 .loading-container {
   display: flex;
   justify-content: center;
@@ -145,7 +143,6 @@
   100% { transform: rotate(360deg); }
 }
 
-// Estilos para el modo edición
 .edit-container {
   padding: 20px;
   max-width: 600px;
@@ -176,7 +173,6 @@
   border-top: 1px solid #ddd;
 }
 
-// Vista previa de cambios
 .preview-section {
   margin-top: 20px;
   padding: 16px;
@@ -209,8 +205,6 @@
     flex-direction: column-reverse;
     gap: 8px;
   }
-
-  // Responsive para placeholders
   .no-image-placeholder {
     max-width: 250px;
     height: 150px;

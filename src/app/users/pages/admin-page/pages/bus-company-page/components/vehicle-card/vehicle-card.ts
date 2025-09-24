@@ -16,7 +16,7 @@ export class VehiclesCard {
   vehicles = input<Vehicle[]>([]);
   onEdit = output<Vehicle>();
   onVehicleUpdated = output<Vehicle>();
-  onDelete = output<string>(); // 👈 nuevo
+  onDelete = output<string>(); 
 
   async onFileSelected(event: Event, vehicle: Vehicle) {
     const input = event.target as HTMLInputElement;
@@ -40,6 +40,6 @@ export class VehiclesCard {
   }
 
   async onDeleteVehicle(vehicle: Vehicle) {
-    this.onDelete.emit(vehicle.nroplaca); // 👈 mandamos la placa al padre
+    this.onDelete.emit(vehicle.nroplaca);
   }
 }

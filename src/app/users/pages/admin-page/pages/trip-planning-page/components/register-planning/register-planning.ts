@@ -30,6 +30,7 @@ import { UserService } from '../../../../../../services/user.service';
     MatDatepickerModule,
   ],
   templateUrl: './register-planning.html',
+  styleUrl: './register-planning.scss'
 })
 export class RegisterTripDialog {
   private fb = inject(FormBuilder);
@@ -66,10 +67,8 @@ export class RegisterTripDialog {
     });
   }
 
-  // register-trip.dialog.ts -> loadData()
   private async loadData() {
     this.destinos.set(await this.tripService.getDestinos());
-    // antes: this.conductores.set(await this.tripService.getConductores());
     this.conductores.set(await this.userService.getConductores());
     this.vehiculos.set(await this.tripService.getVehiculos());
     this.empresas.set(await this.tripService.getEmpresas());
@@ -101,7 +100,7 @@ export class RegisterTripDialog {
         step2,
         this.selectedVehiculo
       );
-      this.dialogRef.close(viaje); // <- devuelve el viaje creado al padre
+      this.dialogRef.close(viaje);
     } catch (err) {
       console.error('Error al registrar viaje', err);
     }

@@ -78,8 +78,6 @@ export class RegisterCard {
       this.isLoading.set(true);
       const loadingDialog = this.dialogService.showLoadingDialog();
 
-      console.log('Iniciando registro...');
-
       const { data, error } = await this.supabaseClient.auth.signUp({
         email: this.form.value.email!,
         password: this.form.value.password!,

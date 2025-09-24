@@ -1,179 +1,187 @@
-<!-- Loading state -->
 @if (loading) {
-  <div class="loading-container">
-    <div class="loading-content">
-      <div class="loading-spinner"></div>
-      <p>Cargando información...</p>
-    </div>
+<div class="loading-container">
+  <div class="loading-content">
+    <div class="loading-spinner"></div>
+    <p>Cargando información...</p>
   </div>
-}
+</div>
+} @if (!loading) { @if (!editMode && viaje) {
+<div class="dialog-container">
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title>Vehículo</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="image-container">
+        @if (viaje?.vehiculo?.vehiculo?.imageUrl) {
+        <img [src]="viaje.vehiculo.vehiculo.imageUrl" alt="Vehículo" />
+        } @else {
+        <div class="no-image-placeholder">
+          <div class="no-image-icon">🚗</div>
+          <span>Sin imagen</span>
+        </div>
+        }
+      </div>
+      <div class="vehiculo-info">
+        <p>
+          <strong>Tipo:</strong> {{ viaje?.vehiculo?.vehiculo?.tipovehiculo }}
+        </p>
+        <p><strong>Placa:</strong> {{ viaje?.vehiculo?.vehiculo?.nroplaca }}</p>
+        <p>
+          <strong>Asientos:</strong> {{ viaje?.vehiculo?.vehiculo?.nroasientos
+          }}
+        </p>
+      </div>
+    </mat-card-content>
+  </mat-card>
 
-@if (!loading) {
-  <!-- Modo detalle -->
-  @if (!editMode && viaje) {
-    <div class="dialog-container">
-      <!-- Vehículo -->
-      <mat-card class="info-card">
-        <mat-card-header>
-          <mat-card-title>Vehículo</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="image-container">
-            @if (viaje?.vehiculo?.vehiculo?.imageUrl) {
-              <img
-                [src]="viaje.vehiculo.vehiculo.imageUrl"
-                alt="Vehículo"
-              />
-            } @else {
-              <div class="no-image-placeholder">
-                <div class="no-image-icon">
-                  🚗
-                </div>
-                <span>Sin imagen</span>
-              </div>
-            }
-          </div>
-          <div class="vehiculo-info">
-            <p><strong>Tipo:</strong> {{ viaje?.vehiculo?.vehiculo?.tipovehiculo }}</p>
-            <p><strong>Placa:</strong> {{ viaje?.vehiculo?.vehiculo?.nroplaca }}</p>
-            <p><strong>Asientos:</strong> {{ viaje?.vehiculo?.vehiculo?.nroasientos }}</p>
-          </div>
-        </mat-card-content>
-      </mat-card>
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title>Empresa contratista</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="image-container small">
+        @if (viaje?.vehiculo?.empresa?.imageUrl) {
+        <img [src]="viaje.vehiculo.empresa.imageUrl" alt="Empresa" />
+        } @else {
+        <div class="no-image-placeholder small">
+          <div class="no-image-icon">🏢</div>
+          <span>Sin logo</span>
+        </div>
+        }
+      </div>
+      <p><strong>{{ viaje?.vehiculo?.empresa?.nomempresa }}</strong></p>
+      <p>
+        <strong>Contacto:</strong> {{ viaje?.vehiculo?.empresa?.nomcontacto }}
+      </p>
+      <p><strong>Cel:</strong> {{ viaje?.vehiculo?.empresa?.celcontacto }}</p>
+    </mat-card-content>
+  </mat-card>
 
-      <!-- Empresa -->
-      <mat-card class="info-card">
-        <mat-card-header>
-          <mat-card-title>Empresa contratista</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <div class="image-container small">
-            @if (viaje?.vehiculo?.empresa?.imageUrl) {
-              <img
-                [src]="viaje.vehiculo.empresa.imageUrl"
-                alt="Empresa"
-              />
-            } @else {
-              <div class="no-image-placeholder small">
-                <div class="no-image-icon">
-                  🏢
-                </div>
-                <span>Sin logo</span>
-              </div>
-            }
-          </div>
-          <p><strong>{{ viaje?.vehiculo?.empresa?.nomempresa }}</strong></p>
-          <p><strong>Contacto:</strong> {{ viaje?.vehiculo?.empresa?.nomcontacto }}</p>
-          <p><strong>Cel:</strong> {{ viaje?.vehiculo?.empresa?.celcontacto }}</p>
-        </mat-card-content>
-      </mat-card>
+  <mat-card class="info-card">
+    <mat-card-header>
+      <mat-card-title>Conductor</mat-card-title>
+    </mat-card-header>
+    <mat-card-content>
+      <p>
+        <strong>Nombre:</strong> {{
+        viaje?.vehiculo?.conductor?.usuario?.nomusuario }}
+      </p>
+      <p>
+        <strong>Apellidos:</strong>
+        {{ viaje?.vehiculo?.conductor?.usuario?.patusuario }} {{
+        viaje?.vehiculo?.conductor?.usuario?.matusuario }}
+      </p>
+      <p><strong>CI:</strong> {{ viaje?.vehiculo?.conductor?.usuario?.ci }}</p>
+      <p>
+        <strong>Cel:</strong> {{ viaje?.vehiculo?.conductor?.usuario?.numcelular
+        }}
+      </p>
+    </mat-card-content>
+  </mat-card>
+</div>
 
-      <!-- Conductor -->
-      <mat-card class="info-card">
-        <mat-card-header>
-          <mat-card-title>Conductor</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <p><strong>Nombre:</strong> {{ viaje?.vehiculo?.conductor?.usuario?.nomusuario }}</p>
-          <p>
-            <strong>Apellidos:</strong>
-            {{ viaje?.vehiculo?.conductor?.usuario?.patusuario }} {{ viaje?.vehiculo?.conductor?.usuario?.matusuario }}
-          </p>
-          <p><strong>CI:</strong> {{ viaje?.vehiculo?.conductor?.usuario?.ci }}</p>
-          <p><strong>Cel:</strong> {{ viaje?.vehiculo?.conductor?.usuario?.numcelular }}</p>
-        </mat-card-content>
-      </mat-card>
-    </div>
+<div class="dialog-actions">
+  <button
+    mat-raised-button
+    color="primary"
+    (click)="startEdit()"
+    [disabled]="loading"
+  >
+    <mat-icon>edit</mat-icon>
+    Editar Información
+  </button>
+</div>
+} @if (editMode) {
+<div class="edit-container">
+  <h3>Editar Asociación del Viaje</h3>
 
-    <!-- Botón de acción -->
-    <div class="dialog-actions">
-      <button mat-raised-button color="primary" (click)="startEdit()" [disabled]="loading">
-        <mat-icon>edit</mat-icon>
-        Editar Información
+  <form [formGroup]="step1Form" class="edit-form">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Conductor</mat-label>
+      <mat-select formControlName="idconductor" required>
+        @for (conductor of conductores; track conductor.idconductor) {
+        <mat-option [value]="conductor.idconductor">
+          {{ conductor.usuario.nomusuario }} {{ conductor.usuario.patusuario }}
+          (CI: {{ conductor.usuario.ci }})
+        </mat-option>
+        }
+      </mat-select>
+      @if (step1Form.get('idconductor')?.invalid &&
+      step1Form.get('idconductor')?.touched) {
+      <mat-error>El conductor es requerido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Vehículo</mat-label>
+      <mat-select formControlName="nroplaca" required>
+        @for (vehiculo of vehiculos; track vehiculo.nroplaca) {
+        <mat-option [value]="vehiculo.nroplaca">
+          {{ vehiculo.nroplaca }} - {{ vehiculo.tipovehiculo }} ({{
+          vehiculo.nroasientos }} asientos)
+        </mat-option>
+        }
+      </mat-select>
+      @if (step1Form.get('nroplaca')?.invalid &&
+      step1Form.get('nroplaca')?.touched) {
+      <mat-error>El vehículo es requerido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Empresa</mat-label>
+      <mat-select formControlName="idempresa" required>
+        @for (empresa of empresas; track empresa.idempresa) {
+        <mat-option [value]="empresa.idempresa">
+          {{ empresa.nomempresa }}
+        </mat-option>
+        }
+      </mat-select>
+      @if (step1Form.get('idempresa')?.invalid &&
+      step1Form.get('idempresa')?.touched) {
+      <mat-error>La empresa es requerida</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="edit-actions">
+      <button
+        mat-stroked-button
+        type="button"
+        (click)="cancelEdit()"
+        [disabled]="loading"
+      >
+        Cancelar
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        (click)="saveEdit()"
+        [disabled]="step1Form.invalid || loading"
+      >
+        @if (loading) { Guardando... } @else { Guardar }
       </button>
     </div>
+  </form>
+
+  @if (step1Form.valid) {
+  <div class="preview-section">
+    <h4>Vista Previa:</h4>
+    <p>
+      <strong>Conductor:</strong> {{
+      getConductorNombre(step1Form.get('idconductor')?.value) }}
+    </p>
+    <p>
+      <strong>Vehículo:</strong> {{
+      getVehiculoInfo(step1Form.get('nroplaca')?.value)?.tipovehiculo }} ({{
+      step1Form.get('nroplaca')?.value }})
+    </p>
+    <p>
+      <strong>Empresa:</strong> {{
+      getEmpresaNombre(step1Form.get('idempresa')?.value) }}
+    </p>
+  </div>
   }
-
-  <!-- Modo edición -->
-  @if (editMode) {
-    <div class="edit-container">
-      <h3>Editar Asociación del Viaje</h3>
-
-      <form [formGroup]="step1Form" class="edit-form">
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Conductor</mat-label>
-          <mat-select formControlName="idconductor" required>
-            @for (conductor of conductores; track conductor.idconductor) {
-              <mat-option [value]="conductor.idconductor">
-                {{ conductor.usuario.nomusuario }} {{ conductor.usuario.patusuario }}
-                (CI: {{ conductor.usuario.ci }})
-              </mat-option>
-            }
-          </mat-select>
-          @if (step1Form.get('idconductor')?.invalid && step1Form.get('idconductor')?.touched) {
-            <mat-error>El conductor es requerido</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Vehículo</mat-label>
-          <mat-select formControlName="nroplaca" required>
-            @for (vehiculo of vehiculos; track vehiculo.nroplaca) {
-              <mat-option [value]="vehiculo.nroplaca">
-                {{ vehiculo.nroplaca }} - {{ vehiculo.tipovehiculo }}
-                ({{ vehiculo.nroasientos }} asientos)
-              </mat-option>
-            }
-          </mat-select>
-          @if (step1Form.get('nroplaca')?.invalid && step1Form.get('nroplaca')?.touched) {
-            <mat-error>El vehículo es requerido</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Empresa</mat-label>
-          <mat-select formControlName="idempresa" required>
-            @for (empresa of empresas; track empresa.idempresa) {
-              <mat-option [value]="empresa.idempresa">
-                {{ empresa.nomempresa }}
-              </mat-option>
-            }
-          </mat-select>
-          @if (step1Form.get('idempresa')?.invalid && step1Form.get('idempresa')?.touched) {
-            <mat-error>La empresa es requerida</mat-error>
-          }
-        </mat-form-field>
-
-        <div class="edit-actions">
-          <button mat-stroked-button type="button" (click)="cancelEdit()" [disabled]="loading">
-            Cancelar
-          </button>
-          <button
-            mat-flat-button
-            color="primary"
-            type="button"
-            (click)="saveEdit()"
-            [disabled]="step1Form.invalid || loading"
-          >
-            @if (loading) {
-              Guardando...
-            } @else {
-              Guardar
-            }
-          </button>
-        </div>
-      </form>
-
-      <!-- Vista previa de la selección actual -->
-      @if (step1Form.valid) {
-        <div class="preview-section">
-          <h4>Vista Previa:</h4>
-          <p><strong>Conductor:</strong> {{ getConductorNombre(step1Form.get('idconductor')?.value) }}</p>
-          <p><strong>Vehículo:</strong> {{ getVehiculoInfo(step1Form.get('nroplaca')?.value)?.tipovehiculo }}
-             ({{ step1Form.get('nroplaca')?.value }})</p>
-          <p><strong>Empresa:</strong> {{ getEmpresaNombre(step1Form.get('idempresa')?.value) }}</p>
-        </div>
-      }
-    </div>
-  }
-}
+</div>
+} }
