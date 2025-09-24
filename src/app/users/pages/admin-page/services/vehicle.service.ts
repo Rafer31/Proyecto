@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { SupabaseService } from '../../../../shared/services/supabase.service';
 
 export interface Vehicle {
-  nroplaca: string ;
+  nroplaca: string;
   color: string;
   nroasientos: number;
   tipovehiculo: 'bus' | 'minibus' | 'mini';
@@ -80,5 +80,13 @@ export class VehicleService {
   getPublicUrl(fileName: string) {
     return this.supabaseClient.storage.from('vehicles').getPublicUrl(fileName)
       .data.publicUrl;
+  }
+  async deleteVehicle(nroplaca: string): Promise<void> {
+    const { error } = await this.supabaseClient
+      .from('vehiculo')
+      .delete()
+      .eq('nroplaca', nroplaca);
+
+    if (error) throw error;
   }
 }

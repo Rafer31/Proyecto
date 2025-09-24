@@ -59,13 +59,10 @@ export class BusCompanyService {
   async updateCompanyImage(companyId: number, file: File): Promise<string> {
     const fileName = `${companyId}-${Date.now()}-${file.name}`;
 
-     
     await this.uploadCompanyImage(file, fileName);
 
-    
     const publicUrl = this.getPublicUrl(fileName);
 
-    
     await this.updateBusCompany(companyId, { imageUrl: publicUrl });
 
     return publicUrl;
@@ -74,5 +71,13 @@ export class BusCompanyService {
   getPublicUrl(fileName: string) {
     return this.supabaseClient.storage.from('companies').getPublicUrl(fileName)
       .data.publicUrl;
+  }
+  async deleteBusCompany(id: number): Promise<void> {
+    const { error } = await this.supabaseClient
+      .from('empresa_contratista')
+      .delete()
+      .eq('idempresa', id);
+
+    if (error) throw error;
   }
 }

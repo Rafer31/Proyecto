@@ -12,8 +12,9 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import {  MatTabsModule } from '@angular/material/tabs';
-import { VehiclePage } from "./pages/vehicle-page/vehicle-page";
+import { MatTabsModule } from '@angular/material/tabs';
+import { VehiclePage } from './pages/vehicle-page/vehicle-page';
+import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-bus-company-page',
@@ -25,8 +26,8 @@ import { VehiclePage } from "./pages/vehicle-page/vehicle-page";
     MatIconModule,
     MatButtonModule,
     MatTabsModule,
-    VehiclePage
-],
+    VehiclePage,
+  ],
   templateUrl: './bus-company-page.html',
   styleUrl: './bus-company-page.scss',
 })
@@ -96,5 +97,30 @@ export class BusCompanyPage {
         )
       );
     }
+  }
+  async removeCompany(id: number) {
+    const company = this.companies().find((c) => c.idempresa === id);
+    if (!company) return;
+
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      width: '400px',
+      data: {
+        title: 'Eliminar empresa',
+        message: `¿Seguro que deseas eliminar la empresa "${company.nomempresa}"?`,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe(async (confirmed: boolean) => {
+      if (confirmed) {
+        try {
+          await this.busCompanyService.deleteBusCompany(id);
+          this.companies.update((companies) =>
+            companies.filter((c) => c.idempresa !== id)
+          );
+        } catch (error) {
+          console.error('Error eliminando empresa:', error);
+        }
+      }
+    });
   }
 }

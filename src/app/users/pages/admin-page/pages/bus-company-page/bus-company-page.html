@@ -25,6 +25,7 @@
         <app-companies-card
           [companies]="companies()"
           (onEdit)="openEditDialog($event)"
+          (onDelete)="removeCompany($event)"
           (onCompanyUpdated)="onCompanyUpdated($event)"
         >
         </app-companies-card>

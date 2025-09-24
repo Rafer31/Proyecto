@@ -6,10 +6,11 @@ import { TripPlanningService } from '../../services/trip-planning.service';
 import { PlanningCardComponent } from './components/planning-card/planning-card';
 import { RegisterTripDialog } from './components/register-planning/register-planning';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-trip-planning-page',
-  imports: [Emptystate, PlanningCardComponent, MatButtonModule, MatIconModule],
+  imports: [Emptystate, PlanningCardComponent, MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './trip-planning-page.html',
   styleUrl: './trip-planning-page.scss',
 })
@@ -24,26 +25,28 @@ export class TripPlanningPage implements OnInit {
     }[]
   >([]);
 
+  loading = signal(true); // 👈 estado de carga
+
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
 
   async ngOnInit() {
     try {
+      this.loading.set(true);
       const viajes = await this.tripService.getViajes();
       this.trips.set(
-        viajes.map((v: any) => {
-          const trip = {
-            idviaje: v.idplanificacion,
-            fechaViaje: v.fechapartida,
-            destino: v.destino?.nomdestino ?? 'Sin destino',
-            horallegada: v.horallegada,
-            horapartida: v.horapartida,
-          };
-          return trip;
-        })
+        viajes.map((v: any) => ({
+          idviaje: v.idplanificacion,
+          fechaViaje: v.fechapartida,
+          destino: v.destino?.nomdestino ?? 'Sin destino',
+          horallegada: v.horallegada,
+          horapartida: v.horapartida,
+        }))
       );
     } catch (err) {
       console.error('Error cargando viajes:', err);
+    } finally {
+      this.loading.set(false); // 👈 terminamos carga
     }
   }
 
@@ -73,5 +76,4 @@ export class TripPlanningPage implements OnInit {
   editarViaje(idviaje: string) {
     console.log('Editar viaje', idviaje);
   }
-
 }

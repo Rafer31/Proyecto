@@ -16,6 +16,7 @@ export class VehiclesCard {
   vehicles = input<Vehicle[]>([]);
   onEdit = output<Vehicle>();
   onVehicleUpdated = output<Vehicle>();
+  onDelete = output<string>(); // 👈 nuevo
 
   async onFileSelected(event: Event, vehicle: Vehicle) {
     const input = event.target as HTMLInputElement;
@@ -23,7 +24,10 @@ export class VehiclesCard {
 
     const file = input.files[0];
     try {
-      const newUrl = await this.vehicleService.updateVehicleImage(vehicle.nroplaca, file);
+      const newUrl = await this.vehicleService.updateVehicleImage(
+        vehicle.nroplaca,
+        file
+      );
       vehicle.imageUrl = newUrl;
       this.onVehicleUpdated.emit(vehicle);
     } catch (err) {
@@ -33,5 +37,9 @@ export class VehiclesCard {
 
   onEditVehicle(vehicle: Vehicle) {
     this.onEdit.emit(vehicle);
+  }
+
+  async onDeleteVehicle(vehicle: Vehicle) {
+    this.onDelete.emit(vehicle.nroplaca); // 👈 mandamos la placa al padre
   }
 }
