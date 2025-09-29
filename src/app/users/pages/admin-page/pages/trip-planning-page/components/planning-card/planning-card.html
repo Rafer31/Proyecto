@@ -15,7 +15,7 @@
   <mat-card-content class="card-body mt-4">
     <div class="info-row">
       <mat-icon>event</mat-icon>
-      <span>{{ fechaViaje | date: "EEEE, d 'de' MMMM 'de' y"}}</span>
+      <span>{{ fechaViaje | date: "EEEE, d 'de' MMMM 'de' y" }}</span>
     </div>
     <div class="info-row">
       <mat-icon>schedule</mat-icon>
@@ -24,6 +24,14 @@
     <div class="info-row">
       <mat-icon>schedule</mat-icon>
       <span>Llegada: {{ horaLlegada.slice(0,5) }}</span>
+    </div>
+
+    <div class="info-row">
+      <mat-icon>event_seat</mat-icon>
+      <span>Asientos disponibles: {{ cantdisponibleasientos }}</span>
+      <button mat-stroked-button color="primary" class="ml-2" (click)="onSeatDialog(idviaje)">
+        Ver
+      </button>
     </div>
   </mat-card-content>
 

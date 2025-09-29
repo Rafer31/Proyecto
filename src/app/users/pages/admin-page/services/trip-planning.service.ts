@@ -49,6 +49,7 @@ export class TripPlanningService {
         vehiculo:conductor_vehiculo_empresa(
           idconductorvehiculoempresa,
           idconductor,
+    
           nroplaca,
           idempresa,
           vehiculo:vehiculo(nroplaca, nroasientos, tipovehiculo, imageUrl),
@@ -75,8 +76,13 @@ export class TripPlanningService {
       fechapartida,
       horallegada,
       horapartida,
-      destino: destino(iddestino, nomdestino)
+      destino: destino(iddestino, nomdestino),
+      conductor_vehiculo_empresa!inner(
+        idconductorvehiculoempresa,
+        cantdisponibleasientos
+      )
     `);
+
     if (error) throw error;
     return data;
   }
@@ -127,7 +133,6 @@ export class TripPlanningService {
   async actualizarAsociacion(idplanificacion: string | number, data: any) {
     const { idconductor, nroplaca, idempresa } = data;
 
-
     const { data: viajeData, error: errorViaje } = await this.supabase
       .from('planificacion_viaje')
       .select('idconductorvehiculoempresa')
@@ -145,8 +150,6 @@ export class TripPlanningService {
       );
     }
 
-  
-
     const { data: updated, error } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .update({ idconductor, nroplaca, idempresa })
@@ -158,7 +161,6 @@ export class TripPlanningService {
       console.error('Error actualizando asociación:', error);
       throw error;
     }
-
 
     return updated;
   }

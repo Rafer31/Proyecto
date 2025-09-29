@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { PlanningCard } from './planning-card';
+import { SeatsDialog } from './seats-dialog';
 
-describe('PlanningCard', () => {
-  let component: PlanningCard;
-  let fixture: ComponentFixture<PlanningCard>;
+describe('SeatsDialog', () => {
+  let component: SeatsDialog;
+  let fixture: ComponentFixture<SeatsDialog>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PlanningCard]
+      imports: [SeatsDialog]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(PlanningCard);
+    fixture = TestBed.createComponent(SeatsDialog);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

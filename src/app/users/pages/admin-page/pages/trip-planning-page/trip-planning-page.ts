@@ -30,6 +30,7 @@ export class TripPlanningPage implements OnInit {
       destino: string;
       horallegada: string;
       horapartida: string;
+      cantdisponibleasientos?: number;
     }[]
   >([]);
 
@@ -49,6 +50,8 @@ export class TripPlanningPage implements OnInit {
           destino: v.destino?.nomdestino ?? 'Sin destino',
           horallegada: v.horallegada,
           horapartida: v.horapartida,
+          cantdisponibleasientos:
+            v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
         }))
       );
     } catch (err) {
@@ -82,7 +85,6 @@ export class TripPlanningPage implements OnInit {
   }
 
   async editarViaje(idviaje: string) {
-
     const viaje = await this.tripService.getViaje(idviaje);
 
     const dialogRef = this.dialog.open(EditTripDialog, {

@@ -5,11 +5,18 @@ import { MatIconModule } from '@angular/material/icon';
 import { CommonModule } from '@angular/common';
 import { WatchMoreDialog } from '../watch-more-dialog/watch-more-dialog';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { SeatsDialog } from '../seats-dialog/seats-dialog';
 
 @Component({
   selector: 'app-planning-card',
   standalone: true,
-  imports: [MatCardModule, MatIconModule, MatButtonModule, CommonModule, MatDialogModule],
+  imports: [
+    MatCardModule,
+    MatIconModule,
+    MatButtonModule,
+    CommonModule,
+    MatDialogModule,
+  ],
   templateUrl: './planning-card.html',
   styleUrl: './planning-card.scss',
 })
@@ -19,7 +26,7 @@ export class PlanningCardComponent {
   @Input() idviaje!: string;
   @Input() horaPartida = '';
   @Input() horaLlegada = '';
-
+  @Input() cantdisponibleasientos!: number | undefined;
   @Output() verMas = new EventEmitter<string>();
   @Output() editar = new EventEmitter<string>();
   @Output() eliminar = new EventEmitter<string>();
@@ -71,7 +78,12 @@ export class PlanningCardComponent {
   onEditar() {
     this.editar.emit(this.idviaje);
   }
-
+  onSeatDialog(idviaje: string) {
+    this.dialog.open(SeatsDialog, {
+      width: '700px',
+      data: { idplanificacion: idviaje },
+    });
+  }
   onEliminar() {
     this.eliminar.emit(this.idviaje);
   }
