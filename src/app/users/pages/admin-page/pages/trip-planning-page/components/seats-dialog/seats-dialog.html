@@ -1,104 +1,136 @@
 <div class="dialog-wrapper">
-  @if (vistaActual() === 'mapa') {
-    <h2 mat-dialog-title>Mapa de Asientos del Bus</h2>
-    <mat-dialog-content class="bus-container">
-      <div class="bus-body">
-        @for (fila of filas(); track $index) {
-        <div class="fila" [class.fila-conductor]="fila.tipo === 'conductor'">
-          @for (seat of fila.asientos; track $index) {
-          <div
-            class="seat"
-            [class.ocupado]="seat.tipo === 'asiento' && seat.ocupado"
-            [class.libre]="seat.tipo === 'asiento' && !seat.ocupado"
-            [class.conductor]="seat.tipo === 'conductor'"
-            [class.pasillo]="seat.tipo === 'pasillo'"
-            [class.vacio]="seat.tipo === 'vacio'"
-            [class.clickable]="seat.tipo === 'asiento' && seat.ocupado"
-            (click)="verDetallePasajero(seat)"
-          >
-            @if (seat.tipo === 'asiento') {
-              <span class="seat-number">{{ seat.num }}</span>
-            }
-            @if (seat.tipo === 'conductor') {
-              <mat-icon class="conductor-icon">person</mat-icon>
-              <span class="conductor-label">{{ seat.label }}</span>
-            }
-          </div>
+  <!-- 🔄 Spinner de carga -->
+  @if (cargando()) {
+    <div class="loading-container">
+      <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+      <p>Cargando asientos...</p>
+    </div>
+  } @else {
+    @if (vistaActual() === 'mapa') {
+      <h2 mat-dialog-title>Mapa de Asientos del Bus</h2>
+      <mat-dialog-content class="bus-container">
+        <div class="bus-body">
+          @for (fila of filas(); track $index) {
+            <div class="fila" [class.fila-conductor]="fila.tipo === 'conductor'">
+              @for (seat of fila.asientos; track $index) {
+                <div
+                  class="seat"
+                  [class.ocupado]="seat.tipo === 'asiento' && seat.ocupado"
+                  [class.libre]="seat.tipo === 'asiento' && !seat.ocupado"
+                  [class.conductor]="seat.tipo === 'conductor'"
+                  [class.pasillo]="seat.tipo === 'pasillo'"
+                  [class.vacio]="seat.tipo === 'vacio'"
+                  [class.clickable]="seat.tipo === 'asiento'"
+                  (click)="seat.tipo === 'asiento' && !seat.ocupado ? reservarAsiento(seat) : verDetallePasajero(seat)"
+                >
+                  @if (seat.tipo === 'asiento') {
+                    <span class="seat-number">{{ seat.num }}</span>
+                  } @if (seat.tipo === 'conductor') {
+                    <mat-icon class="conductor-icon">person</mat-icon>
+                    <span class="conductor-label">{{ seat.label }}</span>
+                  }
+                </div>
+              }
+            </div>
           }
         </div>
+
+        <div class="leyenda">
+          <div class="leyenda-item">
+            <div class="mini-seat libre"></div>
+            <span>Disponible</span>
+          </div>
+          <div class="leyenda-item">
+            <div class="mini-seat ocupado"></div>
+            <span>Ocupado</span>
+          </div>
+        </div>
+      </mat-dialog-content>
+      <mat-dialog-actions align="end">
+        <button mat-stroked-button color="primary" (click)="cerrar()">
+          Cerrar
+        </button>
+      </mat-dialog-actions>
+    }
+
+    @if (vistaActual() === 'detalle' && pasajeroSeleccionado()) {
+      <h2 mat-dialog-title>
+        <button mat-icon-button (click)="volverAlMapa()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        Información del Pasajero
+      </h2>
+      <mat-dialog-content class="detalle-container">
+        <div class="pasajero-card">
+          <div class="pasajero-avatar">
+            <mat-icon>person</mat-icon>
+          </div>
+
+          <div class="pasajero-info">
+            <div class="info-row">
+              <mat-icon class="info-icon">badge</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Nombre Completo</span>
+                <span class="info-value">{{ pasajeroSeleccionado()!.nombre }}</span>
+              </div>
+            </div>
+
+            <div class="info-row">
+              <mat-icon class="info-icon">credit_card</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Cédula de Identidad</span>
+                <span class="info-value">{{ pasajeroSeleccionado()!.ci }}</span>
+              </div>
+            </div>
+
+            <div class="info-row">
+              <mat-icon class="info-icon">phone</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Teléfono</span>
+                <span class="info-value">{{ pasajeroSeleccionado()!.telefono }}</span>
+              </div>
+            </div>
+
+            <div class="info-row">
+              <mat-icon class="info-icon">event_seat</mat-icon>
+              <div class="info-content">
+                <span class="info-label">Número de Asiento</span>
+                <span class="info-value">{{ pasajeroSeleccionado()!.asiento }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-dialog-content>
+      <mat-dialog-actions align="end">
+        <button mat-stroked-button (click)="volverAlMapa()">
+          <mat-icon>map</mat-icon>
+          Volver al Mapa
+        </button>
+
+        @if (esUsuarioActual(pasajeroSeleccionado()!)) {
+          <button
+            mat-stroked-button
+            color="accent"
+            (click)="cambiarAsiento(pasajeroSeleccionado()!)"
+          >
+            <mat-icon>swap_horiz</mat-icon>
+            Cambiar Asiento
+          </button>
         }
-      </div>
 
-      <div class="leyenda">
-        <div class="leyenda-item">
-          <div class="mini-seat libre"></div>
-          <span>Disponible</span>
-        </div>
-        <div class="leyenda-item">
-          <div class="mini-seat ocupado"></div>
-          <span>Ocupado</span>
-        </div>
-      </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-stroked-button color="primary" (click)="cerrar()">Cerrar</button>
-    </mat-dialog-actions>
-  }
+        <button
+          mat-stroked-button
+          color="warn"
+          (click)="cancelarReserva(pasajeroSeleccionado()!)"
+        >
+          <mat-icon>cancel</mat-icon>
+          Cancelar Reserva
+        </button>
 
-  @if (vistaActual() === 'detalle' && pasajeroSeleccionado()) {
-    <h2 mat-dialog-title>
-      <button mat-icon-button (click)="volverAlMapa()" class="back-button">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
-      Información del Pasajero
-    </h2>
-    <mat-dialog-content class="detalle-container">
-      <div class="pasajero-card">
-        <div class="pasajero-avatar">
-          <mat-icon>person</mat-icon>
-        </div>
-
-        <div class="pasajero-info">
-          <div class="info-row">
-            <mat-icon class="info-icon">badge</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Nombre Completo</span>
-              <span class="info-value">{{ pasajeroSeleccionado()!.nombre }}</span>
-            </div>
-          </div>
-
-          <div class="info-row">
-            <mat-icon class="info-icon">credit_card</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Cédula de Identidad</span>
-              <span class="info-value">{{ pasajeroSeleccionado()!.ci }}</span>
-            </div>
-          </div>
-
-          <div class="info-row">
-            <mat-icon class="info-icon">phone</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Teléfono</span>
-              <span class="info-value">{{ pasajeroSeleccionado()!.telefono }}</span>
-            </div>
-          </div>
-
-          <div class="info-row">
-            <mat-icon class="info-icon">event_seat</mat-icon>
-            <div class="info-content">
-              <span class="info-label">Número de Asiento</span>
-              <span class="info-value">{{ pasajeroSeleccionado()!.asiento }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-stroked-button (click)="volverAlMapa()">
-        <mat-icon>map</mat-icon>
-        Volver al Mapa
-      </button>
-      <button mat-stroked-button color="primary" (click)="cerrar()">Cerrar</button>
-    </mat-dialog-actions>
+        <button mat-stroked-button color="primary" (click)="cerrar()">
+          Cerrar
+        </button>
+      </mat-dialog-actions>
+    }
   }
 </div>

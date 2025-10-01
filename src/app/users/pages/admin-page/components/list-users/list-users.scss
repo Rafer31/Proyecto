@@ -17,22 +17,40 @@
   justify-content: center;
   padding: 40px;
   gap: 16px;
+
+  &.initial-loading {
+    min-height: 400px;
+  }
+
+  p {
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 16px;
+  }
 }
 
-.no-data {
+.table-wrapper {
+  position: relative;
+}
+
+.loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.7);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px;
-  gap: 16px;
-  color: #666;
+  z-index: 10;
 }
 
-.no-data mat-icon {
-  font-size: 48px;
-  width: 48px;
-  height: 48px;
+.empty-state-container {
+  padding: 40px 20px;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .role-badge {

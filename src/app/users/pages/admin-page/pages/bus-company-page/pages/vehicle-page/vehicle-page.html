@@ -5,25 +5,35 @@
     color="primary"
     (click)="openCreateDialog()"
     class="add-button me-5"
+    [disabled]="isLoading()"
   >
     <mat-icon>add</mat-icon>
     Agregar vehículo
   </button>
 </div>
-@if (vehicles().length === 0) {
-<app-emptystate
-  [imageSrc]="'no-data.svg'"
-  [title]="'Aún no hay vehículos registrados'"
-  [description]="'No se han registrado vehículos aún'"
-/>
+
+@if (isLoading()) {
+  <!-- Estado de carga -->
+  <div class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="mt-4">Cargando vehículos...</p>
+  </div>
+} @else if (vehicles().length === 0) {
+  <!-- Estado vacío -->
+  <app-emptystate
+    [imageSrc]="'no-data.svg'"
+    [title]="'Aún no hay vehículos registrados'"
+    [description]="'No se han registrado vehículos aún'"
+  />
 } @else {
-<div class="vehicles-container">
-  <app-vehicles-card
-    [vehicles]="vehicles()"
-    (onEdit)="openEditDialog($event)"
-    (onVehicleUpdated)="onVehicleUpdated($event)"
-    (onDelete)="removeVehicle($event)"
-  >
-  </app-vehicles-card>
-</div>
+  <!-- Lista de vehículos -->
+  <div class="vehicles-container">
+    <app-vehicles-card
+      [vehicles]="vehicles()"
+      (onEdit)="openEditDialog($event)"
+      (onVehicleUpdated)="onVehicleUpdated($event)"
+      (onDelete)="removeVehicle($event)"
+    >
+    </app-vehicles-card>
+  </div>
 }

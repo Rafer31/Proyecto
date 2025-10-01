@@ -1,5 +1,4 @@
 <mat-tab-group>
-  
   <mat-tab label="Empresas">
     <ng-template matTabContent>
       <div class="header mt-6">
@@ -9,32 +8,41 @@
           color="primary"
           (click)="openCreateDialog()"
           class="add-button me-6"
+          [disabled]="isLoading()"
         >
           <mat-icon>add</mat-icon>
           Agregar empresa
         </button>
       </div>
-      @if (companies().length === 0) {
-      <app-emptystate
-        [imageSrc]="'no-company.svg'"
-        [title]="'Aún no hay empresas contratistas'"
-        [description]="'No se han registrado empresas aún'"
-      />
+
+      @if (isLoading()) {
+        <!-- Estado de carga -->
+        <div class="loading-container">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p class="mt-4">Cargando empresas...</p>
+        </div>
+      } @else if (companies().length === 0) {
+        <!-- Estado vacío -->
+        <app-emptystate
+          [imageSrc]="'no-company.svg'"
+          [title]="'Aún no hay empresas contratistas'"
+          [description]="'No se han registrado empresas aún'"
+        />
       } @else {
-      <div class="companies-container">
-        <app-companies-card
-          [companies]="companies()"
-          (onEdit)="openEditDialog($event)"
-          (onDelete)="removeCompany($event)"
-          (onCompanyUpdated)="onCompanyUpdated($event)"
-        >
-        </app-companies-card>
-      </div>
+        <!-- Lista de empresas -->
+        <div class="companies-container">
+          <app-companies-card
+            [companies]="companies()"
+            (onEdit)="openEditDialog($event)"
+            (onDelete)="removeCompany($event)"
+            (onCompanyUpdated)="onCompanyUpdated($event)"
+          >
+          </app-companies-card>
+        </div>
       }
     </ng-template>
   </mat-tab>
 
-  
   <mat-tab label="Vehículos">
     <ng-template matTabContent>
       <app-vehicles-page />

@@ -1,4 +1,5 @@
-import { Component, inject, signal, effect } from '@angular/core';
+
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { Emptystate } from '../../../../components/emptystate/emptystate';
@@ -15,6 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { VehiclePage } from './pages/vehicle-page/vehicle-page';
 import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
   selector: 'app-bus-company-page',
@@ -27,6 +29,7 @@ import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dia
     MatButtonModule,
     MatTabsModule,
     VehiclePage,
+    MatProgressSpinnerModule,
   ],
   templateUrl: './bus-company-page.html',
   styleUrl: './bus-company-page.scss',
@@ -36,6 +39,7 @@ export class BusCompanyPage {
   private dialog = inject(MatDialog);
 
   companies = signal<BusCompany[]>([]);
+  isLoading = signal(true);
 
   async ngOnInit() {
     await this.loadCompanies();
@@ -43,10 +47,13 @@ export class BusCompanyPage {
 
   async loadCompanies() {
     try {
+      this.isLoading.set(true);
       const companies = await this.busCompanyService.getBusCompanies();
       this.companies.set(companies);
     } catch (error) {
       console.error('Error cargando empresas:', error);
+    } finally {
+      this.isLoading.set(false);
     }
   }
 
@@ -54,13 +61,11 @@ export class BusCompanyPage {
     const dialogData: CompanyDialogData = {
       isEdit: false,
     };
-
     const dialogRef = this.dialog.open(DialogCompany, {
       width: '500px',
       data: dialogData,
       disableClose: true,
     });
-
     dialogRef.afterClosed().subscribe((result: BusCompany | undefined) => {
       if (result) {
         this.companies.update((companies) => [...companies, result]);
@@ -73,13 +78,11 @@ export class BusCompanyPage {
       company: { ...company },
       isEdit: true,
     };
-
     const dialogRef = this.dialog.open(DialogCompany, {
       width: '500px',
       data: dialogData,
       disableClose: true,
     });
-
     dialogRef.afterClosed().subscribe((result: BusCompany | undefined) => {
       if (result) {
         this.companies.update((companies) =>
@@ -98,10 +101,10 @@ export class BusCompanyPage {
       );
     }
   }
+
   async removeCompany(id: number) {
     const company = this.companies().find((c) => c.idempresa === id);
     if (!company) return;
-
     const dialogRef = this.dialog.open(ConfirmDialog, {
       width: '400px',
       data: {
@@ -109,7 +112,6 @@ export class BusCompanyPage {
         message: `¿Seguro que deseas eliminar la empresa "${company.nomempresa}"?`,
       },
     });
-
     dialogRef.afterClosed().subscribe(async (confirmed: boolean) => {
       if (confirmed) {
         try {

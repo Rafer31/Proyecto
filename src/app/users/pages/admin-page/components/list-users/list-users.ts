@@ -29,6 +29,7 @@ import { EditUserData, EditUsers } from '../edit-users/edit-users';
 import { DialogService } from '../../../../../shared/services/dialog.service';
 import { ObservationDialog } from '../observation-dialog/observation-dialog';
 import { DeleteUsers } from '../delete-users/delete-users';
+import { Emptystate } from '../../../../components/emptystate/emptystate';
 
 @Component({
   selector: 'app-list-users',
@@ -44,6 +45,7 @@ import { DeleteUsers } from '../delete-users/delete-users';
     MatProgressSpinnerModule,
     SearchUsers,
     FilterUsers,
+    Emptystate,
   ],
   templateUrl: './list-users.html',
   styleUrls: ['./list-users.scss'],
@@ -70,6 +72,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
 
   dataSource = new MatTableDataSource<Usuario>([]);
   loading = false;
+  initialLoad = true; // Nueva propiedad para la carga inicial
 
   private searchValue = '';
   roleControlValue = '';
@@ -132,10 +135,12 @@ export default class ListUsers implements OnInit, AfterViewInit {
       this.totalChange.emit(usuarios.length);
 
       this.loading = false;
+      this.initialLoad = false; // Marca que la carga inicial terminó
       this.cdr.detectChanges();
     } catch (err) {
       console.error('Error cargando usuarios', err);
       this.loading = false;
+      this.initialLoad = false;
       this.cdr.detectChanges();
 
       this.totalChange.emit(0);
@@ -211,6 +216,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
       );
     }
   }
+
   async addObservation(user: Usuario) {
     try {
       const asignacion = user.personal?.asignacion_destino?.[0];
