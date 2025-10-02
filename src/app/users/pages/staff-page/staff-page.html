@@ -1,4 +1,4 @@
-<app-user-toolbar appTitle="Bienvenido ">
+<app-user-toolbar appTitle="Bienvenido {{userName()}}">
   <div toolbar-actions>
     <button mat-icon-button matTooltip="Notificaciones">
       <mat-icon>notifications</mat-icon>
@@ -12,6 +12,5 @@
   [items]="menu"
   [routeBrand]="'/users/staff'"
 >
-
   <router-outlet />
 </app-user-sidenav>

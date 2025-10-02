@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import { Component, signal, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -20,7 +20,7 @@ import { UserStateService } from '../../../../../shared/services/user-state.serv
     Emptystate,
   ],
   templateUrl: './available-trips.html',
-  styleUrl: './available-trips.scss'
+  styleUrl: './available-trips.scss',
 })
 export class AvailableTrips implements OnInit {
   viajes = signal<any[]>([]);
@@ -30,16 +30,29 @@ export class AvailableTrips implements OnInit {
 
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
-  private userDataService = inject(UserDataService);
   private supabaseService = inject(SupabaseService);
   private userStateService = inject(UserStateService);
 
-  // Usar estado global para el usuario
   currentUser = this.userStateService.currentUser;
   userName = this.userStateService.userName;
 
+  constructor() {
+    // Efecto que se ejecuta cuando currentUser cambia
+    effect(() => {
+      const usuario = this.currentUser();
+      if (usuario && this.loading()) {
+        // Esperar un tick para que Angular procese el cambio
+        setTimeout(() => this.cargarDatos(), 0);
+      }
+    });
+  }
+
   async ngOnInit() {
-    await this.cargarDatos();
+    // Si ya hay usuario, cargar datos inmediatamente
+    if (this.currentUser()) {
+      await this.cargarDatos();
+    }
+    // Si no hay usuario, el efecto se encargará de cargar cuando esté disponible
   }
 
   private async cargarDatos() {
@@ -47,64 +60,87 @@ export class AvailableTrips implements OnInit {
       this.loading.set(true);
       this.error.set(null);
 
-      // Obtener usuario actual del estado global
       const usuario = this.currentUser();
+
       if (!usuario) {
-        this.error.set('Usuario no encontrado');
+        console.log('Esperando datos del usuario...');
         return;
       }
 
-      // Obtener destino asignado del usuario
-      const { data: personal, error: personalError } = await this.supabaseService.supabase
-        .from('personal')
-        .select('nroficha')
-        .eq('idusuario', usuario.idusuario)
-        .maybeSingle();
+      console.log('Usuario encontrado:', usuario);
 
-      if (personalError || !personal) {
-        this.error.set('No se encontró información de personal');
+      const { data: personal, error: personalError } =
+        await this.supabaseService.supabase
+          .from('personal')
+          .select('nroficha')
+          .eq('idusuario', usuario.idusuario)
+          .maybeSingle();
+
+      if (personalError) {
+        console.error('Error obteniendo personal:', personalError);
+        this.error.set('Error al obtener información de personal');
         return;
       }
 
-      // Obtener asignación de destino activa
-      const { data: asignacion, error: asignacionError } = await this.supabaseService.supabase
-        .from('asignacion_destino')
-        .select('iddestino, destino(nomdestino)')
-        .eq('nroficha', personal.nroficha)
-        .is('fechafin', null)
-        .maybeSingle();
+      if (!personal) {
+        this.error.set('No se encontró información de personal para este usuario');
+        return;
+      }
 
-      if (asignacionError || !asignacion) {
+      console.log('Personal encontrado:', personal);
+
+      const { data: asignacion, error: asignacionError } =
+        await this.supabaseService.supabase
+          .from('asignacion_destino')
+          .select('iddestino, destino(nomdestino)')
+          .eq('nroficha', personal.nroficha)
+          .is('fechafin', null)
+          .maybeSingle();
+
+      if (asignacionError) {
+        console.error('Error obteniendo asignación:', asignacionError);
+        this.error.set('Error al obtener asignación de destino');
+        return;
+      }
+
+      if (!asignacion) {
         this.error.set('No tienes un destino asignado actualmente');
         return;
       }
 
-      // Manejar destino como array o objeto
+      console.log('Asignación encontrada:', asignacion);
+
       const destinoInfo: any = asignacion.destino;
       const nombreDestino = Array.isArray(destinoInfo)
         ? destinoInfo[0]?.nomdestino
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
-      // Obtener viajes disponibles para el destino del usuario
-      const viajes = await this.tripService.getViajesDisponiblesPorDestino(asignacion.iddestino);
+      const viajes = await this.tripService.getViajesDisponiblesPorDestino(
+        asignacion.iddestino
+      );
 
-      this.viajes.set(viajes.map((v: any) => {
-        const destinoViaje: any = v.destino;
-        const nombreDestinoViaje = Array.isArray(destinoViaje)
-          ? destinoViaje[0]?.nomdestino
-          : destinoViaje?.nomdestino;
+      console.log('Viajes obtenidos:', viajes);
 
-        return {
-          idviaje: v.idplanificacion,
-          fechaPartida: v.fechapartida,
-          fechaLlegada: v.fechallegada,
-          horaPartida: v.horapartida,
-          horaLlegada: v.horallegada,
-          destino: nombreDestinoViaje ?? 'Sin destino',
-          asientosDisponibles: v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
-        };
-      }));
+      this.viajes.set(
+        viajes.map((v: any) => {
+          const destinoViaje: any = v.destino;
+          const nombreDestinoViaje = Array.isArray(destinoViaje)
+            ? destinoViaje[0]?.nomdestino
+            : destinoViaje?.nomdestino;
+
+          return {
+            idviaje: v.idplanificacion,
+            fechaPartida: v.fechapartida,
+            fechaLlegada: v.fechallegada,
+            horaPartida: v.horapartida,
+            horaLlegada: v.horallegada,
+            destino: nombreDestinoViaje ?? 'Sin destino',
+            asientosDisponibles:
+              v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
+          };
+        })
+      );
     } catch (err) {
       console.error('Error cargando viajes:', err);
       this.error.set('Error al cargar los viajes disponibles');
@@ -118,13 +154,11 @@ export class AvailableTrips implements OnInit {
       width: '700px',
       data: {
         idplanificacion: idviaje,
-        isStaff: true // Flag para indicar que es un usuario staff
+        isStaff: true,
       },
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      // Solo recargar si el resultado indica que hubo cambios
-      // result puede ser: 'reservado', 'editado', 'cancelado', true, o cualquier valor que indique cambio
       if (result) {
         this.cargarDatos();
       }

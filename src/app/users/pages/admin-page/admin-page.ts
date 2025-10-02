@@ -26,7 +26,6 @@ export class AdminPage implements OnInit {
   private userDataService = inject(UserDataService);
   private userStateService = inject(UserStateService);
 
-  // Usar el estado global en lugar de estado local
   userName = this.userStateService.userName;
   isLoading = this.userStateService.isLoading;
   error = this.userStateService.error;
