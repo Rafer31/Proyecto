@@ -70,7 +70,6 @@ export class SeatsDialog {
       } else {
         const authId = user.id;
 
-        // siempre buscamos usuario activo
         const usuario = await this.userDataService.getActiveUserByAuthId(
           authId
         );
@@ -82,7 +81,6 @@ export class SeatsDialog {
         }
       }
 
-      // === 2. cargar viaje y asientos ===
       const viaje: any = await this.tripService.getViaje(
         this.data.idplanificacion
       );
@@ -99,36 +97,80 @@ export class SeatsDialog {
 
       while (numero <= totalAsientos) {
         const restantes = totalAsientos - numero + 1;
-        const asientosEnFila = restantes >= 4 ? 4 : restantes;
-        const leftSide = Math.ceil(asientosEnFila / 2);
-        const rightSide = asientosEnFila - leftSide;
         const asientosFila: any[] = [];
-
-        for (let i = 0; i < leftSide; i++) {
-          const asientoNum = numero++;
-          const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
+        
+        // Caso especial: última fila con 5 asientos
+        if (restantes === 5) {
+          // 2 asientos a la izquierda
+          for (let i = 0; i < 2; i++) {
+            const asientoNum = numero++;
+            const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
+            asientosFila.push({
+              num: asientoNum,
+              ocupado: ocupados.includes(asientoNum),
+              tipo: 'asiento',
+              pasajero,
+            });
+          }
+          
+          // 1 asiento en el centro (donde normalmente va el pasillo)
+          const asientoCentro = numero++;
+          const pasajeroCentro = pasajeros.find((p) => p.asiento === asientoCentro);
           asientosFila.push({
-            num: asientoNum,
-            ocupado: ocupados.includes(asientoNum),
+            num: asientoCentro,
+            ocupado: ocupados.includes(asientoCentro),
             tipo: 'asiento',
-            pasajero,
+            pasajero: pasajeroCentro,
           });
+          
+          // 2 asientos a la derecha
+          for (let i = 0; i < 2; i++) {
+            const asientoNum = numero++;
+            const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
+            asientosFila.push({
+              num: asientoNum,
+              ocupado: ocupados.includes(asientoNum),
+              tipo: 'asiento',
+              pasajero,
+            });
+          }
+          
+          filasTemp.push({ tipo: 'normal', asientos: asientosFila });
+        } else {
+          // Distribución normal (2 + pasillo + 2 o menos)
+          const asientosEnFila = restantes >= 4 ? 4 : restantes;
+          const leftSide = Math.ceil(asientosEnFila / 2);
+          const rightSide = asientosEnFila - leftSide;
+          
+          // Asientos izquierda
+          for (let i = 0; i < leftSide; i++) {
+            const asientoNum = numero++;
+            const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
+            asientosFila.push({
+              num: asientoNum,
+              ocupado: ocupados.includes(asientoNum),
+              tipo: 'asiento',
+              pasajero,
+            });
+          }
+          
+          // Pasillo
+          asientosFila.push({ num: null, tipo: 'pasillo' });
+          
+          // Asientos derecha
+          for (let i = 0; i < rightSide; i++) {
+            const asientoNum = numero++;
+            const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
+            asientosFila.push({
+              num: asientoNum,
+              ocupado: ocupados.includes(asientoNum),
+              tipo: 'asiento',
+              pasajero,
+            });
+          }
+          
+          filasTemp.push({ tipo: 'normal', asientos: asientosFila });
         }
-
-        asientosFila.push({ num: null, tipo: 'pasillo' });
-
-        for (let i = 0; i < rightSide; i++) {
-          const asientoNum = numero++;
-          const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
-          asientosFila.push({
-            num: asientoNum,
-            ocupado: ocupados.includes(asientoNum),
-            tipo: 'asiento',
-            pasajero,
-          });
-        }
-
-        filasTemp.push({ tipo: 'normal', asientos: asientosFila });
       }
 
       filasTemp.unshift({
@@ -226,14 +268,11 @@ export class SeatsDialog {
     }
 
     try {
-      // Verificar si el usuario ya tiene una reserva
-      const verificacion =
-        await this.reservaService.verificarReservaExistente(
-          usuario.idusuario,
-          this.data.idplanificacion
-        );
+      const verificacion = await this.reservaService.verificarReservaExistente(
+        usuario.idusuario,
+        this.data.idplanificacion
+      );
 
-      // Verificar si el destino es correcto
       if (!verificacion.destinoCorrecto) {
         this.snackBar.open(
           'No puedes reservar en este viaje. El destino no coincide con tu destino origen.',
@@ -243,7 +282,6 @@ export class SeatsDialog {
         return;
       }
 
-      // Si ya tiene una reserva
       if (verificacion.tieneReserva) {
         const esElMismoViaje =
           verificacion.idplanificacion === this.data.idplanificacion;
@@ -265,7 +303,6 @@ export class SeatsDialog {
         const confirmado = await dialogRef.afterClosed().toPromise();
         if (!confirmado) return;
 
-        // Cambiar la reserva
         await this.reservaService.cambiarReserva(
           usuario.idusuario,
           this.data.idplanificacion,
@@ -282,7 +319,6 @@ export class SeatsDialog {
         return;
       }
 
-      // Si no tiene reserva previa, confirmar la reserva nueva
       const dialogRef = this.dialog.open(ConfirmDialog, {
         data: {
           title: 'Confirmar reserva',
@@ -314,7 +350,6 @@ export class SeatsDialog {
     }
   }
 
-  // Método para verificar si el pasajero es el usuario actual
   esUsuarioActual(pasajero: ReservaPasajero): boolean {
     const usuario = this.usuarioActual();
     return usuario && pasajero.idusuario === usuario.idusuario;

@@ -32,6 +32,67 @@ export class UserService {
       ci: c.usuario?.ci ?? null,
     }));
   }
+
+  async getConductoresDisponibles() {
+    
+    const { data: conductores, error: errorConductores } = await this.supabaseClient
+      .from('conductor')
+      .select(`
+        idconductor,
+        idusuario,
+        usuario:usuario (
+          idusuario,
+          nomusuario,
+          patusuario,
+          matusuario,
+          ci
+        )
+      `);
+
+    if (errorConductores) {
+      console.error('Error obteniendo conductores:', errorConductores);
+      throw errorConductores;
+    }
+
+    
+    
+    
+    const { data: conductoresOcupados, error: errorOcupados } = await this.supabaseClient
+      .from('conductor_vehiculo_empresa')
+      .select(`
+        idconductor,
+        planificacion_viaje!inner (
+          idplanificacion,
+          fechapartida,
+          fechallegada
+        )
+      `)
+      .eq('estado', 'asignado');
+
+    if (errorOcupados) {
+      console.error('Error obteniendo conductores ocupados:', errorOcupados);
+      throw errorOcupados;
+    }
+
+    
+    const idsOcupados = new Set(
+      (conductoresOcupados || []).map((cve: any) => cve.idconductor)
+    );
+
+    
+    const conductoresDisponibles = (conductores || [])
+      .filter((c: any) => !idsOcupados.has(c.idconductor))
+      .map((c: any) => ({
+        idconductor: c.idconductor,
+        idusuario: c.idusuario,
+        nombre: `${c.usuario?.nomusuario ?? ''} ${c.usuario?.patusuario ?? ''} ${
+          c.usuario?.matusuario ?? ''
+        }`.trim(),
+        ci: c.usuario?.ci ?? null,
+      }));
+
+    return conductoresDisponibles;
+  }
   
   async getAllUsers() {
     const { data, count, error } = await this.supabaseClient
@@ -80,7 +141,7 @@ export class UserService {
         case 'Personal':
         case 'Administrador':
           nroficha = u.personal ? u.personal.nroficha : '-';
-          // Buscar la asignación activa (sin fechafin)
+          
           const asignacionActiva = u.personal?.asignacion_destino?.find(
             (asig: any) => asig.fechafin === null
           );
@@ -153,7 +214,7 @@ export class UserService {
         case 'Personal':
         case 'Administrador':
           nroficha = u.personal ? u.personal.nroficha : '-';
-          // Buscar la asignación activa (sin fechafin)
+          
           const asignacionActiva = u.personal?.asignacion_destino?.find(
             (asig: any) => asig.fechafin === null
           );

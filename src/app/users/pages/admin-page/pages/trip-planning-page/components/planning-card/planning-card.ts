@@ -32,6 +32,7 @@ export class PlanningCardComponent {
   @Output() verMas = new EventEmitter<string>();
   @Output() editar = new EventEmitter<string>();
   @Output() eliminar = new EventEmitter<string>();
+  @Output() actualizarAsientos = new EventEmitter<string>();
 
   cardColor = '#607d8b';
   constructor(private dialog: MatDialog) {}
@@ -89,7 +90,8 @@ export class PlanningCardComponent {
     });
   
     dialogRef.afterClosed().subscribe(() => {
-      this.verMas.emit(idviaje);
+      // Emitir evento para actualizar los asientos disponibles
+      this.actualizarAsientos.emit(idviaje);
     });
   }
   

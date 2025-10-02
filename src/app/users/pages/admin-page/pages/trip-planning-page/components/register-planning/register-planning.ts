@@ -15,6 +15,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatIconModule } from '@angular/material/icon';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { TripPlanningService } from '../../../../services/trip-planning.service';
 import { UserService } from '../../../../../../services/user.service';
@@ -32,9 +33,10 @@ import { UserService } from '../../../../../../services/user.service';
     MatSelectModule,
     MatDatepickerModule,
     MatCheckboxModule,
+    MatIconModule,
   ],
   templateUrl: './register-planning.html',
-  styleUrl: './register-planning.scss'
+  styleUrl: './register-planning.scss',
 })
 export class RegisterTripDialog {
   private fb = inject(FormBuilder);
@@ -47,20 +49,21 @@ export class RegisterTripDialog {
   empresas = signal<any[]>([]);
   selectedVehiculo: any = null;
 
-  // Turnos y horas
+  loadingConductores = signal<boolean>(true);
+  loadingVehiculos = signal<boolean>(true);
+  loadingData = signal<boolean>(true);
+
   turnos = [
     { value: 'manana', label: 'Mañana', inicio: 6, fin: 12 },
     { value: 'tarde', label: 'Tarde', inicio: 12, fin: 18 },
     { value: 'noche', label: 'Noche', inicio: 18, fin: 24 },
-    { value: 'madrugada', label: 'Madrugada', inicio: 0, fin: 6 }
+    { value: 'madrugada', label: 'Madrugada', inicio: 0, fin: 6 },
   ];
 
   turnoSeleccionado = signal<string | null>(null);
 
-  // Generar todas las horas disponibles (intervalos de 15 minutos)
   todasLasHoras = this.generarHoras();
 
-  // Horas filtradas según turno seleccionado (compartido para ambas)
   horasFiltradas = computed(() => {
     return this.filtrarHorasPorTurno(this.turnoSeleccionado());
   });
@@ -81,16 +84,23 @@ export class RegisterTripDialog {
       }),
       step2: this.fb.group({
         fechapartida: ['', Validators.required],
-        fechallegada: ['', [Validators.required, this.validarFechaLlegada.bind(this)]],
+        fechallegada: [
+          '',
+          [Validators.required, this.validarFechaLlegada.bind(this)],
+        ],
         horapartida: [{ value: '', disabled: true }, Validators.required],
-        horallegada: [{ value: '', disabled: true }, [Validators.required, this.validarHoraLlegada.bind(this)]],
+        horallegada: [
+          { value: '', disabled: true },
+          [Validators.required, this.validarHoraLlegada.bind(this)],
+        ],
         iddestino: ['', Validators.required],
       }),
     });
 
-    // Revalidar cuando cambien las fechas u horas
     this.step2Form.get('fechapartida')?.valueChanges.subscribe(() => {
-      this.step2Form.get('fechallegada')?.updateValueAndValidity({ emitEvent: false });
+      this.step2Form
+        .get('fechallegada')
+        ?.updateValueAndValidity({ emitEvent: false });
       const horallegadaControl = this.step2Form.get('horallegada');
       if (horallegadaControl?.enabled) {
         horallegadaControl.updateValueAndValidity({ emitEvent: false });
@@ -113,10 +123,29 @@ export class RegisterTripDialog {
   }
 
   private async loadData() {
-    this.destinos.set(await this.tripService.getDestinos());
-    this.conductores.set(await this.userService.getConductores());
-    this.vehiculos.set(await this.tripService.getVehiculos());
-    this.empresas.set(await this.tripService.getEmpresas());
+    try {
+      this.loadingData.set(true);
+      this.loadingConductores.set(true);
+      this.loadingVehiculos.set(true);
+
+      const [destinos, conductores, vehiculos, empresas] = await Promise.all([
+        this.tripService.getDestinos(),
+        this.userService.getConductoresDisponibles(),
+        this.tripService.getVehiculosDisponibles(),
+        this.tripService.getEmpresas(),
+      ]);
+
+      this.destinos.set(destinos);
+      this.conductores.set(conductores);
+      this.vehiculos.set(vehiculos);
+      this.empresas.set(empresas);
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+    } finally {
+      this.loadingConductores.set(false);
+      this.loadingVehiculos.set(false);
+      this.loadingData.set(false);
+    }
   }
 
   get step1Form(): FormGroup {
@@ -133,28 +162,25 @@ export class RegisterTripDialog {
   }
 
   async onSubmit() {
-    // Marcar todos los campos como tocados para mostrar errores
     this.formTrip.markAllAsTouched();
-    
-    // Validar manualmente los campos deshabilitados
+
     const horaPartida = this.step2Form.get('horapartida');
     const horaLlegada = this.step2Form.get('horallegada');
-    
+
     if (horaPartida?.disabled) {
       alert('Debe seleccionar un turno para las horas');
       return;
     }
-    
+
     if (this.formTrip.invalid) {
       return;
     }
-    
-    // Obtener valores incluyendo campos deshabilitados
+
     const step1 = this.formTrip.get('step1')?.value;
     const step2 = {
       ...this.step2Form.value,
       horapartida: this.step2Form.get('horapartida')?.value,
-      horallegada: this.step2Form.get('horallegada')?.value
+      horallegada: this.step2Form.get('horallegada')?.value,
     };
 
     try {
@@ -173,7 +199,6 @@ export class RegisterTripDialog {
     this.dialogRef.close();
   }
 
-  // Generar horas en intervalos de 15 minutos
   private generarHoras(): string[] {
     const horas: string[] = [];
     for (let h = 0; h < 24; h++) {
@@ -186,19 +211,18 @@ export class RegisterTripDialog {
     return horas;
   }
 
-  // Filtrar horas según el turno seleccionado
   private filtrarHorasPorTurno(turnoSeleccionado: string | null): string[] {
     if (!turnoSeleccionado) {
       return this.todasLasHoras;
     }
 
-    const turno = this.turnos.find(t => t.value === turnoSeleccionado);
+    const turno = this.turnos.find((t) => t.value === turnoSeleccionado);
     if (!turno) {
       return this.todasLasHoras;
     }
 
     const horasFiltradas: string[] = [];
-    this.todasLasHoras.forEach(hora => {
+    this.todasLasHoras.forEach((hora) => {
       const [h] = hora.split(':').map(Number);
       if (h >= turno.inicio && h < turno.fin) {
         horasFiltradas.push(hora);
@@ -207,19 +231,16 @@ export class RegisterTripDialog {
     return horasFiltradas;
   }
 
-  // Seleccionar turno (compartido para ambas horas)
   toggleTurno(turnoValue: string, checked: boolean) {
     if (checked) {
-      // Si se selecciona, reemplaza el turno actual
       this.turnoSeleccionado.set(turnoValue);
-      // Habilitar los inputs de hora
+
       this.step2Form.get('horapartida')?.enable();
       this.step2Form.get('horallegada')?.enable();
     } else {
-      // Si se deselecciona el mismo turno, lo limpia
       if (this.turnoSeleccionado() === turnoValue) {
         this.turnoSeleccionado.set(null);
-        // Deshabilitar los inputs de hora y limpiar valores
+
         this.step2Form.get('horapartida')?.setValue('');
         this.step2Form.get('horallegada')?.setValue('');
         this.step2Form.get('horapartida')?.disable();
@@ -227,26 +248,25 @@ export class RegisterTripDialog {
       }
     }
 
-    // Limpiar horas si ya no están en las opciones disponibles
     const horaPartida = this.step2Form.get('horapartida')?.value;
     const horaLlegada = this.step2Form.get('horallegada')?.value;
-    
+
     if (horaPartida && !this.horasFiltradas().includes(horaPartida)) {
       this.step2Form.get('horapartida')?.setValue('');
     }
-    
+
     if (horaLlegada && !this.horasFiltradas().includes(horaLlegada)) {
       this.step2Form.get('horallegada')?.setValue('');
     }
   }
 
-  // Verificar si un turno está seleccionado
   isTurnoSeleccionado(turnoValue: string): boolean {
     return this.turnoSeleccionado() === turnoValue;
   }
 
-  // Validador para fecha de llegada
-  private validarFechaLlegada(control: AbstractControl): ValidationErrors | null {
+  private validarFechaLlegada(
+    control: AbstractControl
+  ): ValidationErrors | null {
     const fechaLlegada = control.value;
     const fechaPartida = control.parent?.get('fechapartida')?.value;
 
@@ -267,8 +287,9 @@ export class RegisterTripDialog {
     return null;
   }
 
-  // Validador para hora de llegada
-  private validarHoraLlegada(control: AbstractControl): ValidationErrors | null {
+  private validarHoraLlegada(
+    control: AbstractControl
+  ): ValidationErrors | null {
     const horaLlegada = control.value;
     const horaPartida = control.parent?.get('horapartida')?.value;
     const fechaPartida = control.parent?.get('fechapartida')?.value;
@@ -284,7 +305,6 @@ export class RegisterTripDialog {
     datePartida.setHours(0, 0, 0, 0);
     dateLlegada.setHours(0, 0, 0, 0);
 
-    // Solo validar horas si es el mismo día
     if (dateLlegada.getTime() === datePartida.getTime()) {
       const [hPartida, mPartida] = horaPartida.split(':').map(Number);
       const [hLlegada, mLlegada] = horaLlegada.split(':').map(Number);

@@ -90,28 +90,24 @@ export default class ListUsers implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    // Cargar todos los usuarios primero
     this.loadAllUsers().then(() => {
-      // IMPORTANTE: Conectar paginator y sort DESPUÉS de cargar los datos
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
-      
-      // Forzar detección de cambios
+
       this.cdr.detectChanges();
     });
   }
 
-  /** Carga TODOS los usuarios y los filtra del lado del cliente */
+
   async loadAllUsers() {
     this.loading = true;
     this.cdr.detectChanges();
-    
+
     try {
       const { data, count } = await this.userService.getAllUsers();
       this.allUsers = data || [];
       this.totalItems = count || 0;
 
-      // Aplicar filtros
       this.applyFilters();
 
       this.loading = false;
@@ -127,11 +123,10 @@ export default class ListUsers implements OnInit, AfterViewInit {
     }
   }
 
-  /** Aplica los filtros de búsqueda y rol */
+
   private applyFilters() {
     let usuarios = [...this.allUsers];
 
-    // Filtrar por búsqueda
     if (this.searchValue) {
       const s = this.searchValue.toLowerCase();
       usuarios = usuarios.filter(
@@ -144,7 +139,6 @@ export default class ListUsers implements OnInit, AfterViewInit {
       );
     }
 
-    // Filtrar por rol
     if (this.roleControlValue) {
       usuarios = usuarios.filter(
         (u) =>
@@ -154,10 +148,8 @@ export default class ListUsers implements OnInit, AfterViewInit {
       );
     }
 
-    // Actualizar el data source
     this.dataSource.data = usuarios;
-    
-    // Resetear a la primera página cuando hay filtros
+
     if (this.paginator) {
       this.paginator.firstPage();
     }
@@ -165,7 +157,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
     this.totalChange.emit(usuarios.length);
   }
 
-  /** Carga los roles para el filtro */
+
   private async loadRoles() {
     try {
       this.roles = await this.userService.getRoles();

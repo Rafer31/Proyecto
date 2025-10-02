@@ -11,6 +11,37 @@ export class TripPlanningService {
     return data;
   }
 
+  async getVehiculosDisponibles() {
+    const { data: vehiculos, error: errorVehiculos } = await this.supabase
+      .from('vehiculo')
+      .select('*');
+
+    if (errorVehiculos) throw errorVehiculos;
+
+    const { data: vehiculosOcupados, error: errorOcupados } =
+      await this.supabase
+        .from('conductor_vehiculo_empresa')
+        .select(
+          `
+        nroplaca,
+        planificacion_viaje!inner (
+          idplanificacion
+        )
+      `
+        )
+        .eq('estado', 'asignado');
+
+    if (errorOcupados) throw errorOcupados;
+
+    const placasOcupadas = new Set(
+      (vehiculosOcupados || []).map((cve: any) => cve.nroplaca)
+    );
+
+    return (vehiculos || []).filter(
+      (v: any) => !placasOcupadas.has(v.nroplaca)
+    );
+  }
+
   async getEmpresas() {
     const { data, error } = await this.supabase
       .from('empresa_contratista')
@@ -49,9 +80,9 @@ export class TripPlanningService {
         vehiculo:conductor_vehiculo_empresa(
           idconductorvehiculoempresa,
           idconductor,
-    
           nroplaca,
           idempresa,
+          cantdisponibleasientos,
           vehiculo:vehiculo(nroplaca, nroasientos, tipovehiculo, imageUrl),
           empresa:empresa_contratista(idempresa, nomempresa, nomcontacto, celcontacto, imageUrl),
           conductor:conductor(idconductor, usuario:usuario(idusuario, nomusuario, patusuario, matusuario, ci, numcelular))
@@ -82,6 +113,29 @@ export class TripPlanningService {
         cantdisponibleasientos
       )
     `);
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getViajesDisponiblesPorDestino(iddestino: string) {
+    const { data, error } = await this.supabase
+      .from('planificacion_viaje')
+      .select(`
+        idplanificacion,
+        fechapartida,
+        fechallegada,
+        horallegada,
+        horapartida,
+        destino: destino(iddestino, nomdestino),
+        conductor_vehiculo_empresa!inner(
+          idconductorvehiculoempresa,
+          cantdisponibleasientos
+        )
+      `)
+      .eq('iddestino', iddestino)
+      .gte('fechapartida', new Date().toISOString().split('T')[0])
+      .order('fechapartida', { ascending: true });
 
     if (error) throw error;
     return data;

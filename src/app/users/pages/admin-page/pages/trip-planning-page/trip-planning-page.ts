@@ -64,18 +64,38 @@ export class TripPlanningPage implements OnInit {
   openRegisterDialog() {
     const dialogRef = this.dialog.open(RegisterTripDialog, { width: '700px' });
 
-    dialogRef.afterClosed().subscribe((newTrip) => {
+    dialogRef.afterClosed().subscribe(async (newTrip) => {
       if (newTrip) {
-        this.trips.update((list) => [
-          ...list,
-          {
-            idviaje: newTrip.idplanificacion,
-            fechaViaje: newTrip.fechapartida,
-            destino: newTrip.destino?.nomdestino ?? 'Sin destino',
-            horapartida: newTrip.horapartida,
-            horallegada: newTrip.horallegada,
-          },
-        ]);
+        // Obtener el viaje completo con todos los datos incluyendo cantdisponibleasientos
+        try {
+          const viajeCompleto: any = await this.tripService.getViaje(newTrip.idplanificacion);
+          
+          this.trips.update((list) => [
+            ...list,
+            {
+              idviaje: viajeCompleto.idplanificacion,
+              fechaViaje: viajeCompleto.fechapartida,
+              destino: viajeCompleto.destino?.nomdestino ?? 'Sin destino',
+              horapartida: viajeCompleto.horapartida,
+              horallegada: viajeCompleto.horallegada,
+              cantdisponibleasientos: viajeCompleto.vehiculo?.cantdisponibleasientos ?? 0,
+            },
+          ]);
+        } catch (err) {
+          console.error('Error obteniendo viaje completo:', err);
+          // Fallback: agregar sin cantdisponibleasientos
+          this.trips.update((list) => [
+            ...list,
+            {
+              idviaje: newTrip.idplanificacion,
+              fechaViaje: newTrip.fechapartida,
+              destino: newTrip.destino?.nomdestino ?? 'Sin destino',
+              horapartida: newTrip.horapartida,
+              horallegada: newTrip.horallegada,
+              cantdisponibleasientos: 0,
+            },
+          ]);
+        }
       }
     });
   }
@@ -134,5 +154,29 @@ export class TripPlanningPage implements OnInit {
         }
       }
     });
+  }
+
+  async actualizarAsientosDisponibles(idviaje: string) {
+    try {
+      // Obtener el viaje actualizado desde la base de datos
+      // Los triggers de la BD ya actualizaron cantdisponibleasientos
+      const viaje: any = await this.tripService.getViaje(idviaje);
+      
+      // Actualizar solo el viaje específico en la lista
+      this.trips.update((list) =>
+        list.map((t) =>
+          t.idviaje === idviaje
+            ? {
+                ...t,
+                // cantdisponibleasientos está en conductor_vehiculo_empresa
+                cantdisponibleasientos:
+                  viaje.vehiculo?.cantdisponibleasientos ?? t.cantdisponibleasientos,
+              }
+            : t
+        )
+      );
+    } catch (err) {
+      console.error('Error actualizando asientos disponibles:', err);
+    }
   }
 }

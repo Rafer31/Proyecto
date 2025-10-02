@@ -22,137 +22,129 @@
   </div>
 
   <div class="mat-elevation-z8">
-    <!-- Estado de carga inicial -->
     @if (loading && initialLoad) {
-      <div class="loading-container initial-loading">
-        <mat-spinner diameter="50"></mat-spinner>
-        <p>Cargando usuarios...</p>
-      </div>
+    <div class="loading-container initial-loading">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Cargando usuarios...</p>
+    </div>
     } @else {
-      <!-- Tabla con overlay de carga para páginas subsecuentes -->
-      <div class="table-wrapper">
-        @if (loading && !initialLoad) {
-          <div class="loading-overlay">
-            <mat-spinner diameter="40"></mat-spinner>
-          </div>
-        }
 
-        <table mat-table [dataSource]="dataSource" matSort>
-          <!-- Columna CI -->
-          <ng-container matColumnDef="ci">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>CI</th>
-            <td mat-cell *matCellDef="let user">{{ user.ci }}</td>
-          </ng-container>
+    <div class="table-wrapper">
+      @if (loading && !initialLoad) {
+      <div class="loading-overlay">
+        <mat-spinner diameter="40"></mat-spinner>
+      </div>
+      }
 
-          <!-- Columna Nombre -->
-          <ng-container matColumnDef="nomusuario">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
-            <td mat-cell *matCellDef="let user">{{ user.nomusuario }}</td>
-          </ng-container>
+      <table mat-table [dataSource]="dataSource" matSort>
+        <ng-container matColumnDef="ci">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>CI</th>
+          <td mat-cell *matCellDef="let user">{{ user.ci }}</td>
+        </ng-container>
 
-          <!-- Columna Apellido Paterno -->
-          <ng-container matColumnDef="patusuario">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-              Apellido Paterno
-            </th>
-            <td mat-cell *matCellDef="let user">{{ user.patusuario }}</td>
-          </ng-container>
+        <ng-container matColumnDef="nomusuario">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Nombre</th>
+          <td mat-cell *matCellDef="let user">{{ user.nomusuario }}</td>
+        </ng-container>
 
-          <!-- Columna Apellido Materno -->
-          <ng-container matColumnDef="matusuario">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>
-              Apellido Materno
-            </th>
-            <td mat-cell *matCellDef="let user">{{ user.matusuario }}</td>
-          </ng-container>
+        <ng-container matColumnDef="patusuario">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            Apellido Paterno
+          </th>
+          <td mat-cell *matCellDef="let user">{{ user.patusuario }}</td>
+        </ng-container>
 
-          <!-- Columna Celular -->
-          <ng-container matColumnDef="numcelular">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header>Celular</th>
-            <td mat-cell *matCellDef="let user">{{ user.numcelular }}</td>
-          </ng-container>
+        <ng-container matColumnDef="matusuario">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>
+            Apellido Materno
+          </th>
+          <td mat-cell *matCellDef="let user">{{ user.matusuario }}</td>
+        </ng-container>
 
-          <!-- Columna Rol -->
-          <ng-container matColumnDef="rol">
-            <th mat-header-cell *matHeaderCellDef>Rol</th>
-            <td mat-cell *matCellDef="let user">
-              <span
-                class="role-badge"
-                [ngClass]="{
+        <ng-container matColumnDef="numcelular">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Celular</th>
+          <td mat-cell *matCellDef="let user">{{ user.numcelular }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="rol">
+          <th mat-header-cell *matHeaderCellDef>Rol</th>
+          <td mat-cell *matCellDef="let user">
+            <span
+              class="role-badge"
+              [ngClass]="{
                   'role-personal': user.roles?.[0]?.nomrol === 'Personal',
                   'role-conductor': user.roles?.[0]?.nomrol === 'Conductor',
                   'role-visitante': user.roles?.[0]?.nomrol === 'Visitante',
                   'role-administrador': user.roles?.[0]?.nomrol === 'Administrador',
                   'role-sin-rol': !user.roles?.length
                 }"
-              >
-                {{ user.roles && user.roles.length > 0 ? user.roles[0].nomrol : 'Sin rol' }}
-              </span>
-            </td>
-          </ng-container>
+            >
+              {{ user.roles && user.roles.length > 0 ? user.roles[0].nomrol :
+              'Sin rol' }}
+            </span>
+          </td>
+        </ng-container>
 
-          <!-- Columna Información Extra -->
-          <ng-container matColumnDef="extraInfo">
-            <th mat-header-cell *matHeaderCellDef>Información</th>
-            <td mat-cell *matCellDef="let user">
-              @if (user.roles?.[0]?.nomrol === 'Visitante') {
-                {{ user.extraInfo !== '-' ? user.extraInfo : 'Sin información' }}
-              } @else if (user.roles?.[0]?.nomrol === 'Personal' || user.roles?.[0]?.nomrol === 'Administrador') {
-                {{ user.extraInfo !== '-' ? user.extraInfo : 'Sin observación' }}
-              } @else {
-                Sin datos
-              }
-            </td>
-          </ng-container>
+        <ng-container matColumnDef="extraInfo">
+          <th mat-header-cell *matHeaderCellDef>Información</th>
+          <td mat-cell *matCellDef="let user">
+            @if (user.roles?.[0]?.nomrol === 'Visitante') { {{ user.extraInfo
+            !== '-' ? user.extraInfo : 'Sin información' }} } @else if
+            (user.roles?.[0]?.nomrol === 'Personal' || user.roles?.[0]?.nomrol
+            === 'Administrador') { {{ user.extraInfo !== '-' ? user.extraInfo :
+            'Sin observación' }} } @else { Sin datos }
+          </td>
+        </ng-container>
 
-          <!-- Columna N° Ficha -->
-          <ng-container matColumnDef="nroficha">
-            <th mat-header-cell *matHeaderCellDef>N° Ficha</th>
-            <td mat-cell *matCellDef="let user">{{ user.nroficha }}</td>
-          </ng-container>
+        <ng-container matColumnDef="nroficha">
+          <th mat-header-cell *matHeaderCellDef>N° Ficha</th>
+          <td mat-cell *matCellDef="let user">{{ user.nroficha }}</td>
+        </ng-container>
 
-          <!-- Columna Acciones -->
-          <ng-container matColumnDef="acciones">
-            <th mat-header-cell *matHeaderCellDef>Acciones</th>
-            <td mat-cell *matCellDef="let user">
-              <button mat-icon-button color="primary" (click)="editUser(user)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="deleteUser(user)">
-                <mat-icon>delete</mat-icon>
-              </button>
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef>Acciones</th>
+          <td mat-cell *matCellDef="let user">
+            <button mat-icon-button color="primary" (click)="editUser(user)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteUser(user)">
+              <mat-icon>delete</mat-icon>
+            </button>
 
-              @if (user.roles?.[0]?.nomrol === 'Personal' || user.roles?.[0]?.nomrol === 'Administrador') {
-                <button mat-icon-button color="accent" (click)="addObservation(user)">
-                  <mat-icon>note_add</mat-icon>
-                </button>
-              }
-            </td>
-          </ng-container>
+            @if (user.roles?.[0]?.nomrol === 'Personal' ||
+            user.roles?.[0]?.nomrol === 'Administrador') {
+            <button
+              mat-icon-button
+              color="accent"
+              (click)="addObservation(user)"
+            >
+              <mat-icon>note_add</mat-icon>
+            </button>
+            }
+          </td>
+        </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
-        </table>
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
 
-        <!-- Empty state cuando no hay datos -->
-        @if (!loading && dataSource.data.length === 0) {
-          <div class="empty-state-container">
-            <app-emptystate
-              [imageSrc]="'no-users.svg'"
-              [title]="'No se encontraron usuarios'"
-              [description]="'Intenta ajustar los filtros de búsqueda o agrega un nuevo usuario'"
-            />
-          </div>
-        }
-
-        <!-- Paginador -->
-        <mat-paginator
-          [pageSizeOptions]="[5, 10, 25, 50]"
-          [disabled]="loading"
-          showFirstLastButtons="true"
-        >
-        </mat-paginator>
+      @if (!loading && dataSource.data.length === 0) {
+      <div class="empty-state-container">
+        <app-emptystate
+          [imageSrc]="'no-users.svg'"
+          [title]="'No se encontraron usuarios'"
+          [description]="'Intenta ajustar los filtros de búsqueda o agrega un nuevo usuario'"
+        />
       </div>
+      }
+
+      <mat-paginator
+        [pageSizeOptions]="[5, 10, 25, 50]"
+        [disabled]="loading"
+        showFirstLastButtons="true"
+      >
+      </mat-paginator>
+    </div>
     }
   </div>
 </div>

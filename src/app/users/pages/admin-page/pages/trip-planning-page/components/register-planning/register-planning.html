@@ -1,11 +1,29 @@
-<div class="register-container">
+<div>
   <form [formGroup]="formTrip">
     <mat-horizontal-stepper linear>
       <mat-step [stepControl]="step1Form">
         <form [formGroup]="step1Form">
           <ng-template matStepLabel>Asociar Conductor</ng-template>
 
+          @if (loadingConductores()) {
           <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Cargando conductores...</mat-label>
+            <mat-select disabled>
+              <mat-option>Cargando...</mat-option>
+            </mat-select>
+          </mat-form-field>
+          } @else if (conductores().length === 0) {
+          <div class="no-data-message">
+            <mat-icon>info</mat-icon>
+            <p>
+              No hay conductores disponibles en este momento.
+              <small
+                >Todos los conductores tienen viajes activos asignados.</small
+              >
+            </p>
+          </div>
+          } @else {
+          <mat-form-field appearance="outline" class="full-width mt-3">
             <mat-label>Conductor</mat-label>
             <mat-select formControlName="idconductor" required>
               @for (c of conductores(); track c.idconductor) {
@@ -18,12 +36,30 @@
             <mat-error>Debe seleccionar un conductor</mat-error>
             }
           </mat-form-field>
-
-          <mat-form-field appearance="outline" class="full-width mt-2 ms-5">
+          } @if (loadingVehiculos()) {
+          <mat-form-field appearance="outline" class="full-width ms-4">
+            <mat-label>Cargando vehículos...</mat-label>
+            <mat-select disabled>
+              <mat-option>Cargando...</mat-option>
+            </mat-select>
+          </mat-form-field>
+          } @else if (vehiculos().length === 0) {
+          <div class="no-data-message">
+            <mat-icon>info</mat-icon>
+            <p>
+              No hay vehículos disponibles en este momento.
+              <small
+                >Todos los vehículos están asignados a viajes activos.</small
+              >
+            </p>
+          </div>
+          } @else {
+          <mat-form-field appearance="outline" class="full-width ms-5">
             <mat-label>Vehículo</mat-label>
             <mat-select
               formControlName="nroplaca"
               required
+              [disabled]="conductores().length === 0"
               (selectionChange)="onVehiculoSelected($event.value)"
             >
               @for (v of vehiculos(); track v.nroplaca) {
@@ -36,10 +72,15 @@
             <mat-error>Debe seleccionar un vehículo</mat-error>
             }
           </mat-form-field>
+          }
 
-          <mat-form-field appearance="outline" class="full-width mt-2">
+          <mat-form-field appearance="outline" class="full-width mt-5">
             <mat-label>Empresa</mat-label>
-            <mat-select formControlName="idempresa" required>
+            <mat-select
+              formControlName="idempresa"
+              required
+              [disabled]="loadingData() || conductores().length === 0 || vehiculos().length === 0"
+            >
               @for (e of empresas(); track e.idempresa) {
               <mat-option [value]="e.idempresa">{{ e.nomempresa }}</mat-option>
               }
@@ -49,8 +90,13 @@
             }
           </mat-form-field>
 
-          <div class="actions">
-            <button mat-button matStepperNext [disabled]="step1Form.invalid">
+          <div>
+            <button
+              mat-button
+              matStepperNext
+              [disabled]="loadingData() || step1Form.invalid || conductores().length === 0 || vehiculos().length === 0"
+              class="mt-4"
+            >
               Siguiente
             </button>
           </div>
@@ -61,61 +107,57 @@
         <form [formGroup]="step2Form">
           <ng-template matStepLabel>Planificación de Viaje</ng-template>
 
-          <!-- Fechas -->
+          <mat-form-field appearance="outline" class="full-width mt-4">
+            <mat-label>Fecha Partida</mat-label>
+            <input
+              matInput
+              [matDatepicker]="picker1"
+              formControlName="fechapartida"
+              required
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="picker1"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #picker1></mat-datepicker>
+            @if (step2Form.get('fechapartida')?.hasError('required')) {
+            <mat-error>Debe seleccionar una fecha de partida</mat-error>
+            }
+          </mat-form-field>
 
-          <div class="row-fields">
-            <mat-form-field appearance="outline" class="field-half mt-5">
-              <mat-label>Fecha Llegada</mat-label>
-              <input
-                matInput
-                [matDatepicker]="picker2"
-                formControlName="fechallegada"
-                required
-              />
-              <mat-datepicker-toggle
-                matSuffix
-                [for]="picker2"
-              ></mat-datepicker-toggle>
-              <mat-datepicker #picker2></mat-datepicker>
-              @if (step2Form.get('fechallegada')?.hasError('required') &&
-              step2Form.get('fechallegada')?.touched) {
-              <mat-error>Debe seleccionar una fecha de llegada</mat-error>
-              } @if
-              (step2Form.get('fechallegada')?.hasError('fechaLlegadaMenor') &&
-              step2Form.get('fechallegada')?.touched) {
-              <mat-error
-                >La fecha de llegada no puede ser menor que la de
-                partida</mat-error
-              >
-              }
-            </mat-form-field>
-            <mat-form-field appearance="outline" class="field-half ms-5">
-              <mat-label>Fecha Partida</mat-label>
-              <input
-                matInput
-                [matDatepicker]="picker1"
-                formControlName="fechapartida"
-                required
-              />
-              <mat-datepicker-toggle
-                matSuffix
-                [for]="picker1"
-              ></mat-datepicker-toggle>
-              <mat-datepicker #picker1></mat-datepicker>
-              @if (step2Form.get('fechapartida')?.hasError('required')) {
-              <mat-error>Debe seleccionar una fecha de partida</mat-error>
-              }
-            </mat-form-field>
-          </div>
+          <mat-form-field appearance="outline" class="full-width ms-4">
+            <mat-label>Fecha Llegada</mat-label>
+            <input
+              matInput
+              [matDatepicker]="picker2"
+              formControlName="fechallegada"
+              required
+            />
+            <mat-datepicker-toggle
+              matSuffix
+              [for]="picker2"
+            ></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+            @if (step2Form.get('fechallegada')?.hasError('required') &&
+            step2Form.get('fechallegada')?.touched) {
+            <mat-error>Debe seleccionar una fecha de llegada</mat-error>
+            } @if (step2Form.get('fechallegada')?.hasError('fechaLlegadaMenor')
+            && step2Form.get('fechallegada')?.touched) {
+            <mat-error
+              >La fecha de llegada no puede ser menor que la de
+              partida</mat-error
+            >
+            }
+          </mat-form-field>
 
-          <!-- Selección de Turno -->
-          <div class="turno-section mt-5">
+          <div class="mt-7">
             <h4>Seleccione Turno</h4>
-            <div class="turnos-container">
+            <div>
               @for (turno of turnos; track turno.value) {
               <mat-checkbox
                 [checked]="isTurnoSeleccionado(turno.value)"
                 (change)="toggleTurno(turno.value, $event.checked)"
+                class="ms-4"
               >
                 {{ turno.label }}
               </mat-checkbox>
@@ -123,42 +165,38 @@
             </div>
           </div>
 
-          <!-- Horas de Partida y Llegada en la misma fila -->
-          <div class="row-fields">
-            <mat-form-field appearance="outline" class="field-half mt-3">
-              <mat-label>Hora de Partida</mat-label>
-              <mat-select formControlName="horapartida" required>
-                @for (hora of horasFiltradas(); track hora) {
-                <mat-option [value]="hora">{{ hora }}</mat-option>
-                }
-              </mat-select>
-              @if (step2Form.get('horapartida')?.hasError('required') &&
-              step2Form.get('horapartida')?.touched) {
-              <mat-error>Debe seleccionar una hora de partida</mat-error>
+          <mat-form-field appearance="outline" class="full-width mt-4">
+            <mat-label>Hora de Partida</mat-label>
+            <mat-select formControlName="horapartida" required>
+              @for (hora of horasFiltradas(); track hora) {
+              <mat-option [value]="hora">{{ hora }}</mat-option>
               }
-            </mat-form-field>
+            </mat-select>
+            @if (step2Form.get('horapartida')?.hasError('required') &&
+            step2Form.get('horapartida')?.touched) {
+            <mat-error>Debe seleccionar una hora de partida</mat-error>
+            }
+          </mat-form-field>
 
-            <mat-form-field appearance="outline" class="field-half mt-3 ms-5">
-              <mat-label>Hora de Llegada</mat-label>
-              <mat-select formControlName="horallegada" required>
-                @for (hora of horasFiltradas(); track hora) {
-                <mat-option [value]="hora">{{ hora }}</mat-option>
-                }
-              </mat-select>
-              @if (step2Form.get('horallegada')?.hasError('required') &&
-              step2Form.get('horallegada')?.touched) {
-              <mat-error>Debe seleccionar una hora de llegada</mat-error>
-              } @if (step2Form.get('horallegada')?.hasError('horaLlegadaMenor')
-              && step2Form.get('horallegada')?.touched) {
-              <mat-error
-                >La hora de llegada debe ser posterior a la de
-                partida</mat-error
-              >
+          <mat-form-field appearance="outline" class="full-width ms-4">
+            <mat-label>Hora de Llegada</mat-label>
+            <mat-select formControlName="horallegada" required>
+              @for (hora of horasFiltradas(); track hora) {
+              <mat-option [value]="hora">{{ hora }}</mat-option>
               }
-            </mat-form-field>
-          </div>
+            </mat-select>
+            @if (step2Form.get('horallegada')?.hasError('required') &&
+            step2Form.get('horallegada')?.touched) {
+            <mat-error>Debe seleccionar una hora de llegada</mat-error>
+            } @if (step2Form.get('horallegada')?.hasError('horaLlegadaMenor') &&
+            step2Form.get('horallegada')?.touched) {
+            <mat-error
+              >La hora de llegada debe ser posterior a la de partida</mat-error
+            >
+            }
+          </mat-form-field>
 
-          <mat-form-field appearance="outline" class="w-sm mt-7">
+          <mat-form-field appearance="outline" class="full-width mt-5">
             <mat-label>Destino</mat-label>
             <mat-select formControlName="iddestino" required>
               @for (d of destinos(); track d.iddestino) {
@@ -170,13 +208,14 @@
             }
           </mat-form-field>
 
-          <div class="actions mt-4">
+          <div>
             <button mat-button matStepperPrevious>Volver</button>
             <button
               mat-flat-button
               color="primary"
               (click)="onSubmit()"
               [disabled]="step2Form.invalid"
+              class="ms-4"
             >
               Registrar Viaje
             </button>

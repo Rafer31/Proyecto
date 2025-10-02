@@ -1,0 +1,32 @@
+.no-data-message {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 16px 20px;
+  background-color: #fffbeb;
+  border-left: 4px solid #f59e0b;
+  border-radius: 6px;
+  margin-bottom: 16px;
+
+  mat-icon {
+    color: #f59e0b;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+    color: #78350f;
+    font-size: 14px;
+    line-height: 1.5;
+
+    small {
+      display: block;
+      margin-top: 4px;
+      color: #92400e;
+      font-size: 12px;
+    }
+  }
+}

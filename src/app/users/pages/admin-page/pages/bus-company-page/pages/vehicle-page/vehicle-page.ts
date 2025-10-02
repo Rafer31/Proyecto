@@ -31,7 +31,7 @@ export class VehiclePage {
   private dialog = inject(MatDialog);
 
   vehicles = signal<Vehicle[]>([]);
-  isLoading = signal(true); // Estado de carga
+  isLoading = signal(true); 
 
   async ngOnInit() {
     await this.loadVehicles();
