@@ -1,0 +1,61 @@
+<mat-card class="trip-card">
+  <mat-card-header [style.background-color]="cardColor">
+    <mat-card-title class="card-title">
+      <mat-icon class="destination-icon">place</mat-icon>
+      <span>{{ destino }}</span>
+    </mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="card-content">
+    <!-- Fecha de partida -->
+    <div class="info-row">
+      <mat-icon class="info-icon">event</mat-icon>
+      <div class="info-text">
+        <span class="info-label">Fecha de Partida</span>
+        <span class="info-value">{{ formatFecha(fechaPartida) }}</span>
+      </div>
+    </div>
+
+    <!-- Hora de Partida -->
+    <div class="info-row">
+      <mat-icon class="info-icon">schedule</mat-icon>
+      <div class="info-text">
+        <span class="info-label">Hora de Partida</span>
+        <span class="info-value">{{ formatHora(horaPartida) }}</span>
+      </div>
+    </div>
+
+    <!-- Hora de Llegada -->
+    <div class="info-row">
+      <mat-icon class="info-icon">schedule</mat-icon>
+      <div class="info-text">
+        <span class="info-label">Hora de Llegada</span>
+        <span class="info-value">{{ formatHora(horaLlegada) }}</span>
+      </div>
+    </div>
+
+    <!-- Asientos disponibles -->
+    <div class="info-row">
+      <mat-icon class="info-icon">airline_seat_recline_normal</mat-icon>
+      <div class="info-text">
+        <span class="info-label">Asientos Disponibles</span>
+        <span class="info-value" [class.low-seats]="asientosDisponibles < 5">
+          {{ asientosDisponibles }}
+        </span>
+      </div>
+    </div>
+  </mat-card-content>
+
+  <mat-card-actions class="card-actions">
+    <button 
+      mat-raised-button 
+      color="primary" 
+      (click)="onReservar()"
+      [disabled]="asientosDisponibles === 0"
+      class="reserve-button"
+    >
+      <mat-icon>event_seat</mat-icon>
+      {{ asientosDisponibles > 0 ? 'Reservar Asiento' : 'Sin Asientos' }}
+    </button>
+  </mat-card-actions>
+</mat-card>

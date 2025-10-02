@@ -3,9 +3,15 @@
   <button
     mat-icon-button
     (click)="toggleNav()"
-    [matTooltip]="collapsed() ? 'Expandir' : 'Colapsar'"
+    [matTooltip]="drawerMode() === 'over' ? 'Menú' : (collapsed() ? 'Expandir' : 'Colapsar')"
   >
-    <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+    <mat-icon>
+      @if (drawerMode() === 'over') {
+        menu
+      } @else {
+        {{ collapsed() ? 'chevron_right' : 'chevron_left' }}
+      }
+    </mat-icon>
   </button>
   }
 

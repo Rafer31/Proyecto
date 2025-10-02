@@ -150,6 +150,7 @@ export class ReservaService {
       .from('asignacion_destino')
       .select('idasignaciondestino, iddestino')
       .eq('nroficha', nroficha)
+      .is('fechafin', null)  // Solo asignaciones activas (sin fecha fin)
       .maybeSingle();
 
     if (asignacionError || !asignacion) {
@@ -205,6 +206,7 @@ export class ReservaService {
       .from('asignacion_destino')
       .select('idasignaciondestino')
       .eq('nroficha', nroficha)
+      .is('fechafin', null)  // Solo asignaciones activas (sin fecha fin)
       .maybeSingle();
 
     if (asignacionError || !asignacion) {
@@ -283,6 +285,7 @@ export class ReservaService {
       .from('asignacion_destino')
       .select('idasignaciondestino')
       .eq('nroficha', nroficha)
+      .is('fechafin', null)  // Solo asignaciones activas (sin fecha fin)
       .maybeSingle();
 
     if (asignacionError || !asignacion) {

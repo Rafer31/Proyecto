@@ -33,9 +33,10 @@ export class UserToolbar {
   showNavBtn = input<boolean>(true);
 
   collapsed = this.nav.collapsed;
+  drawerMode = this.nav.drawerMode;
 
   toggleNav() {
-    this.nav.toggleCollapsed();
+    this.nav.toggleNav();
   }
 
   async confirmSignOut() {

@@ -158,22 +158,22 @@ export class TripPlanningPage implements OnInit {
 
   async actualizarAsientosDisponibles(idviaje: string) {
     try {
-      // Obtener el viaje actualizado desde la base de datos
-      // Los triggers de la BD ya actualizaron cantdisponibleasientos
-      const viaje: any = await this.tripService.getViaje(idviaje);
+      // Cuando cambia una reserva de una planificación a otra,
+      // necesitamos actualizar TODAS las planificaciones porque
+      // los asientos disponibles cambian en ambas
+      const viajes = await this.tripService.getViajes();
       
-      // Actualizar solo el viaje específico en la lista
-      this.trips.update((list) =>
-        list.map((t) =>
-          t.idviaje === idviaje
-            ? {
-                ...t,
-                // cantdisponibleasientos está en conductor_vehiculo_empresa
-                cantdisponibleasientos:
-                  viaje.vehiculo?.cantdisponibleasientos ?? t.cantdisponibleasientos,
-              }
-            : t
-        )
+      // Actualizar toda la lista con los datos frescos de la BD
+      this.trips.set(
+        viajes.map((v: any) => ({
+          idviaje: v.idplanificacion,
+          fechaViaje: v.fechapartida,
+          destino: v.destino?.nomdestino ?? 'Sin destino',
+          horallegada: v.horallegada,
+          horapartida: v.horapartida,
+          cantdisponibleasientos:
+            v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
+        }))
       );
     } catch (err) {
       console.error('Error actualizando asientos disponibles:', err);

@@ -1,8 +1,8 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, OnInit, OnDestroy, ViewChild, AfterViewInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatSidenavModule, MatDrawer } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { RouterModule } from '@angular/router';
 import { NavItem } from '../../../shared/interfaces/nav-item';
@@ -21,8 +21,11 @@ import { NavStateService } from '../../../shared/services/nav-state.service';
   templateUrl: './user-sidenav.html',
   styleUrl: './user-sidenav.scss',
 })
-export class UserSidenav {
+export class UserSidenav implements OnInit, OnDestroy, AfterViewInit {
   private readonly nav = inject(NavStateService);
+  private resizeListener?: () => void;
+  
+  @ViewChild('drawer') drawer!: MatDrawer;
 
   appLogo    = input<string>('school');
   appName    = input<string>('Mi App');
@@ -32,7 +35,33 @@ export class UserSidenav {
   drawerMode  = this.nav.drawerMode;
   drawerWidth = this.nav.drawerWidth;
 
-
   showText = computed(() => !this.collapsed());
   toggleCollapsed() { this.nav.toggleCollapsed(); }
+
+  ngOnInit() {
+    this.checkScreenSize();
+    this.resizeListener = () => this.checkScreenSize();
+    window.addEventListener('resize', this.resizeListener);
+  }
+  
+  ngAfterViewInit() {
+    // Registrar el drawer en el servicio
+    this.nav.setDrawer(this.drawer);
+  }
+
+  ngOnDestroy() {
+    if (this.resizeListener) {
+      window.removeEventListener('resize', this.resizeListener);
+    }
+  }
+
+  private checkScreenSize() {
+    const isMobile = window.innerWidth <= 768;
+    this.nav.setOverMode(isMobile);
+    
+    // En móvil, NO colapsar - el sidenav debe mostrarse completo cuando se abre
+    if (isMobile) {
+      this.nav.setCollapsed(false);
+    }
+  }
 }

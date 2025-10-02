@@ -1,11 +1,12 @@
 <mat-sidenav-container class="shell">
   <mat-sidenav
+    #drawer
     class="sidenav"
     [mode]="drawerMode()"
     [opened]="drawerMode() === 'side'"
-    [style.width.px]="collapsed() ? 80 : 260"
-    [style.minWidth.px]="collapsed() ? 80 : 260"
-    [class.collapsed]="collapsed()"
+    [style.width.px]="drawerMode() === 'over' ? 260 : (collapsed() ? 80 : 260)"
+    [style.minWidth.px]="drawerMode() === 'over' ? 260 : (collapsed() ? 80 : 260)"
+    [class.collapsed]="collapsed() && drawerMode() === 'side'"
     [attr.aria-label]="collapsed() ? 'Navegación colapsada' : 'Navegación'"
     fixedInViewport="true"
   >
@@ -38,7 +39,7 @@
   
   <mat-sidenav-content 
     class="content"
-    [style.margin-left.px]="collapsed() ? 80 : 260">
+    [style.margin-left.px]="drawerMode() === 'side' ? (collapsed() ? 80 : 260) : 0">
     <div class="content-inner">
       <ng-content />
     </div>

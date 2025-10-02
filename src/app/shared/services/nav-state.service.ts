@@ -1,9 +1,11 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { MatDrawer } from '@angular/material/sidenav';
 
 @Injectable({ providedIn: 'root' })
 export class NavStateService {
   private readonly _collapsed = signal(false);       
-  private readonly _overMode  = signal(false);       
+  private readonly _overMode  = signal(false);
+  private _drawer?: MatDrawer;
 
   readonly collapsed  = computed(() => this._collapsed());
   readonly drawerMode = computed<'side' | 'over'>(() => this._overMode() ? 'over' : 'side');
@@ -12,4 +14,16 @@ export class NavStateService {
   toggleCollapsed() { this._collapsed.update(v => !v); }
   setCollapsed(v: boolean) { this._collapsed.set(v); }
   setOverMode(v: boolean) { this._overMode.set(v); }
+  
+  setDrawer(drawer: MatDrawer) { this._drawer = drawer; }
+  
+  toggleNav() {
+    if (this._overMode()) {
+      // En modo móvil, toggle el drawer
+      this._drawer?.toggle();
+    } else {
+      // En modo desktop, colapsar/expandir
+      this.toggleCollapsed();
+    }
+  }
 }

@@ -101,3 +101,25 @@
     font-weight: 600;
   }
 }
+
+// Responsive para móviles
+@media (max-width: 768px) {
+  .content {
+    margin-left: 0 !important;
+  }
+
+  .content-inner {
+    padding: 1rem;
+  }
+
+  .sidenav {
+    width: 260px !important;
+    min-width: 260px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-inner {
+    padding: 0.75rem;
+  }
+}

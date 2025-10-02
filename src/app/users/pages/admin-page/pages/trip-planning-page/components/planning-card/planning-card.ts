@@ -89,9 +89,11 @@ export class PlanningCardComponent {
       data: { idplanificacion: idviaje },
     });
   
-    dialogRef.afterClosed().subscribe(() => {
-      // Emitir evento para actualizar los asientos disponibles
-      this.actualizarAsientos.emit(idviaje);
+    dialogRef.afterClosed().subscribe((result) => {
+      // Solo actualizar si hubo cambios (reserva, cancelación o cambio)
+      if (result?.cambiosRealizados) {
+        this.actualizarAsientos.emit(idviaje);
+      }
     });
   }
   

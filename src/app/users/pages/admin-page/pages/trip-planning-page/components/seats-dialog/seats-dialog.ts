@@ -55,7 +55,7 @@ export class SeatsDialog {
     private snackBar: MatSnackBar,
     private userDataService: UserDataService,
     private supabaseService: SupabaseService,
-    @Inject(MAT_DIALOG_DATA) public data: { idplanificacion: string }
+    @Inject(MAT_DIALOG_DATA) public data: { idplanificacion: string; isStaff?: boolean }
   ) {}
 
   async ngOnInit() {
@@ -190,10 +190,25 @@ export class SeatsDialog {
   }
 
   verDetallePasajero(seat: any) {
-    if (seat.tipo === 'asiento' && seat.ocupado && seat.pasajero) {
-      this.pasajeroSeleccionado.set(seat.pasajero);
-      this.vistaActual.set('detalle');
+    if (seat.tipo !== 'asiento' || !seat.ocupado || !seat.pasajero) {
+      return;
     }
+
+    // Si es staff, solo permitir ver su propia información
+    if (this.data.isStaff) {
+      const usuario = this.usuarioActual();
+      if (usuario && seat.pasajero.idusuario === usuario.idusuario) {
+        // Es su propio asiento, puede verlo
+        this.pasajeroSeleccionado.set(seat.pasajero);
+        this.vistaActual.set('detalle');
+      }
+      // Si no es su asiento, no hace nada (no muestra información)
+      return;
+    }
+    
+    // Si es admin, puede ver cualquier asiento
+    this.pasajeroSeleccionado.set(seat.pasajero);
+    this.vistaActual.set('detalle');
   }
 
   volverAlMapa() {
@@ -230,6 +245,8 @@ export class SeatsDialog {
         { duration: 3000 }
       );
       this.volverAlMapa();
+      // Cerrar diálogo con flag de cambios
+      this.dialogRef.close({ cambiosRealizados: true });
     } catch (error) {
       this.snackBar.open(`${error}`, 'Cerrar', { duration: 3000 });
     }
@@ -316,6 +333,9 @@ export class SeatsDialog {
           'Cerrar',
           { duration: 3000 }
         );
+        
+        // Cerrar diálogo con flag de cambios
+        this.dialogRef.close({ cambiosRealizados: true });
         return;
       }
 
@@ -343,6 +363,9 @@ export class SeatsDialog {
         'Cerrar',
         { duration: 3000 }
       );
+      
+      // Cerrar diálogo con flag de cambios
+      this.dialogRef.close({ cambiosRealizados: true });
     } catch (error) {
       this.snackBar.open(`Error: ${error}`, 'Cerrar', {
         duration: 3000,

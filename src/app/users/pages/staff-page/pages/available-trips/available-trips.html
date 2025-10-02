@@ -1,1 +1,55 @@
-<p>available-trips works!</p>
+<div class="available-trips-container">
+  <!-- Header -->
+  <div class="header">
+    <h1 class="title">Viajes Disponibles</h1>
+    @if (usuarioDestino()) {
+      <p class="subtitle">Destino asignado: <strong>{{ usuarioDestino() }}</strong></p>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+      <p>Cargando viajes disponibles...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @else if (error()) {
+    <div class="error-container">
+      <app-emptystate
+        [imageSrc]="'error.svg'"
+        [title]="'Error'"
+        [description]="error()!"
+      />
+    </div>
+  }
+
+  <!-- Empty State -->
+  @else if (viajes().length === 0) {
+    <app-emptystate
+      [imageSrc]="'no-trips.svg'"
+      [title]="'No hay viajes disponibles'"
+      [description]="'No se encontraron viajes programados para tu destino'"
+    />
+  }
+
+  <!-- Trips Grid -->
+  @else {
+    <div class="trips-grid">
+      @for (viaje of viajes(); track viaje.idviaje) {
+        <app-trip-card
+          [idviaje]="viaje.idviaje"
+          [fechaPartida]="viaje.fechaPartida"
+          [fechaLlegada]="viaje.fechaLlegada"
+          [horaPartida]="viaje.horaPartida"
+          [horaLlegada]="viaje.horaLlegada"
+          [destino]="viaje.destino"
+          [asientosDisponibles]="viaje.asientosDisponibles"
+          (reservar)="abrirDialogoReserva($event)"
+        ></app-trip-card>
+      }
+    </div>
+  }
+</div>
