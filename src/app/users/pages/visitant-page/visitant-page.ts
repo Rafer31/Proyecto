@@ -17,7 +17,7 @@ export class VisitantPage {
     {
       icon: 'airport_shuttle',
       label: 'Viajes disponibles',
-      route: '/users/staff/available-trips',
+      route: '/users/visitant/available-visitant-trips',
     },
   ];
 }

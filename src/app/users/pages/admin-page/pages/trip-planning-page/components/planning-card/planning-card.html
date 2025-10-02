@@ -3,40 +3,40 @@
     class="card-header"
     [ngStyle]="{
       'background-image':
-        'linear-gradient(135deg,' + cardColor + ', ' + lightenColor(cardColor, 30) + ')'
+        'linear-gradient(135deg,' + cardColorComputed() + ', ' + lightenColor(cardColorComputed(), 30) + ')'
     }"
   >
     <div class="header-text">
       <div class="header-title">Viaje programado a:</div>
-      <div class="header-destino">{{ destino }}</div>
+      <div class="header-destino">{{ destino() }}</div>
     </div>
   </div>
 
   <mat-card-content class="card-body mt-4">
     <div class="info-row">
       <mat-icon>event</mat-icon>
-      <span>{{ fechaViaje | date: "EEEE, d 'de' MMMM 'de' y" }}</span>
+      <span>{{ fechaViaje() | date: "EEEE, d 'de' MMMM 'de' y" }}</span>
     </div>
     <div class="info-row">
       <mat-icon>schedule</mat-icon>
-      <span>Salida: {{ horaPartida.slice(0,5) }}</span>
+      <span>Salida: {{ horaPartida().slice(0,5) }}</span>
     </div>
     <div class="info-row">
       <mat-icon>schedule</mat-icon>
-      <span>Llegada: {{ horaLlegada.slice(0,5) }}</span>
+      <span>Llegada: {{ horaLlegada().slice(0,5) }}</span>
     </div>
 
     <div class="info-row">
       <mat-icon>event_seat</mat-icon>
       <span>Asientos disponibles: {{ cantdisponibleasientos() }}</span>
-      <button mat-stroked-button color="primary" class="ml-2" (click)="onSeatDialog(idviaje)">
+      <button mat-stroked-button color="primary" class="ml-2" (click)="onSeatDialog()">
         Ver
       </button>
     </div>
   </mat-card-content>
 
   <mat-card-actions align="end">
-    <button mat-button color="primary" (click)="onVerMas(idviaje)">
+    <button mat-button color="primary" (click)="onVerMas()">
       <mat-icon>visibility</mat-icon> Ver más
     </button>
     <button mat-button color="accent" (click)="onEditar()">

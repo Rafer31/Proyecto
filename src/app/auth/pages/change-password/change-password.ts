@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,8 +30,9 @@ export default class ChangePassword {
   private dialogService = inject(DialogService);
   private userDataService = inject(UserDataService);
 
-  hidePassword = true;
-  hideConfirmPassword = true;
+  hidePassword = signal(true);
+  hideConfirmPassword = signal(true);
+  isLoading = signal(false);
 
   form = this.fb.group(
     {
@@ -48,64 +49,70 @@ export default class ChangePassword {
   }
 
   async onSubmit() {
-    if (this.form.invalid) return;
+    if (this.form.invalid || this.isLoading()) return;
 
     const { password } = this.form.value;
 
+    this.isLoading.set(true);
     const loadingRef = this.dialogService.showLoadingDialog();
-    const { error } = await this.supabase.auth.updateUser({
-      password: password!,
-    });
-    this.dialogService.closeLoadingDialog();
 
-    if (error) {
-      console.error('Error actualizando contraseña:', error.message);
-      await this.dialogService.showErrorDialog(error.message, 'Error');
-      return;
-    }
+    try {
+      const { error } = await this.supabase.auth.updateUser({
+        password: password!,
+      });
+      this.dialogService.closeLoadingDialog();
 
-    
-    const {
-      data: { user },
-      error: userErr,
-    } = await this.supabase.auth.getUser();
-
-    if (userErr || !user) {
-      await this.dialogService.showErrorDialog(
-        'Tu sesión se actualizó. Vuelve a iniciar sesión.',
-        'Sesión cerrada'
-      );
-      this.router.navigate(['/login']);
-      return;
-    }
-
-    
-    const usuario = await this.userDataService.getUserByAuthId(user.id);
-
-    if (!usuario) {
-      this.router.navigate(['/register-user']);
-    } else {
-      switch (usuario.rol) {
-        case 'Administrador':
-          this.router.navigate(['/users/admin']);
-          break;
-        case 'Conductor':
-          this.router.navigate(['/users/bus-driver']);
-          break;
-        case 'Personal':
-          this.router.navigate(['/users/staff']);
-          break;
-        case 'Visitante':
-          this.router.navigate(['/users/visitant']);
-          break;
-        default:
-          this.router.navigate(['/login']);
+      if (error) {
+        console.error('Error actualizando contraseña:', error.message);
+        await this.dialogService.showErrorDialog(error.message, 'Error');
+        return;
       }
-    }
 
-    await this.dialogService.showSuccessDialog(
-      'Contraseña actualizada correctamente',
-      'Éxito'
-    );
+
+      const {
+        data: { user },
+        error: userErr,
+      } = await this.supabase.auth.getUser();
+
+      if (userErr || !user) {
+        await this.dialogService.showErrorDialog(
+          'Tu sesión se actualizó. Vuelve a iniciar sesión.',
+          'Sesión cerrada'
+        );
+        this.router.navigate(['/login']);
+        return;
+      }
+
+
+      const usuario = await this.userDataService.getUserByAuthId(user.id);
+
+      if (!usuario) {
+        this.router.navigate(['/register-user']);
+      } else {
+        switch (usuario.rol) {
+          case 'Administrador':
+            this.router.navigate(['/users/admin']);
+            break;
+          case 'Conductor':
+            this.router.navigate(['/users/bus-driver']);
+            break;
+          case 'Personal':
+            this.router.navigate(['/users/staff']);
+            break;
+          case 'Visitante':
+            this.router.navigate(['/users/visitant']);
+            break;
+          default:
+            this.router.navigate(['/login']);
+        }
+      }
+
+      await this.dialogService.showSuccessDialog(
+        'Contraseña actualizada correctamente',
+        'Éxito'
+      );
+    } finally {
+      this.isLoading.set(false);
+    }
   }
 }

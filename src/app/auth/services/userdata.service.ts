@@ -1,9 +1,11 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal, computed } from '@angular/core';
 import { SupabaseService } from '../../shared/services/supabase.service';
+import { UserStateService } from '../../shared/services/user-state.service';
 
 @Injectable({ providedIn: 'root' })
 export class UserDataService {
   private supabaseClient = inject(SupabaseService).supabase;
+  private userStateService = inject(UserStateService);
 
   async getUserRole(authId: string): Promise<string | null> {
     const { data: usuario, error: errorUser } = await this.supabaseClient
@@ -134,21 +136,42 @@ export class UserDataService {
     }
   }
   async getActiveUserByAuthId(authId: string) {
-    const { data: usuario, error } = await this.supabaseClient
-      .from('usuario')
-      .select('*')
-      .eq('auth_id', authId)
-      .maybeSingle();
+    try {
+      const { data: usuario, error } = await this.supabaseClient
+        .from('usuario')
+        .select('*')
+        .eq('auth_id', authId)
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error buscando usuario:', error);
+      if (error) {
+        console.error('Error buscando usuario:', error);
+        throw error;
+      }
+
+      if (!usuario || usuario.estado !== 'Activo') {
+        return null;
+      }
+
+      return usuario;
+    } catch (error) {
+      console.error('Error cargando usuario:', error);
       throw error;
     }
+  }
 
-    if (!usuario || usuario.estado !== 'Activo') {
-      return null;
+  async loadUserAndUpdateState(authId: string) {
+    this.userStateService.setLoading(true);
+    this.userStateService.setError(null);
+
+    try {
+      const usuario = await this.getActiveUserByAuthId(authId);
+      this.userStateService.setUser(usuario);
+      return usuario;
+    } catch (error) {
+      this.userStateService.setError('Error al cargar usuario');
+      throw error;
+    } finally {
+      this.userStateService.setLoading(false);
     }
-
-    return usuario;
   }
 }

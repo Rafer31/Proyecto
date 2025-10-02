@@ -4,7 +4,7 @@ import { SupabaseService } from '../../shared/services/supabase.service';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private supabaseClient = inject(SupabaseService).supabase;
-  
+
   async getConductores() {
     const { data, error } = await this.supabaseClient.from('conductor').select(`
       idconductor,
@@ -34,7 +34,7 @@ export class UserService {
   }
 
   async getConductoresDisponibles() {
-    
+
     const { data: conductores, error: errorConductores } = await this.supabaseClient
       .from('conductor')
       .select(`
@@ -54,9 +54,9 @@ export class UserService {
       throw errorConductores;
     }
 
-    
-    
-    
+
+
+
     const { data: conductoresOcupados, error: errorOcupados } = await this.supabaseClient
       .from('conductor_vehiculo_empresa')
       .select(`
@@ -74,12 +74,12 @@ export class UserService {
       throw errorOcupados;
     }
 
-    
+
     const idsOcupados = new Set(
       (conductoresOcupados || []).map((cve: any) => cve.idconductor)
     );
 
-    
+
     const conductoresDisponibles = (conductores || [])
       .filter((c: any) => !idsOcupados.has(c.idconductor))
       .map((c: any) => ({
@@ -93,7 +93,7 @@ export class UserService {
 
     return conductoresDisponibles;
   }
-  
+
   async getAllUsers() {
     const { data, count, error } = await this.supabaseClient
       .from('usuario')
@@ -141,7 +141,7 @@ export class UserService {
         case 'Personal':
         case 'Administrador':
           nroficha = u.personal ? u.personal.nroficha : '-';
-          
+
           const asignacionActiva = u.personal?.asignacion_destino?.find(
             (asig: any) => asig.fechafin === null
           );
@@ -214,7 +214,7 @@ export class UserService {
         case 'Personal':
         case 'Administrador':
           nroficha = u.personal ? u.personal.nroficha : '-';
-          
+
           const asignacionActiva = u.personal?.asignacion_destino?.find(
             (asig: any) => asig.fechafin === null
           );
@@ -263,7 +263,7 @@ export class UserService {
     }
     return data;
   }
-  
+
   async updateObservation(userId: string, observacion: string) {
     const { data, error } = await this.supabaseClient
       .from('asignacion_destino')

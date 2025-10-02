@@ -1,0 +1,42 @@
+<div class="available-trips-container">
+  <div class="header">
+    <h1>Viajes Disponibles</h1>
+    <p>Como visitante, puedes ver todos los viajes disponibles</p>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>Cargando viajes disponibles...</p>
+    </div>
+  } @else if (error()) {
+    <div class="error-container">
+      <h3>Error</h3>
+      <p>{{ error() }}</p>
+      <button mat-raised-button color="primary" (click)="cargarDatos()">
+        Reintentar
+      </button>
+    </div>
+  } @else if (viajes().length === 0) {
+    <app-emptystate
+      icon="flight_takeoff"
+      title="No hay viajes disponibles"
+      description="No se encontraron viajes disponibles en este momento."
+    />
+  } @else {
+    <div class="trips-grid">
+      @for (viaje of viajes(); track viaje.idviaje) {
+        <app-trip-card
+          [idviaje]="viaje.idviaje"
+          [fechaPartida]="viaje.fechaPartida"
+          [fechaLlegada]="viaje.fechaLlegada"
+          [horaPartida]="viaje.horaPartida"
+          [horaLlegada]="viaje.horaLlegada"
+          [destino]="viaje.destino"
+          [asientosDisponibles]="viaje.asientosDisponibles"
+          (reservar)="abrirDialogoReserva($event)"
+        />
+      }
+    </div>
+  }
+</div>

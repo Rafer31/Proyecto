@@ -320,9 +320,9 @@ export class ReservaService {
       // Si existe una reserva cancelada, actualizarla a 'reservado'
       const { error: updateError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
-        .update({ 
+        .update({
           estado: 'reservado',
-          nroasiento: asiento 
+          nroasiento: asiento
         })
         .eq('idasignaciondestino', idasignaciondestino)
         .eq('idplanificacion', idplanificacion)

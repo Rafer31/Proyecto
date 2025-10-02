@@ -98,7 +98,7 @@ export class SeatsDialog {
       while (numero <= totalAsientos) {
         const restantes = totalAsientos - numero + 1;
         const asientosFila: any[] = [];
-        
+
         // Caso especial: última fila con 5 asientos
         if (restantes === 5) {
           // 2 asientos a la izquierda
@@ -112,7 +112,7 @@ export class SeatsDialog {
               pasajero,
             });
           }
-          
+
           // 1 asiento en el centro (donde normalmente va el pasillo)
           const asientoCentro = numero++;
           const pasajeroCentro = pasajeros.find((p) => p.asiento === asientoCentro);
@@ -122,7 +122,7 @@ export class SeatsDialog {
             tipo: 'asiento',
             pasajero: pasajeroCentro,
           });
-          
+
           // 2 asientos a la derecha
           for (let i = 0; i < 2; i++) {
             const asientoNum = numero++;
@@ -134,14 +134,14 @@ export class SeatsDialog {
               pasajero,
             });
           }
-          
+
           filasTemp.push({ tipo: 'normal', asientos: asientosFila });
         } else {
           // Distribución normal (2 + pasillo + 2 o menos)
           const asientosEnFila = restantes >= 4 ? 4 : restantes;
           const leftSide = Math.ceil(asientosEnFila / 2);
           const rightSide = asientosEnFila - leftSide;
-          
+
           // Asientos izquierda
           for (let i = 0; i < leftSide; i++) {
             const asientoNum = numero++;
@@ -153,10 +153,10 @@ export class SeatsDialog {
               pasajero,
             });
           }
-          
+
           // Pasillo
           asientosFila.push({ num: null, tipo: 'pasillo' });
-          
+
           // Asientos derecha
           for (let i = 0; i < rightSide; i++) {
             const asientoNum = numero++;
@@ -168,7 +168,7 @@ export class SeatsDialog {
               pasajero,
             });
           }
-          
+
           filasTemp.push({ tipo: 'normal', asientos: asientosFila });
         }
       }
@@ -205,7 +205,7 @@ export class SeatsDialog {
       // Si no es su asiento, no hace nada (no muestra información)
       return;
     }
-    
+
     // Si es admin, puede ver cualquier asiento
     this.pasajeroSeleccionado.set(seat.pasajero);
     this.vistaActual.set('detalle');
@@ -333,7 +333,7 @@ export class SeatsDialog {
           'Cerrar',
           { duration: 3000 }
         );
-        
+
         // Cerrar diálogo con flag de cambios
         this.dialogRef.close({ cambiosRealizados: true });
         return;
@@ -363,7 +363,7 @@ export class SeatsDialog {
         'Cerrar',
         { duration: 3000 }
       );
-      
+
       // Cerrar diálogo con flag de cambios
       this.dialogRef.close({ cambiosRealizados: true });
     } catch (error) {

@@ -11,6 +11,7 @@ import { TripPlanningPage } from './pages/admin-page/pages/trip-planning-page/tr
 import { ManageUsersPage } from './pages/admin-page/pages/manage-users-page/manage-users-page';
 import { AssignedTrips } from './pages/bus-driver-page/pages/assigned-trips/assigned-trips';
 import { AvailableTrips } from './pages/staff-page/pages/available-trips/available-trips';
+import { AvailableVisitantTrips } from './pages/visitant-page/pages/available-trips/available-visitant-trips';
 
 export const userRoutes: Routes = [
   {
@@ -64,8 +65,8 @@ export const userRoutes: Routes = [
         component: VisitantPage,
         children: [
           {
-            path: 'available-trips',
-            component: AvailableTrips,
+            path: 'available-visitant-trips',
+            component: AvailableVisitantTrips,
           },
            {
             path: '',

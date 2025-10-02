@@ -10,7 +10,7 @@
   }
 
   mat-card-header {
-    padding: 16px;
+    padding: 20px;
     margin: -16px -16px 0 -16px;
     border-radius: 4px 4px 0 0;
     color: white;
@@ -18,7 +18,7 @@
     .card-title {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-size: 1.25rem;
       font-weight: 500;
       margin: 0;
@@ -32,14 +32,14 @@
   }
 
   .card-content {
-    padding: 20px 16px;
+    padding: 24px 20px;
     flex: 1;
 
     .info-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
+      gap: 14px;
+      margin-bottom: 20px;
 
       &:last-child {
         margin-bottom: 0;
@@ -56,7 +56,7 @@
       .info-text {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 4px;
 
         .info-label {
           font-size: 0.75rem;
@@ -80,12 +80,12 @@
   }
 
   .card-actions {
-    padding: 8px 16px 16px;
+    padding: 12px 20px 20px;
     margin: 0;
 
     .reserve-button {
       width: 100%;
-      padding: 12px;
+      padding: 14px;
       font-size: 1rem;
 
       mat-icon {
@@ -99,8 +99,11 @@
 @media (max-width: 768px) {
   .trip-card {
     mat-card-header {
+      padding: 18px;
+
       .card-title {
         font-size: 1.1rem;
+        gap: 8px;
 
         .destination-icon {
           font-size: 24px;
@@ -111,11 +114,11 @@
     }
 
     .card-content {
-      padding: 16px 12px;
+      padding: 20px 16px;
 
       .info-row {
-        gap: 10px;
-        margin-bottom: 12px;
+        gap: 12px;
+        margin-bottom: 16px;
 
         .info-icon {
           font-size: 20px;
@@ -124,6 +127,8 @@
         }
 
         .info-text {
+          gap: 3px;
+
           .info-label {
             font-size: 0.7rem;
           }
@@ -136,10 +141,32 @@
     }
 
     .card-actions {
+      padding: 10px 16px 18px;
+
       .reserve-button {
-        padding: 10px;
+        padding: 12px;
         font-size: 0.9rem;
       }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .trip-card {
+    mat-card-header {
+      padding: 16px;
+    }
+
+    .card-content {
+      padding: 18px 14px;
+
+      .info-row {
+        margin-bottom: 14px;
+      }
+    }
+
+    .card-actions {
+      padding: 8px 14px 16px;
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -34,24 +34,31 @@ export class UserToolbar {
 
   collapsed = this.nav.collapsed;
   drawerMode = this.nav.drawerMode;
+  isSigningOut = signal(false);
 
   toggleNav() {
     this.nav.toggleNav();
   }
 
   async confirmSignOut() {
-    const dialogRef = this.dialog.open(ConfirmDialog, {
-      data: {
-        title: 'Cerrar sesión',
-        message: '¿Estás seguro de que deseas cerrar sesión?',
-      },
-    });
+    this.isSigningOut.set(true);
 
-    const result = await firstValueFrom(dialogRef.afterClosed());
+    try {
+      const dialogRef = this.dialog.open(ConfirmDialog, {
+        data: {
+          title: 'Cerrar sesión',
+          message: '¿Estás seguro de que deseas cerrar sesión?',
+        },
+      });
 
-    if (result) {
-      await this.supabaseService.supabase.auth.signOut();
-      this.router.navigate(['/login']);
+      const result = await firstValueFrom(dialogRef.afterClosed());
+
+      if (result) {
+        await this.supabaseService.supabase.auth.signOut();
+        this.router.navigate(['/login']);
+      }
+    } finally {
+      this.isSigningOut.set(false);
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output, input, computed } from '@angular/core';
+import { Component, input, output, inject, signal, computed } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,22 +21,26 @@ import { SeatsDialog } from '../seats-dialog/seats-dialog';
   styleUrl: './planning-card.scss',
 })
 export class PlanningCardComponent {
-  @Input() fechaViaje = '';
-  @Input() destino = '';
-  @Input() idviaje!: string;
-  @Input() horaPartida = '';
-  @Input() horaLlegada = '';
-
+  // Modern inputs using input()
+  fechaViaje = input<string>('');
+  destino = input<string>('');
+  idviaje = input.required<string>();
+  horaPartida = input<string>('');
+  horaLlegada = input<string>('');
   cantdisponibleasientos = input<number | undefined>(undefined);
-  
-  @Output() verMas = new EventEmitter<string>();
-  @Output() editar = new EventEmitter<string>();
-  @Output() eliminar = new EventEmitter<string>();
-  @Output() actualizarAsientos = new EventEmitter<string>();
 
-  cardColor = '#607d8b';
-  constructor(private dialog: MatDialog) {}
-  
+  // Modern outputs using output()
+  verMas = output<string>();
+  editar = output<string>();
+  eliminar = output<string>();
+  actualizarAsientos = output<string>();
+
+  // Modern dependency injection
+  private dialog = inject(MatDialog);
+
+  // Reactive state with signals
+  cardColor = signal('#607d8b');
+
   private destinoColors: Record<string, string> = {
     'La Paz': '#3f51b5',
     Cochabamba: '#009688',
@@ -44,13 +48,15 @@ export class PlanningCardComponent {
     Potosí: '#9c27b0',
   };
 
-  ngOnInit() {
-    const normalized = this.destino.trim().toLowerCase();
+  // Computed property for card color based on destination
+  cardColorComputed = computed(() => {
+    const destino = this.destino();
+    const normalized = destino.trim().toLowerCase();
     const match = Object.keys(this.destinoColors).find(
       (d) => d.toLowerCase() === normalized
     );
-    this.cardColor = match ? this.destinoColors[match] : '#607d8b';
-  }
+    return match ? this.destinoColors[match] : '#607d8b';
+  });
 
   lightenColor(color: string, percent: number): string {
     const num = parseInt(color.replace('#', ''), 16);
@@ -72,32 +78,32 @@ export class PlanningCardComponent {
     );
   }
 
-  onVerMas(idviaje: string) {
+  onVerMas() {
     this.dialog.open(WatchMoreDialog, {
       width: '900px',
-      data: { idplanificacion: idviaje },
+      data: { idplanificacion: this.idviaje() },
     });
   }
 
   onEditar() {
-    this.editar.emit(this.idviaje);
+    this.editar.emit(this.idviaje());
   }
-  
-  onSeatDialog(idviaje: string) {
+
+  onSeatDialog() {
     const dialogRef = this.dialog.open(SeatsDialog, {
       width: '700px',
-      data: { idplanificacion: idviaje },
+      data: { idplanificacion: this.idviaje() },
     });
-  
+
     dialogRef.afterClosed().subscribe((result) => {
       // Solo actualizar si hubo cambios (reserva, cancelación o cambio)
       if (result?.cambiosRealizados) {
-        this.actualizarAsientos.emit(idviaje);
+        this.actualizarAsientos.emit(this.idviaje());
       }
     });
   }
-  
+
   onEliminar() {
-    this.eliminar.emit(this.idviaje);
+    this.eliminar.emit(this.idviaje());
   }
 }

@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -8,6 +8,7 @@ import { UserDataService } from '../../../../../auth/services/userdata.service';
 import { SupabaseService } from '../../../../../shared/services/supabase.service';
 import { SeatsDialog } from '../../../admin-page/pages/trip-planning-page/components/seats-dialog/seats-dialog';
 import { Emptystate } from '../../../../components/emptystate/emptystate';
+import { UserStateService } from '../../../../../shared/services/user-state.service';
 
 @Component({
   selector: 'app-available-trips',
@@ -31,6 +32,11 @@ export class AvailableTrips implements OnInit {
   private tripService = inject(TripPlanningService);
   private userDataService = inject(UserDataService);
   private supabaseService = inject(SupabaseService);
+  private userStateService = inject(UserStateService);
+
+  // Usar estado global para el usuario
+  currentUser = this.userStateService.currentUser;
+  userName = this.userStateService.userName;
 
   async ngOnInit() {
     await this.cargarDatos();
@@ -41,17 +47,8 @@ export class AvailableTrips implements OnInit {
       this.loading.set(true);
       this.error.set(null);
 
-      // Obtener usuario actual
-      const { data: { user }, error: authError } = await this.supabaseService.supabase.auth.getUser();
-      
-      if (authError || !user) {
-        this.error.set('No se pudo obtener la información del usuario');
-        return;
-      }
-
-      // Obtener datos del usuario
-      const usuario = await this.userDataService.getActiveUserByAuthId(user.id);
-      
+      // Obtener usuario actual del estado global
+      const usuario = this.currentUser();
       if (!usuario) {
         this.error.set('Usuario no encontrado');
         return;
@@ -84,20 +81,20 @@ export class AvailableTrips implements OnInit {
 
       // Manejar destino como array o objeto
       const destinoInfo: any = asignacion.destino;
-      const nombreDestino = Array.isArray(destinoInfo) 
-        ? destinoInfo[0]?.nomdestino 
+      const nombreDestino = Array.isArray(destinoInfo)
+        ? destinoInfo[0]?.nomdestino
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
       // Obtener viajes disponibles para el destino del usuario
       const viajes = await this.tripService.getViajesDisponiblesPorDestino(asignacion.iddestino);
-      
+
       this.viajes.set(viajes.map((v: any) => {
         const destinoViaje: any = v.destino;
         const nombreDestinoViaje = Array.isArray(destinoViaje)
           ? destinoViaje[0]?.nomdestino
           : destinoViaje?.nomdestino;
-        
+
         return {
           idviaje: v.idplanificacion,
           fechaPartida: v.fechapartida,
@@ -119,15 +116,18 @@ export class AvailableTrips implements OnInit {
   abrirDialogoReserva(idviaje: string) {
     const dialogRef = this.dialog.open(SeatsDialog, {
       width: '700px',
-      data: { 
+      data: {
         idplanificacion: idviaje,
         isStaff: true // Flag para indicar que es un usuario staff
       },
     });
 
-    dialogRef.afterClosed().subscribe(() => {
-      // Recargar viajes para actualizar asientos disponibles
-      this.cargarDatos();
+    dialogRef.afterClosed().subscribe((result) => {
+      // Solo recargar si el resultado indica que hubo cambios
+      // result puede ser: 'reservado', 'editado', 'cancelado', true, o cualquier valor que indique cambio
+      if (result) {
+        this.cargarDatos();
+      }
     });
   }
 }
