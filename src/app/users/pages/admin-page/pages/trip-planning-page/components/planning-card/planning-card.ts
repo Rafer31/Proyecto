@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, input, computed } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,13 +26,16 @@ export class PlanningCardComponent {
   @Input() idviaje!: string;
   @Input() horaPartida = '';
   @Input() horaLlegada = '';
-  @Input() cantdisponibleasientos!: number | undefined;
+
+  cantdisponibleasientos = input<number | undefined>(undefined);
+  
   @Output() verMas = new EventEmitter<string>();
   @Output() editar = new EventEmitter<string>();
   @Output() eliminar = new EventEmitter<string>();
 
   cardColor = '#607d8b';
   constructor(private dialog: MatDialog) {}
+  
   private destinoColors: Record<string, string> = {
     'La Paz': '#3f51b5',
     Cochabamba: '#009688',
@@ -78,12 +81,18 @@ export class PlanningCardComponent {
   onEditar() {
     this.editar.emit(this.idviaje);
   }
+  
   onSeatDialog(idviaje: string) {
-    this.dialog.open(SeatsDialog, {
+    const dialogRef = this.dialog.open(SeatsDialog, {
       width: '700px',
       data: { idplanificacion: idviaje },
     });
+  
+    dialogRef.afterClosed().subscribe(() => {
+      this.verMas.emit(idviaje);
+    });
   }
+  
   onEliminar() {
     this.eliminar.emit(this.idviaje);
   }

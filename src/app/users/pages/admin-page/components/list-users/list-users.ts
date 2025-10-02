@@ -72,12 +72,13 @@ export default class ListUsers implements OnInit, AfterViewInit {
 
   dataSource = new MatTableDataSource<Usuario>([]);
   loading = false;
-  initialLoad = true; // Nueva propiedad para la carga inicial
+  initialLoad = true;
 
   private searchValue = '';
   roleControlValue = '';
 
   totalItems = 0;
+  allUsers: Usuario[] = [];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
@@ -89,62 +90,79 @@ export default class ListUsers implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (this.paginator) {
-      this.paginator.page.subscribe((event: PageEvent) => {
-        this.loadPage(event.pageIndex, event.pageSize);
-      });
-    }
-
-    this.loadPage(0, 10);
+    // Cargar todos los usuarios primero
+    this.loadAllUsers().then(() => {
+      // IMPORTANTE: Conectar paginator y sort DESPUÉS de cargar los datos
+      this.dataSource.paginator = this.paginator;
+      this.dataSource.sort = this.sort;
+      
+      // Forzar detección de cambios
+      this.cdr.detectChanges();
+    });
   }
 
-  /** Carga una página de usuarios desde Supabase */
-  async loadPage(pageIndex: number, pageSize: number) {
+  /** Carga TODOS los usuarios y los filtra del lado del cliente */
+  async loadAllUsers() {
     this.loading = true;
     this.cdr.detectChanges();
+    
     try {
-      const { data, count } = await this.userService.getUsers(
-        pageIndex,
-        pageSize
-      );
-      let usuarios = data || [];
-
-      if (this.searchValue) {
-        const s = this.searchValue.toLowerCase();
-        usuarios = usuarios.filter(
-          (u) =>
-            `${u.nomusuario} ${u.patusuario} ${u.matusuario}`
-              .toLowerCase()
-              .includes(s) ||
-            (u.ci || '').toLowerCase().includes(s) ||
-            (u.numcelular || '').toLowerCase().includes(s)
-        );
-      }
-      if (this.roleControlValue) {
-        usuarios = usuarios.filter(
-          (u) =>
-            u.roles &&
-            u.roles.length > 0 &&
-            u.roles[0].nomrol === this.roleControlValue
-        );
-      }
-
-      this.dataSource.data = usuarios;
+      const { data, count } = await this.userService.getAllUsers();
+      this.allUsers = data || [];
       this.totalItems = count || 0;
 
-      this.totalChange.emit(usuarios.length);
+      // Aplicar filtros
+      this.applyFilters();
 
       this.loading = false;
-      this.initialLoad = false; // Marca que la carga inicial terminó
+      this.initialLoad = false;
       this.cdr.detectChanges();
     } catch (err) {
       console.error('Error cargando usuarios', err);
       this.loading = false;
       this.initialLoad = false;
+      this.dataSource.data = [];
       this.cdr.detectChanges();
-
       this.totalChange.emit(0);
     }
+  }
+
+  /** Aplica los filtros de búsqueda y rol */
+  private applyFilters() {
+    let usuarios = [...this.allUsers];
+
+    // Filtrar por búsqueda
+    if (this.searchValue) {
+      const s = this.searchValue.toLowerCase();
+      usuarios = usuarios.filter(
+        (u) =>
+          `${u.nomusuario} ${u.patusuario} ${u.matusuario}`
+            .toLowerCase()
+            .includes(s) ||
+          (u.ci || '').toLowerCase().includes(s) ||
+          (u.numcelular || '').toLowerCase().includes(s)
+      );
+    }
+
+    // Filtrar por rol
+    if (this.roleControlValue) {
+      usuarios = usuarios.filter(
+        (u) =>
+          u.roles &&
+          u.roles.length > 0 &&
+          u.roles[0].nomrol === this.roleControlValue
+      );
+    }
+
+    // Actualizar el data source
+    this.dataSource.data = usuarios;
+    
+    // Resetear a la primera página cuando hay filtros
+    if (this.paginator) {
+      this.paginator.firstPage();
+    }
+
+    this.totalChange.emit(usuarios.length);
   }
 
   /** Carga los roles para el filtro */
@@ -158,14 +176,12 @@ export default class ListUsers implements OnInit, AfterViewInit {
 
   onSearchChange(search: string) {
     this.searchValue = search;
-    if (this.paginator) this.paginator.firstPage();
-    this.loadPage(0, this.paginator?.pageSize || 10);
+    this.applyFilters();
   }
 
   onRoleChange(role: string) {
     this.roleControlValue = role;
-    if (this.paginator) this.paginator.firstPage();
-    this.loadPage(0, this.paginator?.pageSize || 10);
+    this.applyFilters();
   }
 
   openAddUserDialog() {
@@ -173,8 +189,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
       .open(AddUsers)
       .afterClosed()
       .subscribe((result) => {
-        if (result)
-          this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
+        if (result) this.loadAllUsers();
       });
   }
 
@@ -205,7 +220,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
 
       dialogRef.afterClosed().subscribe((result) => {
         if (result) {
-          this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
+          this.loadAllUsers();
         }
       });
     } catch (error) {
@@ -237,7 +252,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
               user.idusuario,
               result.observacion
             );
-            this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
+            this.loadAllUsers();
           } catch (err) {
             console.error('Error guardando observación', err);
             this.dialogService.showErrorDialog(
@@ -260,7 +275,7 @@ export default class ListUsers implements OnInit, AfterViewInit {
 
     dialogRef.afterClosed().subscribe((result) => {
       if (result) {
-        this.loadPage(this.paginator.pageIndex, this.paginator.pageSize);
+        this.loadAllUsers();
       }
     });
   }

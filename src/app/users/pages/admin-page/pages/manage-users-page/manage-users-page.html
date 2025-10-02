@@ -1,10 +1,2 @@
 <h1 class="text-2xl font-bold mt-5 ms-5">Gestión de usuarios </h1>
 <app-list-users (totalChange)="updateUserCount($event)"></app-list-users>
-
-@if(isDataLoaded() && userCount() === 0) {
-  <app-emptystate
-    [imageSrc]="'no-users.svg'"
-    [title]="'Aún no hay usuarios registrados'"
-    [description]="'No se han registrado usuarios aún'"
-  />
-}

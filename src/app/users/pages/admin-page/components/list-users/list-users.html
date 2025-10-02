@@ -1,4 +1,3 @@
-
 <div class="user-list-container">
   <div class="filters">
     <app-search-users
@@ -97,9 +96,9 @@
             <th mat-header-cell *matHeaderCellDef>Información</th>
             <td mat-cell *matCellDef="let user">
               @if (user.roles?.[0]?.nomrol === 'Visitante') {
-                {{ user.visitante?.informacion || 'Sin info' }}
+                {{ user.extraInfo !== '-' ? user.extraInfo : 'Sin información' }}
               } @else if (user.roles?.[0]?.nomrol === 'Personal' || user.roles?.[0]?.nomrol === 'Administrador') {
-                {{ user.personal?.asignacion_destino?.[0]?.observacion || 'Sin observación' }}
+                {{ user.extraInfo !== '-' ? user.extraInfo : 'Sin observación' }}
               } @else {
                 Sin datos
               }

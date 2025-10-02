@@ -4,6 +4,7 @@ import { SupabaseService } from '../../shared/services/supabase.service';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private supabaseClient = inject(SupabaseService).supabase;
+  
   async getConductores() {
     const { data, error } = await this.supabaseClient.from('conductor').select(`
       idconductor,
@@ -31,6 +32,7 @@ export class UserService {
       ci: c.usuario?.ci ?? null,
     }));
   }
+  
   async getAllUsers() {
     const { data, count, error } = await this.supabaseClient
       .from('usuario')
@@ -46,7 +48,18 @@ export class UserService {
         auth_id,
         estado,
         roles!usuario_idrol_fkey ( idrol, nomrol ),
-        personal ( nroficha, operacion ),
+        personal (
+          nroficha,
+          operacion,
+          asignacion_destino (
+            idasignaciondestino,
+            fechainicio,
+            fechafin,
+            observacion,
+            nroficha,
+            destino ( iddestino, nomdestino )
+          )
+        ),
         visitante ( idvisitante, informacion ),
         conductor ( idconductor )
       `,
@@ -67,6 +80,11 @@ export class UserService {
         case 'Personal':
         case 'Administrador':
           nroficha = u.personal ? u.personal.nroficha : '-';
+          // Buscar la asignación activa (sin fechafin)
+          const asignacionActiva = u.personal?.asignacion_destino?.find(
+            (asig: any) => asig.fechafin === null
+          );
+          extraInfo = asignacionActiva?.observacion || '-';
           break;
         case 'Visitante':
           extraInfo = u.visitante?.informacion ?? '-';
@@ -135,6 +153,11 @@ export class UserService {
         case 'Personal':
         case 'Administrador':
           nroficha = u.personal ? u.personal.nroficha : '-';
+          // Buscar la asignación activa (sin fechafin)
+          const asignacionActiva = u.personal?.asignacion_destino?.find(
+            (asig: any) => asig.fechafin === null
+          );
+          extraInfo = asignacionActiva?.observacion || '-';
           break;
         case 'Visitante':
           extraInfo = u.visitante?.informacion ?? '-';
@@ -179,6 +202,7 @@ export class UserService {
     }
     return data;
   }
+  
   async updateObservation(userId: string, observacion: string) {
     const { data, error } = await this.supabaseClient
       .from('asignacion_destino')
