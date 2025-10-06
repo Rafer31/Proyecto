@@ -64,7 +64,7 @@ export class AvailableVisitantTrips implements OnInit {
             fechaPartida: v.fechapartida,
             fechaLlegada: v.fechallegada,
             horaPartida: v.horapartida,
-            horaLlegada: v.horallegada,
+
             destino: nombreDestinoViaje ?? 'Sin destino',
             asientosDisponibles:
               v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,

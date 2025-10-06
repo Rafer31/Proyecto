@@ -21,24 +21,19 @@ import { SeatsDialog } from '../seats-dialog/seats-dialog';
   styleUrl: './planning-card.scss',
 })
 export class PlanningCardComponent {
-  // Modern inputs using input()
   fechaViaje = input<string>('');
   destino = input<string>('');
   idviaje = input.required<string>();
   horaPartida = input<string>('');
-  horaLlegada = input<string>('');
   cantdisponibleasientos = input<number | undefined>(undefined);
 
-  // Modern outputs using output()
   verMas = output<string>();
   editar = output<string>();
   eliminar = output<string>();
   actualizarAsientos = output<string>();
 
-  // Modern dependency injection
   private dialog = inject(MatDialog);
 
-  // Reactive state with signals
   cardColor = signal('#607d8b');
 
   private destinoColors: Record<string, string> = {
@@ -48,7 +43,7 @@ export class PlanningCardComponent {
     Potosí: '#9c27b0',
   };
 
-  // Computed property for card color based on destination
+
   cardColorComputed = computed(() => {
     const destino = this.destino();
     const normalized = destino.trim().toLowerCase();
@@ -96,7 +91,6 @@ export class PlanningCardComponent {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      // Solo actualizar si hubo cambios (reserva, cancelación o cambio)
       if (result?.cambiosRealizados) {
         this.actualizarAsientos.emit(this.idviaje());
       }

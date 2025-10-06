@@ -5,7 +5,6 @@ export interface Viaje {
   fechaPartida: string;
   fechaLlegada: string;
   horaPartida: string;
-  horaLlegada: string;
   destino: string;
   asientosDisponibles: number;
 }

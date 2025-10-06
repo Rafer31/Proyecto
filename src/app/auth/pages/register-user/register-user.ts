@@ -52,7 +52,7 @@ export default class RegisterUser {
   }
   private async loadDestinos() {
     try {
-      const data = await this.destinyService.getDestinos();
+      const data = await this.destinyService.getDestinosParaViajes();
       this.destinos.set(data);
     } catch (error) {
       console.error('No se pudieron cargar los destinos', error);

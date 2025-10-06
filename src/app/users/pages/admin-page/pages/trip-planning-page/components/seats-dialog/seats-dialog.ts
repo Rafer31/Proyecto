@@ -55,7 +55,8 @@ export class SeatsDialog {
     private snackBar: MatSnackBar,
     private userDataService: UserDataService,
     private supabaseService: SupabaseService,
-    @Inject(MAT_DIALOG_DATA) public data: { idplanificacion: string; isStaff?: boolean }
+    @Inject(MAT_DIALOG_DATA)
+    public data: { idplanificacion: string; isStaff?: boolean }
   ) {}
 
   async ngOnInit() {
@@ -115,7 +116,9 @@ export class SeatsDialog {
 
           // 1 asiento en el centro (donde normalmente va el pasillo)
           const asientoCentro = numero++;
-          const pasajeroCentro = pasajeros.find((p) => p.asiento === asientoCentro);
+          const pasajeroCentro = pasajeros.find(
+            (p) => p.asiento === asientoCentro
+          );
           asientosFila.push({
             num: asientoCentro,
             ocupado: ocupados.includes(asientoCentro),
@@ -334,37 +337,60 @@ export class SeatsDialog {
           { duration: 3000 }
         );
 
-        // Cerrar diálogo con flag de cambios
         this.dialogRef.close({ cambiosRealizados: true });
         return;
       }
 
+      // NUEVO: Verificar si existe retorno asociado
+      const { existeRetorno, idplanificacionRetorno } =
+        await this.reservaService.verificarRetornoAsociado(
+          this.data.idplanificacion
+        );
+
+      let reservarRetorno = false;
+
+      if (existeRetorno) {
+        const dialogRef = this.dialog.open(ConfirmDialog, {
+          data: {
+            title: 'Reservar con retorno',
+            message: `Este viaje tiene un retorno programado. ¿Deseas reservar el asiento ${seat.num} también para el viaje de retorno?`,
+          },
+        });
+
+        reservarRetorno = await dialogRef.afterClosed().toPromise();
+      }
+
+      // Confirmar la reserva
       const dialogRef = this.dialog.open(ConfirmDialog, {
         data: {
           title: 'Confirmar reserva',
-          message: `¿Desea reservar el asiento ${seat.num}?`,
+          message:
+            existeRetorno && reservarRetorno
+              ? `¿Confirmas reservar el asiento ${seat.num} para la salida y el retorno?`
+              : `¿Desea reservar el asiento ${seat.num}?`,
         },
       });
 
       const confirmado = await dialogRef.afterClosed().toPromise();
       if (!confirmado) return;
 
-      await this.reservaService.reservarAsiento(
+      // Usar el nuevo método que maneja retornos
+      await this.reservaService.reservarAsientoConRetorno(
         this.data.idplanificacion,
         seat.num,
-        'personal',
-        usuario.idusuario
+        usuario.idusuario,
+        reservarRetorno
       );
 
       await this.ngOnInit();
 
-      this.snackBar.open(
-        `Asiento ${seat.num} reservado correctamente`,
-        'Cerrar',
-        { duration: 3000 }
-      );
+      const mensaje =
+        existeRetorno && reservarRetorno
+          ? `Asientos ${seat.num} reservados correctamente para salida y retorno`
+          : `Asiento ${seat.num} reservado correctamente`;
 
-      // Cerrar diálogo con flag de cambios
+      this.snackBar.open(mensaje, 'Cerrar', { duration: 3000 });
+
       this.dialogRef.close({ cambiosRealizados: true });
     } catch (error) {
       this.snackBar.open(`Error: ${error}`, 'Cerrar', {

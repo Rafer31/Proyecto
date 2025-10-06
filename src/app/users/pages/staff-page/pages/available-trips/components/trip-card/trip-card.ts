@@ -16,7 +16,7 @@ export class TripCardComponent {
   fechaPartida = input<string>();
   fechaLlegada = input<string>();
   horaPartida = input<string>();
-  horaLlegada = input<string>();
+
   destino = input<string>();
   asientosDisponibles = input<number>();
 

@@ -31,7 +31,7 @@ export class VehiclePage {
   private dialog = inject(MatDialog);
 
   vehicles = signal<Vehicle[]>([]);
-  isLoading = signal(true); 
+  isLoading = signal(true);
 
   async ngOnInit() {
     await this.loadVehicles();
@@ -81,7 +81,6 @@ export class VehiclePage {
       }
     });
   }
-
   onVehicleUpdated(updated: Vehicle) {
     this.vehicles.update((vehicles) =>
       vehicles.map((v) => (v.nroplaca === updated.nroplaca ? updated : v))

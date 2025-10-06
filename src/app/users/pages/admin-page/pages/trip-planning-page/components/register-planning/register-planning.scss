@@ -1,32 +1,318 @@
+.dialog-container {
+  padding: 8px;
+  min-height: 400px;
+}
+
+// FORMULARIOS COMPACTOS
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.form-field {
+  width: 100%;
+
+  ::ng-deep {
+    .mat-mdc-form-field-wrapper {
+      padding-bottom: 8px;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      padding: 0 12px;
+    }
+  }
+}
+
+.form-field-full {
+  width: 100%;
+  margin-bottom: 12px;
+
+  ::ng-deep {
+    .mat-mdc-form-field-wrapper {
+      padding-bottom: 8px;
+    }
+  }
+}
+
+// SECCIÓN DE TURNOS
+.turno-section {
+  margin: 16px 0 12px;
+
+  .section-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #666;
+    margin-bottom: 8px;
+  }
+
+  .checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+
+    mat-checkbox {
+      ::ng-deep {
+        .mdc-form-field {
+          font-size: 14px;
+        }
+
+        .mdc-checkbox {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+}
+
+// ACCIONES
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.actions-center {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+
+  button {
+    min-width: 140px;
+  }
+}
+
+// MENSAJES
 .no-data-message {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 16px 20px;
-  background-color: #fffbeb;
-  border-left: 4px solid #f59e0b;
+  gap: 8px;
+  padding: 12px;
+  background-color: #fff3cd;
   border-radius: 6px;
-  margin-bottom: 16px;
+  border-left: 3px solid #ffc107;
+  margin-bottom: 12px;
 
   mat-icon {
-    color: #f59e0b;
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
+    color: #ff9800;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
   }
 
   p {
     margin: 0;
-    color: #78350f;
-    font-size: 14px;
-    line-height: 1.5;
+    color: #856404;
+    font-size: 13px;
+  }
+}
 
-    small {
-      display: block;
-      margin-top: 4px;
-      color: #92400e;
-      font-size: 12px;
+.muted {
+  color: #757575;
+  font-size: 0.85em;
+  margin-left: 4px;
+}
+
+// PREGUNTA RETORNO
+.pregunta-retorno {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  text-align: center;
+
+  .icon-success {
+    margin-bottom: 20px;
+
+    mat-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      color: #4caf50;
+    }
+  }
+
+  h2 {
+    margin: 0 0 12px;
+    font-size: 24px;
+    font-weight: 500;
+    color: #333;
+  }
+
+  p {
+    margin: 0 0 8px;
+    font-size: 16px;
+    color: #666;
+  }
+
+  .info-text {
+    font-size: 14px;
+    color: #999;
+    margin-bottom: 24px;
+  }
+}
+
+// RETORNO HEADER
+.retorno-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px 8px 0 0;
+  margin: -8px -8px 16px;
+
+  mat-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 500;
+  }
+}
+
+.retorno-form {
+  padding: 0 8px;
+}
+
+.destino-fijo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background-color: #e3f2fd;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  border-left: 3px solid #2196f3;
+
+  mat-icon {
+    color: #1976d2;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  span {
+    font-size: 14px;
+    color: #1565c0;
+
+    strong {
+      font-weight: 600;
+      color: #0d47a1;
+    }
+  }
+}
+
+// STEPPER PERSONALIZADO
+::ng-deep {
+  .mat-horizontal-stepper-header {
+    padding: 12px 16px !important;
+    height: auto !important;
+  }
+
+  .mat-step-label {
+    font-size: 14px !important;
+    min-width: auto !important;
+  }
+
+  .mat-horizontal-content-container {
+    padding: 16px 8px 8px !important;
+  }
+
+  .mat-stepper-horizontal-line {
+    margin: 0 -8px !important;
+  }
+}
+
+// MATERIAL FORM FIELD COMPACT
+::ng-deep {
+  .mat-mdc-form-field {
+    .mat-mdc-form-field-subscript-wrapper {
+      height: 16px;
+      margin-top: 2px;
+    }
+
+    .mat-mdc-form-field-error {
+      font-size: 11px;
+    }
+
+    .mat-mdc-form-field-hint {
+      font-size: 11px;
+    }
+  }
+
+  .mat-mdc-select-panel {
+    max-height: 280px;
+  }
+
+  .mat-mdc-option {
+    min-height: 40px;
+    font-size: 14px;
+  }
+}
+
+// ANIMACIONES
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pregunta-retorno,
+.retorno-header,
+.retorno-form {
+  animation: fadeIn 0.3s ease-out;
+}
+
+// RESPONSIVO
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .checkbox-group {
+    grid-template-columns: 1fr;
+  }
+
+  .actions,
+  .actions-center {
+    flex-direction: column;
+
+    button {
+      width: 100%;
+    }
+  }
+
+  .retorno-header {
+    padding: 12px;
+
+    mat-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+
+    h2 {
+      font-size: 18px;
     }
   }
 }

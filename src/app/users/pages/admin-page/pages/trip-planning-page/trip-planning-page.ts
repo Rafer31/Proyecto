@@ -1,6 +1,7 @@
 import { Component, signal, inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
+import { MatTabsModule } from '@angular/material/tabs';
 import { Emptystate } from '../../../../components/emptystate/emptystate';
 import { TripPlanningService } from '../../services/trip-planning.service';
 import { PlanningCardComponent } from './components/planning-card/planning-card';
@@ -18,6 +19,7 @@ import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dia
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatTabsModule,
   ],
   templateUrl: './trip-planning-page.html',
   styleUrl: './trip-planning-page.scss',
@@ -28,30 +30,58 @@ export class TripPlanningPage implements OnInit {
       idviaje: string;
       fechaViaje: string;
       destino: string;
-      horallegada: string;
+      horapartida: string;
+      cantdisponibleasientos?: number;
+    }[]
+  >([]);
+
+  retornos = signal<
+    {
+      idviaje: string;
+      fechaViaje: string;
+      destino: string;
       horapartida: string;
       cantdisponibleasientos?: number;
     }[]
   >([]);
 
   loading = signal(true);
+  selectedTabIndex = signal(0);
 
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
 
   async ngOnInit() {
+    await this.cargarDatos();
+  }
+
+  private async cargarDatos() {
     try {
       this.loading.set(true);
+
+      // Cargar viajes de salida
       const viajes = await this.tripService.getViajes();
       this.trips.set(
         viajes.map((v: any) => ({
           idviaje: v.idplanificacion,
           fechaViaje: v.fechapartida,
           destino: v.destino?.nomdestino ?? 'Sin destino',
-          horallegada: v.horallegada,
           horapartida: v.horapartida,
           cantdisponibleasientos:
             v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
+        }))
+      );
+
+      // Cargar retornos
+      const retornos = await this.tripService.getRetornos();
+      this.retornos.set(
+        retornos.map((r: any) => ({
+          idviaje: r.idplanificacion,
+          fechaViaje: r.fechapartida,
+          destino: r.destino?.nomdestino ?? 'Sin destino',
+          horapartida: r.horapartida,
+          cantdisponibleasientos:
+            r.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
         }))
       );
     } catch (err) {
@@ -64,45 +94,55 @@ export class TripPlanningPage implements OnInit {
   openRegisterDialog() {
     const dialogRef = this.dialog.open(RegisterTripDialog, { width: '700px' });
 
-    dialogRef.afterClosed().subscribe(async (newTrip) => {
-      if (newTrip) {
-        // Obtener el viaje completo con todos los datos incluyendo cantdisponibleasientos
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
         try {
-          const viajeCompleto: any = await this.tripService.getViaje(newTrip.idplanificacion);
-          
-          this.trips.update((list) => [
-            ...list,
-            {
-              idviaje: viajeCompleto.idplanificacion,
-              fechaViaje: viajeCompleto.fechapartida,
-              destino: viajeCompleto.destino?.nomdestino ?? 'Sin destino',
-              horapartida: viajeCompleto.horapartida,
-              horallegada: viajeCompleto.horallegada,
-              cantdisponibleasientos: viajeCompleto.vehiculo?.cantdisponibleasientos ?? 0,
-            },
-          ]);
+          // Si se registró un viaje de salida
+          if (result.viaje) {
+            const viajeCompleto: any = await this.tripService.getViaje(
+              result.viaje.idplanificacion
+            );
+
+            this.trips.update((list) => [
+              ...list,
+              {
+                idviaje: viajeCompleto.idplanificacion,
+                fechaViaje: viajeCompleto.fechapartida,
+                destino: viajeCompleto.destino?.nomdestino ?? 'Sin destino',
+                horapartida: viajeCompleto.horapartida,
+                cantdisponibleasientos:
+                  viajeCompleto.vehiculo?.cantdisponibleasientos ?? 0,
+              },
+            ]);
+          }
+
+          // Si se registró un retorno
+          if (result.retorno) {
+            const retornoCompleto: any = await this.tripService.getViaje(
+              result.retorno.idplanificacion
+            );
+
+            this.retornos.update((list) => [
+              ...list,
+              {
+                idviaje: retornoCompleto.idplanificacion,
+                fechaViaje: retornoCompleto.fechapartida,
+                destino: retornoCompleto.destino?.nomdestino ?? 'Sin destino',
+                horapartida: retornoCompleto.horapartida,
+                cantdisponibleasientos:
+                  retornoCompleto.vehiculo?.cantdisponibleasientos ?? 0,
+              },
+            ]);
+          }
         } catch (err) {
           console.error('Error obteniendo viaje completo:', err);
-          // Fallback: agregar sin cantdisponibleasientos
-          this.trips.update((list) => [
-            ...list,
-            {
-              idviaje: newTrip.idplanificacion,
-              fechaViaje: newTrip.fechapartida,
-              destino: newTrip.destino?.nomdestino ?? 'Sin destino',
-              horapartida: newTrip.horapartida,
-              horallegada: newTrip.horallegada,
-              cantdisponibleasientos: 0,
-            },
-          ]);
+
+          await this.cargarDatos();
         }
       }
     });
   }
 
-  abrirDialog(idviaje: string) {
-    console.log('Ver más viaje', idviaje);
-  }
 
   async editarViaje(idviaje: string) {
     const viaje = await this.tripService.getViaje(idviaje);
@@ -114,31 +154,54 @@ export class TripPlanningPage implements OnInit {
 
     dialogRef.afterClosed().subscribe((updatedTrip) => {
       if (updatedTrip) {
-        this.trips.update((list) =>
-          list.map((t) =>
-            t.idviaje === updatedTrip.idplanificacion
-              ? {
-                  idviaje: updatedTrip.idplanificacion,
-                  fechaViaje: updatedTrip.fechapartida,
-                  destino: updatedTrip.destino?.nomdestino ?? 'Sin destino',
-                  horapartida: updatedTrip.horapartida,
-                  horallegada: updatedTrip.horallegada,
-                }
-              : t
-          )
-        );
+        const esSalida = updatedTrip.tipo === 'salida';
+
+        if (esSalida) {
+          this.trips.update((list) =>
+            list.map((t) =>
+              t.idviaje === updatedTrip.idplanificacion
+                ? {
+                    idviaje: updatedTrip.idplanificacion,
+                    fechaViaje: updatedTrip.fechapartida,
+                    destino: updatedTrip.destino?.nomdestino ?? 'Sin destino',
+                    horapartida: updatedTrip.horapartida,
+                  }
+                : t
+            )
+          );
+        } else {
+          this.retornos.update((list) =>
+            list.map((t) =>
+              t.idviaje === updatedTrip.idplanificacion
+                ? {
+                    idviaje: updatedTrip.idplanificacion,
+                    fechaViaje: updatedTrip.fechapartida,
+                    destino: updatedTrip.destino?.nomdestino ?? 'Sin destino',
+                    horapartida: updatedTrip.horapartida,
+                  }
+                : t
+            )
+          );
+        }
       }
     });
   }
+
   async eliminarViaje(idviaje: string) {
-    const viaje = this.trips().find((t) => t.idviaje === idviaje);
+    // Buscar en ambas listas
+    const viaje = this.trips().find((t) => t.idviaje === idviaje) ||
+                  this.retornos().find((t) => t.idviaje === idviaje);
+
     if (!viaje) return;
+
+    const esRetorno = this.retornos().some((r) => r.idviaje === idviaje);
+    const tipoViaje = esRetorno ? 'retorno' : 'viaje';
 
     const dialogRef = this.dialog.open(ConfirmDialog, {
       width: '400px',
       data: {
-        title: 'Eliminar viaje',
-        message: `¿Seguro que deseas eliminar el viaje programado a "${viaje.destino}" el día ${viaje.fechaViaje}?`,
+        title: `Eliminar ${tipoViaje}`,
+        message: `¿Seguro que deseas eliminar el ${tipoViaje} programado a "${viaje.destino}" el día ${viaje.fechaViaje}?`,
       },
     });
 
@@ -146,9 +209,16 @@ export class TripPlanningPage implements OnInit {
       if (confirmed) {
         try {
           await this.tripService.eliminarViaje(idviaje);
-          this.trips.update((list) =>
-            list.filter((t) => t.idviaje !== idviaje)
-          );
+
+          if (esRetorno) {
+            this.retornos.update((list) =>
+              list.filter((t) => t.idviaje !== idviaje)
+            );
+          } else {
+            this.trips.update((list) =>
+              list.filter((t) => t.idviaje !== idviaje)
+            );
+          }
         } catch (err) {
           console.error('Error eliminando viaje:', err);
         }
@@ -158,25 +228,40 @@ export class TripPlanningPage implements OnInit {
 
   async actualizarAsientosDisponibles(idviaje: string) {
     try {
-      // Cuando cambia una reserva de una planificación a otra,
-      // necesitamos actualizar TODAS las planificaciones porque
-      // los asientos disponibles cambian en ambas
-      const viajes = await this.tripService.getViajes();
-      
-      // Actualizar toda la lista con los datos frescos de la BD
-      this.trips.set(
-        viajes.map((v: any) => ({
-          idviaje: v.idplanificacion,
-          fechaViaje: v.fechapartida,
-          destino: v.destino?.nomdestino ?? 'Sin destino',
-          horallegada: v.horallegada,
-          horapartida: v.horapartida,
-          cantdisponibleasientos:
-            v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
-        }))
-      );
+      // Determinar si es un retorno o viaje de salida
+      const esRetorno = this.retornos().some((r) => r.idviaje === idviaje);
+
+      if (esRetorno) {
+        const retornos = await this.tripService.getRetornos();
+        this.retornos.set(
+          retornos.map((v: any) => ({
+            idviaje: v.idplanificacion,
+            fechaViaje: v.fechapartida,
+            destino: v.destino?.nomdestino ?? 'Sin destino',
+            horapartida: v.horapartida,
+            cantdisponibleasientos:
+              v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
+          }))
+        );
+      } else {
+        const viajes = await this.tripService.getViajes();
+        this.trips.set(
+          viajes.map((v: any) => ({
+            idviaje: v.idplanificacion,
+            fechaViaje: v.fechapartida,
+            destino: v.destino?.nomdestino ?? 'Sin destino',
+            horapartida: v.horapartida,
+            cantdisponibleasientos:
+              v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
+          }))
+        );
+      }
     } catch (err) {
       console.error('Error actualizando asientos disponibles:', err);
     }
+  }
+
+  onTabChange(index: number) {
+    this.selectedTabIndex.set(index);
   }
 }

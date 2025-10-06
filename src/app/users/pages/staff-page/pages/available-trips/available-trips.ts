@@ -63,11 +63,10 @@ export class AvailableTrips implements OnInit {
       const usuario = this.currentUser();
 
       if (!usuario) {
-        console.log('Esperando datos del usuario...');
+
         return;
       }
 
-      console.log('Usuario encontrado:', usuario);
 
       const { data: personal, error: personalError } =
         await this.supabaseService.supabase
@@ -87,7 +86,6 @@ export class AvailableTrips implements OnInit {
         return;
       }
 
-      console.log('Personal encontrado:', personal);
 
       const { data: asignacion, error: asignacionError } =
         await this.supabaseService.supabase
@@ -108,7 +106,7 @@ export class AvailableTrips implements OnInit {
         return;
       }
 
-      console.log('Asignación encontrada:', asignacion);
+
 
       const destinoInfo: any = asignacion.destino;
       const nombreDestino = Array.isArray(destinoInfo)
@@ -119,8 +117,6 @@ export class AvailableTrips implements OnInit {
       const viajes = await this.tripService.getViajesDisponiblesPorDestino(
         asignacion.iddestino
       );
-
-      console.log('Viajes obtenidos:', viajes);
 
       this.viajes.set(
         viajes.map((v: any) => {
@@ -134,7 +130,7 @@ export class AvailableTrips implements OnInit {
             fechaPartida: v.fechapartida,
             fechaLlegada: v.fechallegada,
             horaPartida: v.horapartida,
-            horaLlegada: v.horallegada,
+
             destino: nombreDestinoViaje ?? 'Sin destino',
             asientosDisponibles:
               v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,

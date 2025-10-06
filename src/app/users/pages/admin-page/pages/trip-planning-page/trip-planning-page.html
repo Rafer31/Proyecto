@@ -1,38 +1,87 @@
-<div class="header mt-6">
-  <h1 class="text-2xl font-bold">Planificación de los viajes</h1>
-  <button mat-flat-button color="primary" (click)="openRegisterDialog()">
-    <mat-icon>add</mat-icon>
-    Planificar viaje
-  </button>
-</div>
+<mat-tab-group
+  class="mt-4"
+  [selectedIndex]="selectedTabIndex()"
+  (selectedIndexChange)="onTabChange($event)"
+>
+  <!-- Tab de Viajes Planificados -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">event_note</mat-icon>
+      Viajes Planificados
+      <span class="tab-badge">{{ trips().length }}</span>
+    </ng-template>
 
-@if (loading()) {
-<div class="loading-container">
-  <mat-spinner diameter="48"></mat-spinner>
-  <p>Cargando planificaciones...</p>
-</div>
-} @else if (trips().length === 0) {
-<app-emptystate
-  [imageSrc]="'no-trips.svg'"
-  [title]="'Aún no hay viajes planificados'"
-  [description]="'No se han planificado viajes aún'"
-/>
-} @else {
+    <div class="header mt-6">
+      <h1 class="text-2xl font-bold">Planificación de los viajes</h1>
+      <button mat-flat-button color="primary" (click)="openRegisterDialog()">
+        <mat-icon>add</mat-icon>
+        Planificar viaje
+      </button>
+    </div>
 
-<div class="cards-grid">
-  @for (trip of trips(); track trip.idviaje) {
-  <app-planning-card
-    [idviaje]="trip.idviaje"
-    [fechaViaje]="trip.fechaViaje"
-    [destino]="trip.destino"
-    [horaPartida]="trip.horapartida"
-    [horaLlegada]="trip.horallegada"
-    [cantdisponibleasientos]="trip.cantdisponibleasientos"
-    (editar)="editarViaje(trip.idviaje)"
-    (eliminar)="eliminarViaje(trip.idviaje)"
-    (actualizarAsientos)="actualizarAsientosDisponibles($event)"
-  ></app-planning-card>
+    @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>Cargando planificaciones...</p>
+      </div>
+    } @else if (trips().length === 0) {
+      <app-emptystate
+        [imageSrc]="'no-trips.svg'"
+        [title]="'Aún no hay viajes planificados'"
+        [description]="'No se han planificado viajes aún'"
+      />
+    } @else {
+      <div class="cards-grid">
+        @for (trip of trips(); track trip.idviaje) {
+          <app-planning-card
+            [idviaje]="trip.idviaje"
+            [fechaViaje]="trip.fechaViaje"
+            [destino]="trip.destino"
+            [horaPartida]="trip.horapartida"
+            [cantdisponibleasientos]="trip.cantdisponibleasientos"
+            (editar)="editarViaje(trip.idviaje)"
+            (eliminar)="eliminarViaje(trip.idviaje)"
+            (actualizarAsientos)="actualizarAsientosDisponibles($event)"
+          ></app-planning-card>
+        }
+      </div>
+    }
+  </mat-tab>
 
-  }
-</div>
-}
+  <!-- Tab de Retornos -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">keyboard_return</mat-icon>
+      Retornos
+      <span class="tab-badge">{{ retornos().length }}</span>
+    </ng-template>
+
+    @if (loading()) {
+      <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>Cargando retornos...</p>
+      </div>
+    } @else if (retornos().length === 0) {
+      <app-emptystate
+        [imageSrc]="'no-trips.svg'"
+        [title]="'No hay retornos programados'"
+        [description]="'Los retornos se mostrarán aquí una vez programados'"
+      />
+    } @else {
+      <div class="cards-grid">
+        @for (retorno of retornos(); track retorno.idviaje) {
+          <app-planning-card
+            [idviaje]="retorno.idviaje"
+            [fechaViaje]="retorno.fechaViaje"
+            [destino]="retorno.destino"
+            [horaPartida]="retorno.horapartida"
+            [cantdisponibleasientos]="retorno.cantdisponibleasientos"
+            (editar)="editarViaje(retorno.idviaje)"
+            (eliminar)="eliminarViaje(retorno.idviaje)"
+            (actualizarAsientos)="actualizarAsientosDisponibles($event)"
+          ></app-planning-card>
+        }
+      </div>
+    }
+  </mat-tab>
+</mat-tab-group>

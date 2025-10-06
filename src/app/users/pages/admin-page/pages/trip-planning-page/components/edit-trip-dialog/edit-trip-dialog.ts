@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { TripPlanningService } from '../../../../services/trip-planning.service';
+import { DestinyService } from '../../../../../../../shared/services/destiny.service';
 
 @Component({
   selector: 'app-edit-trip-dialog',
@@ -29,7 +30,7 @@ export class EditTripDialog {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<EditTripDialog>);
   private tripService = inject(TripPlanningService);
-
+  private destinyService = inject(DestinyService)
   destinos: any[] = [];
   formStep2!: FormGroup;
 
@@ -40,11 +41,11 @@ export class EditTripDialog {
       fechapartida: [this.data?.viaje.fechapartida || '', Validators.required],
       fechallegada: [this.data?.viaje.fechallegada || '', Validators.required],
       horapartida: [this.data?.viaje.horapartida || '', Validators.required],
-      horallegada: [this.data?.viaje.horallegada || '', Validators.required],
+
       iddestino: [this.data?.viaje.destino?.iddestino || '', Validators.required],
     });
 
-    this.destinos = await this.tripService.getDestinos();
+    this.destinos = await this.destinyService.getDestinosParaViajes();
   }
 
   async onSubmit() {

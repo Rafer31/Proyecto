@@ -50,12 +50,6 @@ export class TripPlanningService {
     return data;
   }
 
-  async getDestinos() {
-    const { data, error } = await this.supabase.from('destino').select('*');
-    if (error) throw error;
-    return data;
-  }
-
   async getConductores() {
     const { data, error } = await this.supabase
       .from('conductor')
@@ -74,8 +68,8 @@ export class TripPlanningService {
         idplanificacion,
         fechapartida,
         horapartida,
-        horallegada,
         fechallegada,
+        tipo,
         destino:destino(iddestino, nomdestino),
         vehiculo:conductor_vehiculo_empresa(
           idconductorvehiculoempresa,
@@ -105,14 +99,34 @@ export class TripPlanningService {
       .select(`
       idplanificacion,
       fechapartida,
-      horallegada,
       horapartida,
+      tipo,
       destino: destino(iddestino, nomdestino),
       conductor_vehiculo_empresa!inner(
         idconductorvehiculoempresa,
         cantdisponibleasientos
       )
-    `);
+    `)
+      .eq('tipo', 'salida'); // Solo viajes de salida
+
+    if (error) throw error;
+    return data;
+  }
+
+  async getRetornos() {
+    const { data, error } = await this.supabase.from('planificacion_viaje')
+      .select(`
+      idplanificacion,
+      fechapartida,
+      horapartida,
+      tipo,
+      destino: destino(iddestino, nomdestino),
+      conductor_vehiculo_empresa!inner(
+        idconductorvehiculoempresa,
+        cantdisponibleasientos
+      )
+    `)
+      .eq('tipo', 'retorno'); // Solo retornos
 
     if (error) throw error;
     return data;
@@ -125,8 +139,8 @@ export class TripPlanningService {
         idplanificacion,
         fechapartida,
         fechallegada,
-        horallegada,
         horapartida,
+        tipo,
         destino: destino(iddestino, nomdestino),
         conductor_vehiculo_empresa!inner(
           idconductorvehiculoempresa,
@@ -134,6 +148,7 @@ export class TripPlanningService {
         )
       `)
       .eq('iddestino', iddestino)
+      .eq('tipo', 'salida')
       .gte('fechapartida', new Date().toISOString().split('T')[0])
       .order('fechapartida', { ascending: true });
 
@@ -165,7 +180,7 @@ export class TripPlanningService {
         fechallegada: step2.fechallegada,
         fechaplanificacion: now,
         horapartida: step2.horapartida,
-        horallegada: step2.horallegada,
+        tipo: step2.tipo || 'salida', // Asegurar que siempre tenga tipo
         idconductorvehiculoempresa: cve.idconductorvehiculoempresa,
         iddestino: step2.iddestino,
       })
@@ -175,7 +190,7 @@ export class TripPlanningService {
     fechapartida,
     fechallegada,
     horapartida,
-    horallegada,
+    tipo,
     destino:destino(iddestino, nomdestino)
   `
       )
@@ -218,6 +233,7 @@ export class TripPlanningService {
 
     return updated;
   }
+
   async eliminarViaje(idplanificacion: string) {
     const { error } = await this.supabase
       .from('planificacion_viaje')
@@ -231,9 +247,9 @@ export class TripPlanningService {
 
     return true;
   }
+
   async actualizarPlanificacion(idplanificacion: string, data: any) {
-    const { fechapartida, fechallegada, horapartida, horallegada, iddestino } =
-      data;
+    const { fechapartida, fechallegada, horapartida, iddestino, tipo } = data;
 
     const { data: updated, error } = await this.supabase
       .from('planificacion_viaje')
@@ -241,12 +257,12 @@ export class TripPlanningService {
         fechapartida,
         fechallegada,
         horapartida,
-        horallegada,
+        tipo,
         iddestino,
       })
       .eq('idplanificacion', idplanificacion)
       .select(
-        `idplanificacion, fechapartida, fechallegada, horapartida, horallegada,
+        `idplanificacion, fechapartida, fechallegada, horapartida, tipo,
          destino:destino(iddestino, nomdestino)`
       )
       .single();

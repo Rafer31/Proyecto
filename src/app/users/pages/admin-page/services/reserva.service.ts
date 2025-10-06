@@ -150,7 +150,7 @@ export class ReservaService {
       .from('asignacion_destino')
       .select('idasignaciondestino, iddestino')
       .eq('nroficha', nroficha)
-      .is('fechafin', null)  // Solo asignaciones activas (sin fecha fin)
+      .is('fechafin', null)
       .maybeSingle();
 
     if (asignacionError || !asignacion) {
@@ -165,7 +165,6 @@ export class ReservaService {
 
     const destinoCorrecto = viajeActual?.iddestino === asignacion.iddestino;
 
-    // Buscar reserva activa (estado 'reservado')
     const { data: reservaExistente } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idplanificacion, nroasiento, estado')
@@ -206,7 +205,7 @@ export class ReservaService {
       .from('asignacion_destino')
       .select('idasignaciondestino')
       .eq('nroficha', nroficha)
-      .is('fechafin', null)  // Solo asignaciones activas (sin fecha fin)
+      .is('fechafin', null)
       .maybeSingle();
 
     if (asignacionError || !asignacion) {
@@ -215,7 +214,6 @@ export class ReservaService {
 
     const idasignaciondestino = asignacion.idasignaciondestino;
 
-    // Buscar reserva activa (solo estado 'reservado')
     const { data: reservaActual } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idplanificacion, nroasiento')
@@ -227,7 +225,6 @@ export class ReservaService {
       reservaActual?.idplanificacion === idplanificacionNueva;
 
     if (esElMismoViaje) {
-      // Cambiar asiento en el mismo viaje
       const { error: updateError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .update({ nroasiento: asientoNuevo })
@@ -237,7 +234,6 @@ export class ReservaService {
 
       if (updateError) throw updateError;
     } else {
-      // Cancelar reserva anterior
       const { error: cancelError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .update({ estado: 'cancelado' })
@@ -246,7 +242,6 @@ export class ReservaService {
 
       if (cancelError) throw cancelError;
 
-      // Crear nueva reserva
       const { error: reservaError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .insert([
@@ -261,6 +256,57 @@ export class ReservaService {
       if (reservaError) throw reservaError;
     }
   }
+
+  // NUEVO: Verificar si existe retorno asociado
+  async verificarRetornoAsociado(idplanificacionSalida: string): Promise<{
+    existeRetorno: boolean;
+    idplanificacionRetorno?: string;
+  }> {
+    const { data, error } = await this.supabase
+      .from('planificacion_viaje')
+      .select('idplanificacion')
+      .eq('tipo', 'retorno')
+      .eq('idviaje_relacionado', idplanificacionSalida)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error verificando retorno:', error);
+      return { existeRetorno: false };
+    }
+
+    return {
+      existeRetorno: !!data,
+      idplanificacionRetorno: data?.idplanificacion,
+    };
+  }
+
+  // NUEVO: Reservar asiento con opción de retorno
+  async reservarAsientoConRetorno(
+    idplanificacionSalida: string,
+    asiento: number,
+    idusuario: string,
+    reservarRetorno: boolean
+  ) {
+    // Reservar en la salida
+    await this.reservarAsiento(idplanificacionSalida, asiento, 'personal', idusuario);
+
+    // Si desea reservar retorno, buscar el retorno asociado
+    if (reservarRetorno) {
+      const { existeRetorno, idplanificacionRetorno } =
+        await this.verificarRetornoAsociado(idplanificacionSalida);
+
+      if (existeRetorno && idplanificacionRetorno) {
+        // Reservar el mismo asiento en el retorno
+        await this.reservarAsiento(
+          idplanificacionRetorno,
+          asiento,
+          'personal',
+          idusuario
+        );
+      }
+    }
+  }
+
   async reservarAsiento(
     idplanificacion: string,
     asiento: number,
@@ -285,7 +331,7 @@ export class ReservaService {
       .from('asignacion_destino')
       .select('idasignaciondestino')
       .eq('nroficha', nroficha)
-      .is('fechafin', null)  // Solo asignaciones activas (sin fecha fin)
+      .is('fechafin', null)
       .maybeSingle();
 
     if (asignacionError || !asignacion) {
@@ -294,7 +340,6 @@ export class ReservaService {
 
     const idasignaciondestino = asignacion.idasignaciondestino;
 
-    // Verificar si existe una reserva ACTIVA (estado 'reservado')
     const { data: existenteActiva } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('*')
@@ -307,7 +352,6 @@ export class ReservaService {
       throw new Error('Ya tienes un asiento reservado en este viaje');
     }
 
-    // Verificar si existe una reserva CANCELADA para reutilizarla
     const { data: existenteCancelada } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('*')
@@ -317,7 +361,6 @@ export class ReservaService {
       .maybeSingle();
 
     if (existenteCancelada) {
-      // Si existe una reserva cancelada, actualizarla a 'reservado'
       const { error: updateError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .update({
@@ -330,7 +373,6 @@ export class ReservaService {
 
       if (updateError) throw updateError;
     } else {
-      // Si no existe ningún registro, crear uno nuevo
       const { error: reservaError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .insert([
