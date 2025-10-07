@@ -42,6 +42,7 @@ export class TripPlanningPage implements OnInit {
       destino: string;
       horapartida: string;
       cantdisponibleasientos?: number;
+      idviaje_relacionado?: string;
     }[]
   >([]);
 
@@ -59,7 +60,6 @@ export class TripPlanningPage implements OnInit {
     try {
       this.loading.set(true);
 
-      // Cargar viajes de salida
       const viajes = await this.tripService.getViajes();
       this.trips.set(
         viajes.map((v: any) => ({
@@ -72,7 +72,6 @@ export class TripPlanningPage implements OnInit {
         }))
       );
 
-      // Cargar retornos
       const retornos = await this.tripService.getRetornos();
       this.retornos.set(
         retornos.map((r: any) => ({
@@ -97,7 +96,6 @@ export class TripPlanningPage implements OnInit {
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result) {
         try {
-          // Si se registró un viaje de salida
           if (result.viaje) {
             const viajeCompleto: any = await this.tripService.getViaje(
               result.viaje.idplanificacion
@@ -116,7 +114,6 @@ export class TripPlanningPage implements OnInit {
             ]);
           }
 
-          // Si se registró un retorno
           if (result.retorno) {
             const retornoCompleto: any = await this.tripService.getViaje(
               result.retorno.idplanificacion
@@ -142,7 +139,6 @@ export class TripPlanningPage implements OnInit {
       }
     });
   }
-
 
   async editarViaje(idviaje: string) {
     const viaje = await this.tripService.getViaje(idviaje);
@@ -188,9 +184,9 @@ export class TripPlanningPage implements OnInit {
   }
 
   async eliminarViaje(idviaje: string) {
-    // Buscar en ambas listas
-    const viaje = this.trips().find((t) => t.idviaje === idviaje) ||
-                  this.retornos().find((t) => t.idviaje === idviaje);
+    const viaje =
+      this.trips().find((t) => t.idviaje === idviaje) ||
+      this.retornos().find((t) => t.idviaje === idviaje);
 
     if (!viaje) return;
 
@@ -208,8 +204,11 @@ export class TripPlanningPage implements OnInit {
     dialogRef.afterClosed().subscribe(async (confirmed: boolean) => {
       if (confirmed) {
         try {
-          await this.tripService.eliminarViaje(idviaje);
-
+          if (!esRetorno) {
+            await this.tripService.eliminarViajeConRetorno(idviaje);
+          } else {
+            await this.tripService.eliminarViaje(idviaje);
+          }
           if (esRetorno) {
             this.retornos.update((list) =>
               list.filter((t) => t.idviaje !== idviaje)
@@ -217,6 +216,10 @@ export class TripPlanningPage implements OnInit {
           } else {
             this.trips.update((list) =>
               list.filter((t) => t.idviaje !== idviaje)
+            );
+
+            this.retornos.update((list) =>
+              list.filter((t) => t.idviaje_relacionado !== idviaje)
             );
           }
         } catch (err) {
@@ -228,7 +231,6 @@ export class TripPlanningPage implements OnInit {
 
   async actualizarAsientosDisponibles(idviaje: string) {
     try {
-      // Determinar si es un retorno o viaje de salida
       const esRetorno = this.retornos().some((r) => r.idviaje === idviaje);
 
       if (esRetorno) {

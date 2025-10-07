@@ -33,7 +33,6 @@ export class StaffPage implements OnInit {
   ];
 
   async ngOnInit() {
-    // Solo cargar si no hay usuario actual
     if (!this.userStateService.currentUser()) {
       await this.cargarUsuario();
     }

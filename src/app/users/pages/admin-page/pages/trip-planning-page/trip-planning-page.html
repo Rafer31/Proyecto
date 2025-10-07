@@ -3,7 +3,6 @@
   [selectedIndex]="selectedTabIndex()"
   (selectedIndexChange)="onTabChange($event)"
 >
-  <!-- Tab de Viajes Planificados -->
   <mat-tab>
     <ng-template mat-tab-label>
       <mat-icon class="tab-icon">event_note</mat-icon>
@@ -48,10 +47,8 @@
     }
   </mat-tab>
 
-  <!-- Tab de Retornos -->
-
   <mat-tab>
-    <h1 class="text-2xl font-bold">Planificación de los viajes</h1>
+    <h1 class="text-2xl font-bold">Planificación de los retornos</h1>
     <ng-template mat-tab-label>
       <mat-icon class="tab-icon">keyboard_return</mat-icon>
       Retornos

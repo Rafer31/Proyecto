@@ -100,9 +100,7 @@ export class SeatsDialog {
         const restantes = totalAsientos - numero + 1;
         const asientosFila: any[] = [];
 
-        // Caso especial: última fila con 5 asientos
         if (restantes === 5) {
-          // 2 asientos a la izquierda
           for (let i = 0; i < 2; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -114,7 +112,6 @@ export class SeatsDialog {
             });
           }
 
-          // 1 asiento en el centro (donde normalmente va el pasillo)
           const asientoCentro = numero++;
           const pasajeroCentro = pasajeros.find(
             (p) => p.asiento === asientoCentro
@@ -126,7 +123,6 @@ export class SeatsDialog {
             pasajero: pasajeroCentro,
           });
 
-          // 2 asientos a la derecha
           for (let i = 0; i < 2; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -140,12 +136,10 @@ export class SeatsDialog {
 
           filasTemp.push({ tipo: 'normal', asientos: asientosFila });
         } else {
-          // Distribución normal (2 + pasillo + 2 o menos)
           const asientosEnFila = restantes >= 4 ? 4 : restantes;
           const leftSide = Math.ceil(asientosEnFila / 2);
           const rightSide = asientosEnFila - leftSide;
 
-          // Asientos izquierda
           for (let i = 0; i < leftSide; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -157,10 +151,8 @@ export class SeatsDialog {
             });
           }
 
-          // Pasillo
           asientosFila.push({ num: null, tipo: 'pasillo' });
 
-          // Asientos derecha
           for (let i = 0; i < rightSide; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -197,19 +189,16 @@ export class SeatsDialog {
       return;
     }
 
-    // Si es staff, solo permitir ver su propia información
     if (this.data.isStaff) {
       const usuario = this.usuarioActual();
       if (usuario && seat.pasajero.idusuario === usuario.idusuario) {
-        // Es su propio asiento, puede verlo
         this.pasajeroSeleccionado.set(seat.pasajero);
         this.vistaActual.set('detalle');
       }
-      // Si no es su asiento, no hace nada (no muestra información)
+
       return;
     }
 
-    // Si es admin, puede ver cualquier asiento
     this.pasajeroSeleccionado.set(seat.pasajero);
     this.vistaActual.set('detalle');
   }
@@ -248,7 +237,7 @@ export class SeatsDialog {
         { duration: 3000 }
       );
       this.volverAlMapa();
-      // Cerrar diálogo con flag de cambios
+
       this.dialogRef.close({ cambiosRealizados: true });
     } catch (error) {
       this.snackBar.open(`${error}`, 'Cerrar', { duration: 3000 });
@@ -341,7 +330,6 @@ export class SeatsDialog {
         return;
       }
 
-      // NUEVO: Verificar si existe retorno asociado
       const { existeRetorno, idplanificacionRetorno } =
         await this.reservaService.verificarRetornoAsociado(
           this.data.idplanificacion
@@ -360,7 +348,6 @@ export class SeatsDialog {
         reservarRetorno = await dialogRef.afterClosed().toPromise();
       }
 
-      // Confirmar la reserva
       const dialogRef = this.dialog.open(ConfirmDialog, {
         data: {
           title: 'Confirmar reserva',
@@ -374,7 +361,6 @@ export class SeatsDialog {
       const confirmado = await dialogRef.afterClosed().toPromise();
       if (!confirmado) return;
 
-      // Usar el nuevo método que maneja retornos
       await this.reservaService.reservarAsientoConRetorno(
         this.data.idplanificacion,
         seat.num,

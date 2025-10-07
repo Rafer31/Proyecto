@@ -257,7 +257,6 @@ export class ReservaService {
     }
   }
 
-  // NUEVO: Verificar si existe retorno asociado
   async verificarRetornoAsociado(idplanificacionSalida: string): Promise<{
     existeRetorno: boolean;
     idplanificacionRetorno?: string;
@@ -280,23 +279,24 @@ export class ReservaService {
     };
   }
 
-  // NUEVO: Reservar asiento con opción de retorno
   async reservarAsientoConRetorno(
     idplanificacionSalida: string,
     asiento: number,
     idusuario: string,
     reservarRetorno: boolean
   ) {
-    // Reservar en la salida
-    await this.reservarAsiento(idplanificacionSalida, asiento, 'personal', idusuario);
+    await this.reservarAsiento(
+      idplanificacionSalida,
+      asiento,
+      'personal',
+      idusuario
+    );
 
-    // Si desea reservar retorno, buscar el retorno asociado
     if (reservarRetorno) {
       const { existeRetorno, idplanificacionRetorno } =
         await this.verificarRetornoAsociado(idplanificacionSalida);
 
       if (existeRetorno && idplanificacionRetorno) {
-        // Reservar el mismo asiento en el retorno
         await this.reservarAsiento(
           idplanificacionRetorno,
           asiento,
@@ -365,7 +365,7 @@ export class ReservaService {
         .from('asignaciondestino_planificacionviaje')
         .update({
           estado: 'reservado',
-          nroasiento: asiento
+          nroasiento: asiento,
         })
         .eq('idasignaciondestino', idasignaciondestino)
         .eq('idplanificacion', idplanificacion)

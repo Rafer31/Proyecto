@@ -29,8 +29,8 @@ export class AvailableVisitantTrips implements OnInit {
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
   private userStateService = inject(UserStateService);
+  private userDataService = inject(UserDataService);
 
-  // Usar estado global para el usuario
   currentUser = this.userStateService.currentUser;
   userName = this.userStateService.userName;
 
@@ -48,8 +48,6 @@ export class AvailableVisitantTrips implements OnInit {
         this.error.set('Usuario no encontrado');
         return;
       }
-
-      // Obtener todos los viajes disponibles (visitantes pueden ver todos)
       const viajes = await this.tripService.getViajes();
 
       this.viajes.set(

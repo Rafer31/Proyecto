@@ -1,5 +1,4 @@
 <div class="dialog-container">
-  <!-- ETAPA 1: FORMULARIO DE SALIDA -->
   @if (etapaActual() === 'salida') {
     <form [formGroup]="formTrip">
       <mat-horizontal-stepper linear>
@@ -186,7 +185,6 @@
     </form>
   }
 
-  <!-- ETAPA 2: PREGUNTA SOBRE RETORNO -->
   @if (etapaActual() === 'pregunta-retorno') {
     <div class="pregunta-retorno">
       <div class="icon-success">
@@ -209,8 +207,6 @@
       </div>
     </div>
   }
-
-  <!-- ETAPA 3: FORMULARIO DE RETORNO -->
   @if (etapaActual() === 'retorno') {
     <div class="retorno-header">
       <mat-icon>keyboard_return</mat-icon>
@@ -223,7 +219,6 @@
         <span>Destino: <strong>{{ destinosRetorno()[0]?.nomdestino || 'Bolívar' }}</strong></span>
       </div>
 
-      <!-- Campo oculto para el destino -->
       <input type="hidden" formControlName="iddestino" />
 
       <div class="form-row">

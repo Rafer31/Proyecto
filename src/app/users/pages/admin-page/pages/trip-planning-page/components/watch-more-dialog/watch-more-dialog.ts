@@ -173,7 +173,6 @@ export class WatchMoreDialog implements OnInit {
       `${conductor.usuario.nomusuario} ${conductor.usuario.patusuario} ${conductor.usuario.matusuario}` :
       'No encontrado';
   }
-
   getVehiculoInfo(nroplaca: string): any {
     return this.vehiculos.find(v => v.nroplaca === nroplaca);
   }

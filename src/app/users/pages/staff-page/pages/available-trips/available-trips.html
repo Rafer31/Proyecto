@@ -1,5 +1,4 @@
 <div class="available-trips-container">
-  <!-- Header -->
   <div class="header">
     <h1 class="title">Viajes Disponibles</h1>
     @if (usuarioDestino()) {
@@ -7,7 +6,6 @@
     }
   </div>
 
-  <!-- Loading State -->
   @if (loading()) {
     <div class="loading-container">
       <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
@@ -15,7 +13,6 @@
     </div>
   }
 
-  <!-- Error State -->
   @else if (error()) {
     <div class="error-container">
       <app-emptystate
@@ -26,7 +23,6 @@
     </div>
   }
 
-  <!-- Empty State -->
   @else if (viajes().length === 0) {
     <app-emptystate
       [imageSrc]="'no-trips.svg'"
@@ -35,7 +31,6 @@
     />
   }
 
-  <!-- Trips Grid -->
   @else {
     <div class="trips-grid">
       @for (viaje of viajes(); track viaje.idviaje) {
