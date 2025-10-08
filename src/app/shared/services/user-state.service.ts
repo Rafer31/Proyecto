@@ -7,7 +7,6 @@ export class UserStateService {
   private readonly _isLoading = signal(false);
   private readonly _error = signal<string | null>(null);
 
-  // Señales públicas de solo lectura
   readonly currentUser = computed(() => this._currentUser());
   readonly isLoading = computed(() => this._isLoading());
   readonly error = computed(() => this._error());
@@ -22,7 +21,6 @@ export class UserStateService {
     );
   });
 
-  // Métodos para actualizar el estado
   setUser(user: Usuario | null) {
     this._currentUser.set(user);
     this._error.set(null);
@@ -42,6 +40,4 @@ export class UserStateService {
     this._error.set(null);
     this._isLoading.set(false);
   }
-
-
 }

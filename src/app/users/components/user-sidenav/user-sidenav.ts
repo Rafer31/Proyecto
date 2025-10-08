@@ -1,4 +1,14 @@
-import { Component, computed, inject, input, OnInit, OnDestroy, ViewChild, AfterViewInit, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  AfterViewInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -27,18 +37,20 @@ export class UserSidenav implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('drawer') drawer!: MatDrawer;
 
-  appLogo    = input<string>('school');
-  appName    = input<string>('Mi App');
-  items      = input<NavItem[]>([]);
+  appLogo = input<string>('school');
+  appName = input<string>('Mi App');
+  items = input<NavItem[]>([]);
   routeBrand = input<string>('/');
-  collapsed   = this.nav.collapsed;
-  drawerMode  = this.nav.drawerMode;
+  collapsed = this.nav.collapsed;
+  drawerMode = this.nav.drawerMode;
   drawerWidth = this.nav.drawerWidth;
 
   showText = computed(() => !this.collapsed());
   isResizing = signal(false);
 
-  toggleCollapsed() { this.nav.toggleCollapsed(); }
+  toggleCollapsed() {
+    this.nav.toggleCollapsed();
+  }
 
   ngOnInit() {
     this.checkScreenSize();
@@ -47,7 +59,6 @@ export class UserSidenav implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    // Registrar el drawer en el servicio
     this.nav.setDrawer(this.drawer);
   }
 
@@ -63,12 +74,10 @@ export class UserSidenav implements OnInit, OnDestroy, AfterViewInit {
     const isMobile = window.innerWidth <= 768;
     this.nav.setOverMode(isMobile);
 
-    // En móvil, NO colapsar - el sidenav debe mostrarse completo cuando se abre
     if (isMobile) {
       this.nav.setCollapsed(false);
     }
 
-    // Reset resizing state after a short delay
     setTimeout(() => this.isResizing.set(false), 100);
   }
 }

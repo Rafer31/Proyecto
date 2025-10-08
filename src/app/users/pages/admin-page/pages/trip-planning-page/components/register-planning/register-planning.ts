@@ -59,7 +59,6 @@ export class RegisterTripDialog {
   loadingVehiculos = signal<boolean>(true);
   loadingData = signal<boolean>(true);
 
-  // Control de flujo: salida -> pregunta retorno -> retorno
   etapaActual = signal<'salida' | 'pregunta-retorno' | 'retorno'>('salida');
   datosViajeSalida: any = null;
 
@@ -115,14 +114,19 @@ export class RegisterTripDialog {
       }),
       step2: this.fb.group({
         fechapartida: ['', Validators.required],
-        fechallegada: ['', [Validators.required, this.validarFechaLlegada.bind(this)]],
+        fechallegada: [
+          '',
+          [Validators.required, this.validarFechaLlegada.bind(this)],
+        ],
         horapartida: [{ value: '', disabled: true }, Validators.required],
         iddestino: ['', Validators.required],
       }),
     });
 
     this.step2Form.get('fechapartida')?.valueChanges.subscribe(() => {
-      this.step2Form.get('fechallegada')?.updateValueAndValidity({ emitEvent: false });
+      this.step2Form
+        .get('fechallegada')
+        ?.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -132,17 +136,16 @@ export class RegisterTripDialog {
       this.loadingConductores.set(true);
       this.loadingVehiculos.set(true);
 
-      const [destinos, destinoBolivar, conductores, vehiculos, empresas] = await Promise.all([
-        this.destinyService.getDestinosParaViajes(),
-        this.destinyService.getDestinoBolivar(),
-        this.userService.getConductoresDisponibles(),
-        this.tripService.getVehiculosDisponibles(),
-        this.tripService.getEmpresas(),
-      ]);
+      const [destinos, destinoBolivar, conductores, vehiculos, empresas] =
+        await Promise.all([
+          this.destinyService.getDestinosParaViajes(),
+          this.destinyService.getDestinoBolivar(),
+          this.userService.getConductoresDisponibles(),
+          this.tripService.getVehiculosDisponibles(),
+          this.tripService.getEmpresas(),
+        ]);
 
       this.destinos.set(destinos);
-
-
 
       this.destinosRetorno.set(destinoBolivar ? [destinoBolivar] : []);
 
@@ -167,7 +170,9 @@ export class RegisterTripDialog {
   }
 
   onVehiculoSelected(nroplaca: string) {
-    this.selectedVehiculo = this.vehiculos().find((v) => v.nroplaca === nroplaca);
+    this.selectedVehiculo = this.vehiculos().find(
+      (v) => v.nroplaca === nroplaca
+    );
   }
 
   async onSubmitSalida() {
@@ -195,13 +200,12 @@ export class RegisterTripDialog {
       const viaje = await this.tripService.registrarViaje(
         step1,
         step2,
-        this.selectedVehiculo
+        this.selectedVehiculo,
+        null
       );
 
-      // Guardar datos del viaje de salida
       this.datosViajeSalida = { viaje, step1 };
 
-      // Ir a la etapa de pregunta
       this.etapaActual.set('pregunta-retorno');
     } catch (err) {
       console.error('Error al registrar viaje', err);
@@ -210,29 +214,22 @@ export class RegisterTripDialog {
 
   onDecidirRetorno(crearRetorno: boolean) {
     if (crearRetorno) {
-      // Ir a la etapa de retorno primero
       this.etapaActual.set('retorno');
 
-      // Esperar un tick para que Angular renderice el formulario
       setTimeout(() => {
-        // Resetear completamente el formulario
         this.step2Form.reset();
 
-        // Resetear el turno seleccionado
         this.turnoSeleccionado.set(null);
 
-        // Deshabilitar hora partida inicialmente
         const horaPartidaControl = this.step2Form.get('horapartida');
         if (horaPartidaControl) {
           horaPartidaControl.disable({ emitEvent: false });
           horaPartidaControl.setValue('', { emitEvent: false });
         }
 
-        // Configurar destino de retorno automáticamente (CRÍTICO)
         if (this.destinosRetorno().length > 0) {
           const destinoControl = this.step2Form.get('iddestino');
           const destinoBolivar = this.destinosRetorno()[0];
-
 
           if (destinoControl && destinoBolivar) {
             destinoControl.setValue(destinoBolivar.iddestino);
@@ -241,23 +238,18 @@ export class RegisterTripDialog {
           }
         }
 
-        // Asegurarse de que las fechas estén limpias
         this.step2Form.get('fechapartida')?.setValue(null);
         this.step2Form.get('fechallegada')?.setValue(null);
-
-
       }, 0);
     } else {
       this.dialogRef.close({
         viaje: this.datosViajeSalida.viaje,
-        retorno: null
+        retorno: null,
       });
     }
   }
 
   async onSubmitRetorno() {
-
-
     this.step2Form.markAllAsTouched();
 
     const horaPartida = this.step2Form.get('horapartida');
@@ -279,17 +271,16 @@ export class RegisterTripDialog {
     };
 
     try {
-      // Pasar el ID del viaje de salida como viaje relacionado
       const viajeRetorno = await this.tripService.registrarViaje(
         this.datosViajeSalida.step1,
         step2Retorno,
         this.selectedVehiculo,
-
+        this.datosViajeSalida.viaje.idplanificacion
       );
 
       this.dialogRef.close({
         viaje: this.datosViajeSalida.viaje,
-        retorno: viajeRetorno
+        retorno: viajeRetorno,
       });
     } catch (err) {
       console.error('Error al registrar retorno', err);
@@ -301,10 +292,10 @@ export class RegisterTripDialog {
   }
 
   volverASalida() {
-    // Volver desde pregunta a salida (eliminar el viaje creado)
     if (this.datosViajeSalida?.viaje) {
-      this.tripService.eliminarViaje(this.datosViajeSalida.viaje.idplanificacion)
-        .catch(err => console.error('Error eliminando viaje:', err));
+      this.tripService
+        .eliminarViaje(this.datosViajeSalida.viaje.idplanificacion)
+        .catch((err) => console.error('Error eliminando viaje:', err));
     }
     this.datosViajeSalida = null;
     this.etapaActual.set('salida');
@@ -326,7 +317,6 @@ export class RegisterTripDialog {
     return horas;
   }
 
-  // Crear un método para trackBy
   trackByHora(index: number, hora: string): string {
     return hora;
   }
@@ -393,7 +383,9 @@ export class RegisterTripDialog {
     return this.turnoSeleccionado() === turnoValue;
   }
 
-  private validarFechaLlegada(control: AbstractControl): ValidationErrors | null {
+  private validarFechaLlegada(
+    control: AbstractControl
+  ): ValidationErrors | null {
     const fechaLlegada = control.value;
     const fechaPartida = control.parent?.get('fechapartida')?.value;
 

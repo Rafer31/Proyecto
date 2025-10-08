@@ -37,22 +37,18 @@ export class AvailableTrips implements OnInit {
   userName = this.userStateService.userName;
 
   constructor() {
-    // Efecto que se ejecuta cuando currentUser cambia
     effect(() => {
       const usuario = this.currentUser();
       if (usuario && this.loading()) {
-        // Esperar un tick para que Angular procese el cambio
         setTimeout(() => this.cargarDatos(), 0);
       }
     });
   }
 
   async ngOnInit() {
-    // Si ya hay usuario, cargar datos inmediatamente
     if (this.currentUser()) {
       await this.cargarDatos();
     }
-    // Si no hay usuario, el efecto se encargará de cargar cuando esté disponible
   }
 
   private async cargarDatos() {

@@ -46,6 +46,9 @@ export class SeatsDialog {
   cargando = signal<boolean>(true);
   usuarioActual = signal<any | null>(null);
   rolActual = signal<string | null>(null);
+  modoCambioAsiento = signal<boolean>(false);
+  pasajeroCambiando = signal<ReservaPasajero | null>(null);
+  tipoViaje = signal<'salida' | 'retorno'>('salida');
 
   constructor(
     private dialog: MatDialog,
@@ -85,6 +88,10 @@ export class SeatsDialog {
       const viaje: any = await this.tripService.getViaje(
         this.data.idplanificacion
       );
+
+      // Determinar el tipo de viaje
+      this.tipoViaje.set(viaje.tipo || 'salida');
+
       const totalAsientos = viaje.vehiculo.vehiculo?.nroasientos ?? 0;
 
       const pasajeros: Pasajero[] =
@@ -100,9 +107,7 @@ export class SeatsDialog {
         const restantes = totalAsientos - numero + 1;
         const asientosFila: any[] = [];
 
-        // Caso especial: última fila con 5 asientos
         if (restantes === 5) {
-          // 2 asientos a la izquierda
           for (let i = 0; i < 2; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -114,7 +119,6 @@ export class SeatsDialog {
             });
           }
 
-          // 1 asiento en el centro (donde normalmente va el pasillo)
           const asientoCentro = numero++;
           const pasajeroCentro = pasajeros.find(
             (p) => p.asiento === asientoCentro
@@ -126,7 +130,6 @@ export class SeatsDialog {
             pasajero: pasajeroCentro,
           });
 
-          // 2 asientos a la derecha
           for (let i = 0; i < 2; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -140,12 +143,10 @@ export class SeatsDialog {
 
           filasTemp.push({ tipo: 'normal', asientos: asientosFila });
         } else {
-          // Distribución normal (2 + pasillo + 2 o menos)
           const asientosEnFila = restantes >= 4 ? 4 : restantes;
           const leftSide = Math.ceil(asientosEnFila / 2);
           const rightSide = asientosEnFila - leftSide;
 
-          // Asientos izquierda
           for (let i = 0; i < leftSide; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -157,10 +158,8 @@ export class SeatsDialog {
             });
           }
 
-          // Pasillo
           asientosFila.push({ num: null, tipo: 'pasillo' });
 
-          // Asientos derecha
           for (let i = 0; i < rightSide; i++) {
             const asientoNum = numero++;
             const pasajero = pasajeros.find((p) => p.asiento === asientoNum);
@@ -197,19 +196,16 @@ export class SeatsDialog {
       return;
     }
 
-    // Si es staff, solo permitir ver su propia información
     if (this.data.isStaff) {
       const usuario = this.usuarioActual();
       if (usuario && seat.pasajero.idusuario === usuario.idusuario) {
-        // Es su propio asiento, puede verlo
         this.pasajeroSeleccionado.set(seat.pasajero);
         this.vistaActual.set('detalle');
       }
-      // Si no es su asiento, no hace nada (no muestra información)
+
       return;
     }
 
-    // Si es admin, puede ver cualquier asiento
     this.pasajeroSeleccionado.set(seat.pasajero);
     this.vistaActual.set('detalle');
   }
@@ -217,6 +213,8 @@ export class SeatsDialog {
   volverAlMapa() {
     this.vistaActual.set('mapa');
     this.pasajeroSeleccionado.set(null);
+    this.modoCambioAsiento.set(false);
+    this.pasajeroCambiando.set(null);
   }
 
   cerrar() {
@@ -225,10 +223,23 @@ export class SeatsDialog {
 
   async cancelarReserva(pasajero: ReservaPasajero) {
     if (!pasajero) return;
+
+    // Verificar si hay un retorno asociado
+    const { existeRetorno, idplanificacionRetorno } =
+      await this.reservaService.verificarRetornoAsociado(
+        this.data.idplanificacion
+      );
+
+    let mensaje = `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento}?`;
+
+    if (existeRetorno && this.tipoViaje() === 'salida') {
+      mensaje = `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento}? También se cancelará la reserva en el retorno asociado.`;
+    }
+
     const dialogRef = this.dialog.open(ConfirmDialog, {
       data: {
         title: 'Confirmar cancelación',
-        message: `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento}?`,
+        message: mensaje,
       },
     });
 
@@ -236,19 +247,31 @@ export class SeatsDialog {
     if (!confirmado) return;
 
     try {
+      // Cancelar en el viaje actual
       await this.reservaService.cancelarReserva(
         this.data.idplanificacion,
         pasajero.asiento,
         pasajero.tipo
       );
+
+      // Si es salida y hay retorno, cancelar también en el retorno
+      if (existeRetorno && idplanificacionRetorno && this.tipoViaje() === 'salida') {
+        await this.reservaService.cancelarReserva(
+          idplanificacionRetorno,
+          pasajero.asiento,
+          pasajero.tipo
+        );
+      }
+
       await this.ngOnInit();
-      this.snackBar.open(
-        `Reserva del asiento ${pasajero.asiento} cancelada`,
-        'Cerrar',
-        { duration: 3000 }
-      );
+
+      const mensajeExito = existeRetorno && this.tipoViaje() === 'salida'
+        ? `Reserva del asiento ${pasajero.asiento} cancelada en salida y retorno`
+        : `Reserva del asiento ${pasajero.asiento} cancelada`;
+
+      this.snackBar.open(mensajeExito, 'Cerrar', { duration: 3000 });
       this.volverAlMapa();
-      // Cerrar diálogo con flag de cambios
+
       this.dialogRef.close({ cambiosRealizados: true });
     } catch (error) {
       this.snackBar.open(`${error}`, 'Cerrar', { duration: 3000 });
@@ -258,21 +281,35 @@ export class SeatsDialog {
   async cambiarAsiento(pasajero: ReservaPasajero) {
     if (!pasajero) return;
 
+    // Verificar si hay un retorno asociado
+    const { existeRetorno } = await this.reservaService.verificarRetornoAsociado(
+      this.data.idplanificacion
+    );
+
+    let mensaje = `¿Desea cambiar el asiento ${pasajero.asiento} por otro? Seleccione un asiento disponible después de confirmar.`;
+
+    if (existeRetorno && this.tipoViaje() === 'salida') {
+      mensaje = `¿Desea cambiar el asiento ${pasajero.asiento} por otro? El cambio se aplicará tanto en la salida como en el retorno. Seleccione un asiento disponible después de confirmar.`;
+    }
+
     const dialogRef = this.dialog.open(ConfirmDialog, {
       data: {
         title: 'Cambiar asiento',
-        message: `¿Desea cambiar el asiento ${pasajero.asiento} por otro? Seleccione un asiento disponible después de confirmar.`,
+        message: mensaje,
       },
     });
 
     const confirmado = await dialogRef.afterClosed().toPromise();
     if (!confirmado) return;
 
-    this.snackBar.open(
-      'Ahora seleccione el nuevo asiento en el mapa',
-      'Cerrar',
-      { duration: 4000 }
-    );
+    this.modoCambioAsiento.set(true);
+    this.pasajeroCambiando.set(pasajero);
+
+    const mensajeSnack = existeRetorno && this.tipoViaje() === 'salida'
+      ? 'Seleccione el nuevo asiento. El cambio se aplicará en salida y retorno.'
+      : 'Ahora seleccione el nuevo asiento en el mapa';
+
+    this.snackBar.open(mensajeSnack, 'Cerrar', { duration: 4000 });
     this.volverAlMapa();
   }
 
@@ -288,6 +325,65 @@ export class SeatsDialog {
     }
 
     try {
+      // Si estamos en modo cambio de asiento
+      if (this.modoCambioAsiento() && this.pasajeroCambiando()) {
+        const pasajero = this.pasajeroCambiando();
+
+        // Verificar si hay retorno asociado
+        const { existeRetorno, idplanificacionRetorno } =
+          await this.reservaService.verificarRetornoAsociado(
+            this.data.idplanificacion
+          );
+
+        let mensajeConfirmacion = `¿Confirma cambiar del asiento ${pasajero!.asiento} al asiento ${seat.num}?`;
+
+        if (existeRetorno && this.tipoViaje() === 'salida') {
+          mensajeConfirmacion = `¿Confirma cambiar del asiento ${pasajero!.asiento} al asiento ${seat.num}? El cambio se aplicará en salida y retorno.`;
+        }
+
+        const dialogRef = this.dialog.open(ConfirmDialog, {
+          data: {
+            title: 'Confirmar cambio',
+            message: mensajeConfirmacion,
+          },
+        });
+
+        const confirmado = await dialogRef.afterClosed().toPromise();
+        if (!confirmado) {
+          this.modoCambioAsiento.set(false);
+          this.pasajeroCambiando.set(null);
+          return;
+        }
+
+        await this.reservaService.cambiarReservaEnMismoViaje(
+          usuario.idusuario,
+          this.data.idplanificacion,
+          seat.num
+        );
+
+        if (existeRetorno && idplanificacionRetorno && this.tipoViaje() === 'salida') {
+          await this.reservaService.cambiarReservaEnMismoViaje(
+            usuario.idusuario,
+            idplanificacionRetorno,
+            seat.num
+          );
+        }
+
+        await this.ngOnInit();
+
+        const mensajeExito = existeRetorno && this.tipoViaje() === 'salida'
+          ? `Asiento cambiado exitosamente al ${seat.num} en salida y retorno`
+          : `Asiento cambiado exitosamente al ${seat.num}`;
+
+        this.snackBar.open(mensajeExito, 'Cerrar', { duration: 3000 });
+
+        this.modoCambioAsiento.set(false);
+        this.pasajeroCambiando.set(null);
+        this.dialogRef.close({ cambiosRealizados: true });
+        return;
+      }
+
+      // Flujo normal de reserva
       const verificacion = await this.reservaService.verificarReservaExistente(
         usuario.idusuario,
         this.data.idplanificacion
@@ -341,7 +437,6 @@ export class SeatsDialog {
         return;
       }
 
-      // NUEVO: Verificar si existe retorno asociado
       const { existeRetorno, idplanificacionRetorno } =
         await this.reservaService.verificarRetornoAsociado(
           this.data.idplanificacion
@@ -349,7 +444,7 @@ export class SeatsDialog {
 
       let reservarRetorno = false;
 
-      if (existeRetorno) {
+      if (existeRetorno && this.tipoViaje() === 'salida') {
         const dialogRef = this.dialog.open(ConfirmDialog, {
           data: {
             title: 'Reservar con retorno',
@@ -360,7 +455,6 @@ export class SeatsDialog {
         reservarRetorno = await dialogRef.afterClosed().toPromise();
       }
 
-      // Confirmar la reserva
       const dialogRef = this.dialog.open(ConfirmDialog, {
         data: {
           title: 'Confirmar reserva',
@@ -374,7 +468,6 @@ export class SeatsDialog {
       const confirmado = await dialogRef.afterClosed().toPromise();
       if (!confirmado) return;
 
-      // Usar el nuevo método que maneja retornos
       await this.reservaService.reservarAsientoConRetorno(
         this.data.idplanificacion,
         seat.num,
