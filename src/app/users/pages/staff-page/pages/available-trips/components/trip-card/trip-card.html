@@ -11,7 +11,7 @@
       <mat-icon class="info-icon">event</mat-icon>
       <div class="info-text">
         <span class="info-label">Fecha de Partida</span>
-        <span class="info-value">{{ formatFecha(fechaPartida()) }}</span>
+        <span class="info-value">{{ fechaPartida() | date: "EEEE, d 'de' MMMM 'de' y"  }}</span>
       </div>
     </div>
 

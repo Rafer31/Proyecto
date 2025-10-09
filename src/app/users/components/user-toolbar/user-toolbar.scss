@@ -5,18 +5,22 @@
   background: linear-gradient(90deg, #ff7043 0%, #ffa270 100%);
   color: #fff;
   border-bottom: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   transition: background 0.3s ease, box-shadow 0.3s ease;
 
   .title {
-    margin-left: .75rem;
-    font-weight:  500;
-    font-size: 23px;
-    letter-spacing: .3px;
+    margin-left: 0.75rem;
+    font-weight: 500;
+    font-size: 25px;
+    letter-spacing: 0.3px;
   }
-  .spacer { flex: 1 1 auto; }
+  .spacer {
+    flex: 1 1 auto;
+  }
 
-  .avatar-btn { margin-left: .25rem; }
+  .avatar-btn {
+    margin-left: 0.25rem;
+  }
   .avatar {
     width: 32px;
     height: 32px;
@@ -26,5 +30,26 @@
   }
   .avatar-btn:hover .avatar {
     transform: scale(1.05);
+  }
+}
+@media (max-width: 768px) {
+  .toolbar {
+    .title {
+      margin-left: 0.75rem;
+      font-weight: 500;
+      font-size: 18px;
+      letter-spacing: 0.3px;
+    }
+  }
+
+  @media (max-width: 376px) {
+    .toolbar {
+      .title {
+        margin-left: 0.55rem;
+        font-weight: 500;
+        font-size: 15px;
+        letter-spacing: 0.3px;
+      }
+    }
   }
 }

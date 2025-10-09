@@ -7,8 +7,6 @@ export class TripPlanningService {
   private supabase = inject(SupabaseService).supabase;
   private retornoService = inject(RetornoService);
 
-  // ========== CONSULTAS DE VEHÍCULOS ==========
-
   async getVehiculos() {
     const { data, error } = await this.supabase.from('vehiculo').select('*');
     if (error) throw error;
@@ -46,8 +44,6 @@ export class TripPlanningService {
     );
   }
 
-  // ========== CONSULTAS DE EMPRESAS Y CONDUCTORES ==========
-
   async getEmpresas() {
     const { data, error } = await this.supabase
       .from('empresa_contratista')
@@ -65,8 +61,6 @@ export class TripPlanningService {
     if (error) throw error;
     return data || [];
   }
-
-  // ========== CONSULTAS DE VIAJES ==========
 
   async getViaje(idplanificacion: string) {
     const { data, error } = await this.supabase
@@ -122,24 +116,15 @@ export class TripPlanningService {
     return data;
   }
 
-  /**
-   * Obtiene viajes disponibles por destino con información de retorno
-   */
   async getViajesDisponiblesPorDestino(iddestino: string) {
     return await this.retornoService.getViajesDisponiblesPorDestinoConRetorno(
       iddestino
     );
   }
 
-  // ========== CREACIÓN DE VIAJES ==========
-
-  /**
-   * Registra un viaje simple (sin retorno)
-   */
   async registrarViaje(step1: any, step2: any, vehiculo: any) {
     const now = new Date().toISOString();
 
-    // Crear asociación conductor-vehículo-empresa
     const { data: cve, error: errCve } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .insert({
@@ -156,7 +141,6 @@ export class TripPlanningService {
 
     if (errCve) throw errCve;
 
-    // Crear planificación de viaje
     const { data: viaje, error: errPlan } = await this.supabase
       .from('planificacion_viaje')
       .insert({
@@ -182,9 +166,6 @@ export class TripPlanningService {
     return viaje;
   }
 
-  /**
-   * Registra un viaje con su retorno
-   */
   async registrarViajeConRetorno(
     step1Ida: any,
     step2Ida: any,
@@ -194,17 +175,14 @@ export class TripPlanningService {
     vehiculoRetorno: any,
     observaciones?: string
   ) {
-    // Registrar viaje de ida
     const viajeIda = await this.registrarViaje(step1Ida, step2Ida, vehiculoIda);
 
-    // Registrar viaje de retorno
     const viajeRetorno = await this.registrarViaje(
       step1Retorno,
       step2Retorno,
       vehiculoRetorno
     );
 
-    // Crear la relación de retorno
     await this.retornoService.crearRetornoViaje(
       viajeIda.idplanificacion,
       viajeRetorno.idplanificacion,
@@ -217,9 +195,6 @@ export class TripPlanningService {
     };
   }
 
-  /**
-   * Crea una relación de retorno entre dos viajes existentes
-   */
   async crearRelacionRetorno(
     idplanificacionIda: string,
     idplanificacionRetorno: string,
@@ -231,8 +206,6 @@ export class TripPlanningService {
       observaciones
     );
   }
-
-  // ========== ACTUALIZACIÓN DE VIAJES ==========
 
   async actualizarPlanificacion(idplanificacion: string, data: any) {
     const { fechapartida, fechallegada, horapartida, iddestino } = data;
@@ -295,13 +268,7 @@ export class TripPlanningService {
     return updated;
   }
 
-  // ========== ELIMINACIÓN DE VIAJES ==========
-
-  /**
-   * Elimina un viaje simple (sin retorno)
-   */
   async eliminarViaje(idplanificacion: string) {
-    // Verificar si tiene retorno asociado
     const { existe } = await this.retornoService.tieneRetorno(idplanificacion);
 
     if (existe) {
@@ -310,14 +277,12 @@ export class TripPlanningService {
       );
     }
 
-    // Obtener el CVE antes de eliminar
     const { data: viajeData } = await this.supabase
       .from('planificacion_viaje')
       .select('idconductorvehiculoempresa')
       .eq('idplanificacion', idplanificacion)
       .single();
 
-    // Eliminar el viaje
     const { error } = await this.supabase
       .from('planificacion_viaje')
       .delete()
@@ -328,7 +293,6 @@ export class TripPlanningService {
       throw error;
     }
 
-    // Eliminar la asociación CVE
     if (viajeData?.idconductorvehiculoempresa) {
       await this.supabase
         .from('conductor_vehiculo_empresa')
@@ -339,15 +303,10 @@ export class TripPlanningService {
     return true;
   }
 
-  /**
-   * Elimina un viaje con su retorno asociado
-   */
   async eliminarViajeConRetorno(idplanificacionIda: string) {
-    // Obtener el retorno asociado
     const { existe, idplanificacionRetorno } =
       await this.retornoService.tieneRetorno(idplanificacionIda);
 
-    // Obtener los CVEs de ambos viajes
     const viajes = [];
 
     const { data: viajeIda } = await this.supabase
@@ -368,12 +327,10 @@ export class TripPlanningService {
       if (viajeRetorno) viajes.push(viajeRetorno);
     }
 
-    // Eliminar la relación de retorno (esto eliminará ambos viajes por CASCADE)
     if (existe) {
       await this.retornoService.eliminarRetorno(idplanificacionIda);
     }
 
-    // Eliminar el viaje de ida
     const { error: errorIda } = await this.supabase
       .from('planificacion_viaje')
       .delete()
@@ -381,7 +338,6 @@ export class TripPlanningService {
 
     if (errorIda) throw errorIda;
 
-    // Eliminar el viaje de retorno si existe
     if (existe && idplanificacionRetorno) {
       const { error: errorRetorno } = await this.supabase
         .from('planificacion_viaje')
@@ -391,7 +347,6 @@ export class TripPlanningService {
       if (errorRetorno) throw errorRetorno;
     }
 
-    // Eliminar las asociaciones CVE
     const cveIds = viajes
       .map((v) => v.idconductorvehiculoempresa)
       .filter((id) => id != null);
@@ -409,9 +364,6 @@ export class TripPlanningService {
     };
   }
 
-  /**
-   * Obtiene todos los viajes con sus retornos asociados (para listados)
-   */
   async getViajesConRetorno() {
     return await this.retornoService.getViajesConRetorno();
   }

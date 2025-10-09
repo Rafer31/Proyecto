@@ -1,13 +1,10 @@
 <div class="login-content">
   <div class="left-content">
     @if (isLoginMode()) { <login-card (changeValue)="isLoginMode.set(false)" />}
-    @else {
-    <register-card (changeValue)="isLoginMode.set(true)" />
-    }
+    @else { <register-card (changeValue)="isLoginMode.set(true)" /> }
   </div>
 
   <div class="right-content">
     <right-content />
   </div>
-
 </div>

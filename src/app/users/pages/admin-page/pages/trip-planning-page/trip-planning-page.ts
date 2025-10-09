@@ -52,15 +52,12 @@ export class TripPlanningPage implements OnInit {
     try {
       this.loading.set(true);
 
-      // Obtener viajes con información de retorno
       const viajesConRetorno = await this.tripService.getViajesConRetorno();
 
-      // Separar viajes (ida) y retornos
       const viajes: ViajeCard[] = [];
       const retornos: ViajeCard[] = [];
 
       viajesConRetorno.forEach((viajeData: any) => {
-        // Agregar viaje de ida
         const cve = Array.isArray(viajeData.viaje.conductor_vehiculo_empresa)
           ? viajeData.viaje.conductor_vehiculo_empresa[0]
           : viajeData.viaje.conductor_vehiculo_empresa;
@@ -74,9 +71,10 @@ export class TripPlanningPage implements OnInit {
           tieneRetorno: viajeData.tieneRetorno,
         });
 
-        // Agregar retorno si existe
         if (viajeData.tieneRetorno && viajeData.retorno) {
-          const cveRetorno = Array.isArray(viajeData.retorno.conductor_vehiculo_empresa)
+          const cveRetorno = Array.isArray(
+            viajeData.retorno.conductor_vehiculo_empresa
+          )
             ? viajeData.retorno.conductor_vehiculo_empresa[0]
             : viajeData.retorno.conductor_vehiculo_empresa;
 
@@ -104,7 +102,7 @@ export class TripPlanningPage implements OnInit {
 
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result?.viaje) {
-        await this.cargarDatos(); // Recargar todo para mantener consistencia
+        await this.cargarDatos();
       }
     });
   }
@@ -119,21 +117,24 @@ export class TripPlanningPage implements OnInit {
 
     dialogRef.afterClosed().subscribe(async (updatedTrip) => {
       if (updatedTrip) {
-        await this.cargarDatos(); // Recargar para mantener consistencia
+        await this.cargarDatos();
       }
     });
   }
 
   async eliminarViaje(idviaje: string) {
-    // Buscar el viaje en ambas listas
     const viaje = this.trips().find((t) => t.idviaje === idviaje);
     const esViajeSalida = !!viaje;
 
-    const viajeAEliminar = viaje || this.retornos().find((r) => r.idviaje === idviaje);
+    const viajeAEliminar =
+      viaje || this.retornos().find((r) => r.idviaje === idviaje);
     if (!viajeAEliminar) return;
 
-    // Construir mensaje de confirmación
-    let mensaje = `¿Seguro que deseas eliminar el ${esViajeSalida ? 'viaje' : 'retorno'} programado a "${viajeAEliminar.destino}" el día ${viajeAEliminar.fechaViaje}?`;
+    let mensaje = `¿Seguro que deseas eliminar el ${
+      esViajeSalida ? 'viaje' : 'retorno'
+    } programado a "${viajeAEliminar.destino}" el día ${
+      viajeAEliminar.fechaViaje
+    }?`;
 
     if (esViajeSalida && viaje?.tieneRetorno) {
       mensaje += ' También se eliminará el retorno asociado.';
@@ -151,14 +152,11 @@ export class TripPlanningPage implements OnInit {
       if (confirmed) {
         try {
           if (esViajeSalida) {
-            // Eliminar viaje de salida (y retorno si tiene)
             await this.tripService.eliminarViajeConRetorno(idviaje);
           } else {
-            // Eliminar solo retorno
             await this.tripService.eliminarViaje(idviaje);
           }
 
-          // Recargar datos para mantener sincronización
           await this.cargarDatos();
         } catch (err) {
           console.error('Error eliminando viaje:', err);
@@ -170,21 +168,17 @@ export class TripPlanningPage implements OnInit {
 
   async actualizarAsientosDisponibles(idviaje: string) {
     try {
-      // Obtener el viaje actualizado
       const viajeActualizado = await this.tripService.getViaje(idviaje);
 
-      // Acceder correctamente a los asientos disponibles
       const cve = Array.isArray(viajeActualizado.vehiculo)
         ? viajeActualizado.vehiculo[0]
         : viajeActualizado.vehiculo;
 
       const asientosActualizados = cve?.cantdisponibleasientos ?? 0;
 
-      // Determinar si es viaje de ida o retorno
       const esViajeSalida = this.trips().some((t) => t.idviaje === idviaje);
 
       if (esViajeSalida) {
-        // Actualizar en la lista de viajes
         this.trips.update((list) =>
           list.map((t) =>
             t.idviaje === idviaje
@@ -193,13 +187,12 @@ export class TripPlanningPage implements OnInit {
           )
         );
 
-        // Si tiene retorno, actualizar también el retorno
-        const { existe, idplanificacionRetorno } = await this.retornoService.tieneRetorno(idviaje);
+        const { existe, idplanificacionRetorno } =
+          await this.retornoService.tieneRetorno(idviaje);
         if (existe && idplanificacionRetorno) {
           await this.actualizarAsientosRetorno(idplanificacionRetorno);
         }
       } else {
-        // Actualizar en la lista de retornos
         this.retornos.update((list) =>
           list.map((r) =>
             r.idviaje === idviaje

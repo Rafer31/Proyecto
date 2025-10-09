@@ -45,15 +45,6 @@ export class TripCardComponent {
     if (id) this.reservar.emit(id);
   }
 
-  formatFecha(fecha?: string): string {
-    if (!fecha) return '';
-    const date = new Date(fecha);
-    return date.toLocaleDateString('es-BO', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
-  }
 
   formatHora(hora?: string): string {
     if (!hora) return '';

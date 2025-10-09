@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -26,6 +26,7 @@ export class AvailableTrips implements OnInit {
   loading = signal(true);
   error = signal<string | null>(null);
   usuarioDestino = signal<string | null>(null);
+  private datosYaCargados = false;
 
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
@@ -34,8 +35,23 @@ export class AvailableTrips implements OnInit {
 
   currentUser = this.userStateService.currentUser;
 
+  constructor() {
+    effect(() => {
+      const usuario = this.currentUser();
+      const isLoading = this.userStateService.isLoading();
+
+      if (usuario && !isLoading && !this.datosYaCargados) {
+        this.datosYaCargados = true;
+        setTimeout(() => this.cargarDatos(), 0);
+      }
+    });
+  }
+
   async ngOnInit() {
-    await this.cargarDatos();
+    if (this.currentUser() && !this.userStateService.isLoading()) {
+      await this.cargarDatos();
+      this.datosYaCargados = true;
+    }
   }
 
   private async cargarDatos() {
@@ -46,11 +62,12 @@ export class AvailableTrips implements OnInit {
       const usuario = this.currentUser();
 
       if (!usuario) {
-        this.error.set('No se encontró usuario autenticado');
+        console.log('No hay usuario en currentUser()');
         return;
       }
 
-      // Obtener personal
+      console.log('Cargando datos para usuario:', usuario.idusuario);
+
       const { data: personal, error: personalError } =
         await this.supabaseService.supabase
           .from('personal')
@@ -65,11 +82,12 @@ export class AvailableTrips implements OnInit {
       }
 
       if (!personal) {
-        this.error.set('No se encontró información de personal para este usuario');
+        this.error.set(
+          'No se encontró información de personal para este usuario'
+        );
         return;
       }
 
-      // Obtener asignación de destino
       const { data: asignacion, error: asignacionError } =
         await this.supabaseService.supabase
           .from('asignacion_destino')
@@ -95,12 +113,15 @@ export class AvailableTrips implements OnInit {
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
-      // Obtener viajes con retorno
-      const viajesConRetorno = await this.tripService.getViajesDisponiblesPorDestino(
-        asignacion.iddestino
-      );
+      console.log('Buscando viajes para destino:', asignacion.iddestino);
 
-      // Mapear solo los viajes (no los retornos)
+      const viajesConRetorno =
+        await this.tripService.getViajesDisponiblesPorDestino(
+          asignacion.iddestino
+        );
+
+      console.log('Viajes encontrados:', viajesConRetorno);
+
       this.viajes.set(
         viajesConRetorno.map((viajeData: any) => {
           const viaje = viajeData.viaje;
@@ -123,6 +144,8 @@ export class AvailableTrips implements OnInit {
           };
         })
       );
+
+      console.log('Viajes mapeados:', this.viajes());
     } catch (err) {
       console.error('Error cargando viajes:', err);
       this.error.set('Error al cargar los viajes disponibles');

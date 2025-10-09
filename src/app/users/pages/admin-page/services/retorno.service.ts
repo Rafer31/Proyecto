@@ -39,9 +39,6 @@ export class RetornoService {
     return data;
   }
 
-  /**
-   * Obtiene el retorno asociado a un viaje de ida
-   */
   async getRetornoPorIda(idplanificacionIda: string): Promise<any | null> {
     const { data, error } = await this.supabase
       .from('retorno_viaje')
@@ -75,9 +72,6 @@ export class RetornoService {
     return data?.retorno || null;
   }
 
-  /**
-   * Obtiene la ida asociada a un viaje de retorno
-   */
   async getIdaPorRetorno(idplanificacionRetorno: string): Promise<any | null> {
     const { data, error } = await this.supabase
       .from('retorno_viaje')
@@ -111,9 +105,6 @@ export class RetornoService {
     return data?.ida || null;
   }
 
-  /**
-   * Verifica si un viaje tiene retorno asociado
-   */
   async tieneRetorno(idplanificacionIda: string): Promise<{
     existe: boolean;
     idplanificacionRetorno?: string;
@@ -136,9 +127,6 @@ export class RetornoService {
     };
   }
 
-  /**
-   * Cancela la relación de retorno (cambia estado a 'cancelado')
-   */
   async cancelarRetorno(idplanificacionIda: string): Promise<void> {
     const { error } = await this.supabase
       .from('retorno_viaje')
@@ -149,9 +137,6 @@ export class RetornoService {
     if (error) throw error;
   }
 
-  /**
-   * Elimina completamente la relación de retorno
-   */
   async eliminarRetorno(idplanificacionIda: string): Promise<void> {
     const { error } = await this.supabase
       .from('retorno_viaje')
@@ -161,11 +146,7 @@ export class RetornoService {
     if (error) throw error;
   }
 
-  /**
-   * Obtiene todos los viajes de ida con sus retornos asociados
-   */
   async getViajesConRetorno(): Promise<ViajeConRetorno[]> {
-    // Obtener todos los viajes
     const { data: viajes, error: errorViajes } = await this.supabase
       .from('planificacion_viaje')
       .select(
@@ -185,7 +166,6 @@ export class RetornoService {
 
     if (errorViajes) throw errorViajes;
 
-    // Obtener todas las relaciones de retorno
     const { data: retornos, error: errorRetornos } = await this.supabase
       .from('retorno_viaje')
       .select('idplanificacion_ida, idplanificacion_retorno')
@@ -193,19 +173,20 @@ export class RetornoService {
 
     if (errorRetornos) throw errorRetornos;
 
-    // Crear un mapa de retornos
     const retornoMap = new Map(
-      (retornos || []).map((r: any) => [r.idplanificacion_ida, r.idplanificacion_retorno])
+      (retornos || []).map((r: any) => [
+        r.idplanificacion_ida,
+        r.idplanificacion_retorno,
+      ])
     );
 
-    // Crear un set de IDs que son retornos (no deben aparecer como viajes principales)
-    const idsRetornos = new Set((retornos || []).map((r: any) => r.idplanificacion_retorno));
+    const idsRetornos = new Set(
+      (retornos || []).map((r: any) => r.idplanificacion_retorno)
+    );
 
-    // Filtrar y mapear los viajes
     const viajesConRetorno: ViajeConRetorno[] = [];
 
     for (const viaje of viajes || []) {
-      // Si este viaje es un retorno de otro, no lo incluimos como viaje principal
       if (idsRetornos.has(viaje.idplanificacion)) {
         continue;
       }
@@ -227,9 +208,6 @@ export class RetornoService {
     return viajesConRetorno;
   }
 
-  /**
-   * Obtiene viajes disponibles por destino incluyendo información de retorno
-   */
   async getViajesDisponiblesPorDestinoConRetorno(
     iddestino: string
   ): Promise<ViajeConRetorno[]> {
@@ -249,12 +227,10 @@ export class RetornoService {
       `
       )
       .eq('iddestino', iddestino)
-      .gte('fechapartida', new Date().toISOString().split('T')[0])
       .order('fechapartida', { ascending: true });
 
     if (error) throw error;
 
-    // Obtener retornos para estos viajes
     const idsViajes = (viajes || []).map((v: any) => v.idplanificacion);
 
     const { data: retornos } = await this.supabase
@@ -289,9 +265,6 @@ export class RetornoService {
     }));
   }
 
-  /**
-   * Actualiza la observación de un retorno
-   */
   async actualizarObservacion(
     idplanificacionIda: string,
     observaciones: string

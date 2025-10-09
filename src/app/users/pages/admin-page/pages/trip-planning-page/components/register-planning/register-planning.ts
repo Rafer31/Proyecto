@@ -56,24 +56,19 @@ export class RegisterTripDialog {
   private tripService = inject(TripPlanningService);
   private userService = inject(UserService);
 
-  // Datos del formulario
   destinos = signal<any[]>([]);
   destinoBolivar = signal<any | null>(null);
   conductores = signal<any[]>([]);
   vehiculos = signal<any[]>([]);
   empresas = signal<any[]>([]);
 
-  // Estados de carga
   loading = signal<boolean>(true);
 
-  // Control de etapas
   etapaActual = signal<EtapaViaje>('salida');
   datosViajeSalida = signal<DatosViaje | null>(null);
 
-  // Vehículo seleccionado
   selectedVehiculo = signal<any>(null);
 
-  // Control de turnos
   turnos = [
     { value: 'manana', label: 'Mañana', inicio: 6, fin: 12 },
     { value: 'tarde', label: 'Tarde', inicio: 12, fin: 18 },
@@ -83,12 +78,13 @@ export class RegisterTripDialog {
 
   turnoSeleccionado = signal<string | null>(null);
   todasLasHoras = this.generarHoras();
-  horasFiltradas = computed(() => this.filtrarHorasPorTurno(this.turnoSeleccionado()));
+  horasFiltradas = computed(() =>
+    this.filtrarHorasPorTurno(this.turnoSeleccionado())
+  );
 
   formTrip!: FormGroup;
 
   constructor() {
-    // Habilitar/deshabilitar controles según disponibilidad de datos
     effect(() => {
       if (!this.formTrip) return;
 
@@ -124,15 +120,19 @@ export class RegisterTripDialog {
       }),
       step2: this.fb.group({
         fechapartida: ['', Validators.required],
-        fechallegada: ['', [Validators.required, this.validarFechaLlegada.bind(this)]],
+        fechallegada: [
+          '',
+          [Validators.required, this.validarFechaLlegada.bind(this)],
+        ],
         horapartida: [{ value: '', disabled: true }, Validators.required],
         iddestino: ['', Validators.required],
       }),
     });
 
-    // Revalidar fecha de llegada cuando cambia la fecha de partida
     this.step2Form.get('fechapartida')?.valueChanges.subscribe(() => {
-      this.step2Form.get('fechallegada')?.updateValueAndValidity({ emitEvent: false });
+      this.step2Form
+        .get('fechallegada')
+        ?.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -140,13 +140,14 @@ export class RegisterTripDialog {
     try {
       this.loading.set(true);
 
-      const [destinos, destinoBolivar, conductores, vehiculos, empresas] = await Promise.all([
-        this.destinyService.getDestinosParaViajes(),
-        this.destinyService.getDestinoBolivar(),
-        this.userService.getConductoresDisponibles(),
-        this.tripService.getVehiculosDisponibles(),
-        this.tripService.getEmpresas(),
-      ]);
+      const [destinos, destinoBolivar, conductores, vehiculos, empresas] =
+        await Promise.all([
+          this.destinyService.getDestinosParaViajes(),
+          this.destinyService.getDestinoBolivar(),
+          this.userService.getConductoresDisponibles(),
+          this.tripService.getVehiculosDisponibles(),
+          this.tripService.getEmpresas(),
+        ]);
 
       this.destinos.set(destinos);
       this.destinoBolivar.set(destinoBolivar);
@@ -161,8 +162,6 @@ export class RegisterTripDialog {
     }
   }
 
-  // ========== GETTERS ==========
-
   get step1Form(): FormGroup {
     return this.formTrip.get('step1') as FormGroup;
   }
@@ -170,8 +169,6 @@ export class RegisterTripDialog {
   get step2Form(): FormGroup {
     return this.formTrip.get('step2') as FormGroup;
   }
-
-  // ========== EVENTOS DE FORMULARIO ==========
 
   onVehiculoSelected(nroplaca: string) {
     const vehiculo = this.vehiculos().find((v) => v.nroplaca === nroplaca);
@@ -192,7 +189,6 @@ export class RegisterTripDialog {
       }
     }
 
-    // Limpiar hora si no está en el nuevo turno
     const horaActual = horaPartidaControl?.value;
     if (horaActual && !this.horasFiltradas().includes(horaActual)) {
       horaPartidaControl?.setValue('');
@@ -202,8 +198,6 @@ export class RegisterTripDialog {
   isTurnoSeleccionado(turnoValue: string): boolean {
     return this.turnoSeleccionado() === turnoValue;
   }
-
-  // ========== SUBMIT VIAJE DE SALIDA ==========
 
   async onSubmitSalida() {
     if (!this.validarFormulario()) return;
@@ -231,8 +225,6 @@ export class RegisterTripDialog {
     }
   }
 
-  // ========== DECISIÓN DE RETORNO ==========
-
   onDecidirRetorno(crearRetorno: boolean) {
     if (crearRetorno) {
       this.prepararFormularioRetorno();
@@ -243,7 +235,6 @@ export class RegisterTripDialog {
   }
 
   private prepararFormularioRetorno() {
-    // Resetear formulario con un pequeño delay para evitar problemas de Angular
     setTimeout(() => {
       this.step2Form.reset();
       this.turnoSeleccionado.set(null);
@@ -252,7 +243,6 @@ export class RegisterTripDialog {
       horaPartidaControl?.disable({ emitEvent: false });
       horaPartidaControl?.setValue('', { emitEvent: false });
 
-      // Pre-seleccionar destino Bolívar para el retorno
       const destinoControl = this.step2Form.get('iddestino');
       const destino = this.destinoBolivar();
 
@@ -263,8 +253,6 @@ export class RegisterTripDialog {
     }, 0);
   }
 
-  // ========== SUBMIT VIAJE DE RETORNO ==========
-
   async onSubmitRetorno() {
     if (!this.validarFormulario('retorno')) return;
 
@@ -274,14 +262,12 @@ export class RegisterTripDialog {
     const step2Retorno = this.step2Form.value;
 
     try {
-      // Crear SOLO el viaje de retorno
       const viajeRetorno = await this.tripService.registrarViaje(
         datosIda.step1,
         step2Retorno,
         this.selectedVehiculo()
       );
 
-      // Crear la relación en retorno_viaje
       await this.tripService.crearRelacionRetorno(
         datosIda.viaje.idplanificacion,
         viajeRetorno.idplanificacion
@@ -293,8 +279,6 @@ export class RegisterTripDialog {
       alert('Error al registrar el retorno. Por favor, intente nuevamente.');
     }
   }
-
-  // ========== NAVEGACIÓN ==========
 
   async volverASalida() {
     const datosIda = this.datosViajeSalida();
@@ -318,8 +302,6 @@ export class RegisterTripDialog {
     this.dialogRef.close();
   }
 
-  // ========== HELPERS PRIVADOS ==========
-
   private validarFormulario(tipo: 'salida' | 'retorno' = 'salida'): boolean {
     const esRetorno = tipo === 'retorno';
     const form = esRetorno ? this.step2Form : this.formTrip;
@@ -328,7 +310,11 @@ export class RegisterTripDialog {
 
     const horaPartida = this.step2Form.get('horapartida');
     if (horaPartida?.disabled) {
-      alert(`Debe seleccionar un turno para las horas${esRetorno ? ' del retorno' : ''}`);
+      alert(
+        `Debe seleccionar un turno para las horas${
+          esRetorno ? ' del retorno' : ''
+        }`
+      );
       return false;
     }
 
@@ -358,7 +344,9 @@ export class RegisterTripDialog {
     });
   }
 
-  private validarFechaLlegada(control: AbstractControl): ValidationErrors | null {
+  private validarFechaLlegada(
+    control: AbstractControl
+  ): ValidationErrors | null {
     const fechaLlegada = control.value;
     const fechaPartida = control.parent?.get('fechapartida')?.value;
 
@@ -402,8 +390,6 @@ export class RegisterTripDialog {
       return h >= turno.inicio && h < turno.fin;
     });
   }
-
-  // ========== TRACK BY FUNCTIONS ==========
 
   trackByHora = (_: number, hora: string) => hora;
   trackByTurno = (_: number, turno: any) => turno.value;

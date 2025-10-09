@@ -11,7 +11,13 @@ import { UserStateService } from '../../../shared/services/user-state.service';
 
 @Component({
   selector: 'app-staff-page',
-  imports: [UserToolbar, UserSidenav, MatButtonModule, MatIconModule, RouterOutlet],
+  imports: [
+    UserToolbar,
+    UserSidenav,
+    MatButtonModule,
+    MatIconModule,
+    RouterOutlet,
+  ],
   templateUrl: './staff-page.html',
   styleUrl: './staff-page.scss',
 })
@@ -33,7 +39,6 @@ export class StaffPage implements OnInit {
   ];
 
   async ngOnInit() {
-    // Siempre recargar el usuario al iniciar
     await this.cargarUsuario();
   }
 
@@ -41,8 +46,10 @@ export class StaffPage implements OnInit {
     try {
       this.userStateService.setLoading(true);
 
-      const { data: { user }, error: authError } =
-        await this.supabaseService.supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await this.supabaseService.supabase.auth.getUser();
 
       if (authError || !user) {
         console.error('Error obteniendo usuario autenticado:', authError);
@@ -50,7 +57,6 @@ export class StaffPage implements OnInit {
         return;
       }
 
-      // Forzar recarga del usuario desde la base de datos
       await this.userDataService.loadUserAndUpdateState(user.id);
     } catch (error) {
       console.error('Error cargando datos del usuario:', error);

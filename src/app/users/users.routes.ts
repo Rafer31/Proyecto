@@ -56,7 +56,7 @@ export const userRoutes: Routes = [
           {
             path: '',
             redirectTo: 'available-trips',
-            pathMatch: 'full'
+            pathMatch: 'full',
           },
         ],
       },
@@ -68,10 +68,10 @@ export const userRoutes: Routes = [
             path: 'available-visitant-trips',
             component: AvailableVisitantTrips,
           },
-           {
+          {
             path: '',
-            redirectTo: 'available-trips',
-            pathMatch: 'full'
+            redirectTo: 'available-visitant-trips',
+            pathMatch: 'full',
           },
         ],
       },
@@ -83,10 +83,10 @@ export const userRoutes: Routes = [
             path: 'assigned-trips',
             component: AssignedTrips,
           },
-           {
+          {
             path: '',
             redirectTo: 'assigned-trips',
-            pathMatch: 'full'
+            pathMatch: 'full',
           },
         ],
       },

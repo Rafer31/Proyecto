@@ -16,8 +16,6 @@ export class ReservaService {
   private supabase = inject(SupabaseService).supabase;
   private retornoService = inject(RetornoService);
 
-  // ========== CONSULTAS DE PASAJEROS ==========
-
   async getPasajerosPorPlanificacion(
     idplanificacion: string
   ): Promise<ReservaPasajero[]> {
@@ -64,7 +62,9 @@ export class ReservaService {
       if (u) {
         pasajeros.push({
           asiento: p.nroasiento,
-          nombre: `${u.nomusuario} ${u.patusuario ?? ''} ${u.matusuario ?? ''}`.trim(),
+          nombre: `${u.nomusuario} ${u.patusuario ?? ''} ${
+            u.matusuario ?? ''
+          }`.trim(),
           ci: u.ci,
           telefono: u.numcelular,
           tipo: 'personal',
@@ -109,7 +109,9 @@ export class ReservaService {
       if (u) {
         pasajeros.push({
           asiento: v.nroasiento,
-          nombre: `${u.nomusuario} ${u.patusuario ?? ''} ${u.matusuario ?? ''}`.trim(),
+          nombre: `${u.nomusuario} ${u.patusuario ?? ''} ${
+            u.matusuario ?? ''
+          }`.trim(),
           ci: u.ci,
           telefono: u.numcelular,
           tipo: 'visitante',
@@ -121,18 +123,36 @@ export class ReservaService {
     return pasajeros;
   }
 
-  // ========== VERIFICACIÓN DE RESERVAS ==========
-
   async verificarReservaExistente(
     idusuario: string,
-    idplanificacionActual: string
+    idplanificacionActual: string,
+    isStaff: boolean
   ): Promise<{
     tieneReserva: boolean;
     idplanificacion?: string;
     asiento?: number;
     destinoCorrecto: boolean;
   }> {
-    // Obtener datos del personal
+    if (!isStaff) {
+      const { data: reservaExistente } = await this.supabase
+        .from('visitante_planificacionviaje')
+        .select('idplanificacion, nroasiento, estado')
+        .eq('idusuario', idusuario)
+        .eq('estado', 'reservado')
+        .maybeSingle();
+
+      if (reservaExistente) {
+        return {
+          tieneReserva: true,
+          idplanificacion: reservaExistente.idplanificacion,
+          asiento: reservaExistente.nroasiento,
+          destinoCorrecto: true,
+        };
+      }
+
+      return { tieneReserva: false, destinoCorrecto: true };
+    }
+
     const { data: personal, error: personalError } = await this.supabase
       .from('personal')
       .select('nroficha')
@@ -143,7 +163,6 @@ export class ReservaService {
       return { tieneReserva: false, destinoCorrecto: false };
     }
 
-    // Obtener asignación activa
     const { data: asignacion, error: asignacionError } = await this.supabase
       .from('asignacion_destino')
       .select('idasignaciondestino, iddestino')
@@ -155,7 +174,6 @@ export class ReservaService {
       return { tieneReserva: false, destinoCorrecto: false };
     }
 
-    // Verificar si el destino del viaje coincide con la asignación
     const { data: viajeActual } = await this.supabase
       .from('planificacion_viaje')
       .select('iddestino')
@@ -164,7 +182,6 @@ export class ReservaService {
 
     const destinoCorrecto = viajeActual?.iddestino === asignacion.iddestino;
 
-    // Buscar reserva existente
     const { data: reservaExistente } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idplanificacion, nroasiento, estado')
@@ -184,21 +201,14 @@ export class ReservaService {
     return { tieneReserva: false, destinoCorrecto };
   }
 
-  // ========== RESERVAS ==========
-
-  /**
-   * Reserva un asiento para personal, con opción de reservar también en el retorno
-   */
   async reservarAsientoPersonal(
     idplanificacion: string,
     asiento: number,
     idusuario: string,
     reservarRetorno: boolean = false
   ): Promise<void> {
-    // Reservar en el viaje principal
     await this.crearReservaPersonal(idplanificacion, asiento, idusuario);
 
-    // Si se solicita, reservar también en el retorno
     if (reservarRetorno) {
       const { existe, idplanificacionRetorno } =
         await this.retornoService.tieneRetorno(idplanificacion);
@@ -213,17 +223,15 @@ export class ReservaService {
     }
   }
 
-  /**
-   * Crea una reserva para personal en un viaje específico
-   */
   private async crearReservaPersonal(
     idplanificacion: string,
     asiento: number,
     idusuario: string
   ): Promise<void> {
-    const idasignaciondestino = await this.getAsignacionActivaPersonal(idusuario);
+    const idasignaciondestino = await this.getAsignacionActivaPersonal(
+      idusuario
+    );
 
-    // Verificar si ya tiene reserva en este viaje
     const { data: existenteActiva } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('*')
@@ -236,7 +244,6 @@ export class ReservaService {
       throw new Error('Ya tienes un asiento reservado en este viaje');
     }
 
-    // Verificar si tiene una reserva cancelada que se puede reactivar
     const { data: existenteCancelada } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('*')
@@ -246,7 +253,6 @@ export class ReservaService {
       .maybeSingle();
 
     if (existenteCancelada) {
-      // Reactivar reserva cancelada
       const { error } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .update({
@@ -259,7 +265,6 @@ export class ReservaService {
 
       if (error) throw error;
     } else {
-      // Crear nueva reserva
       const { error } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .insert({
@@ -272,11 +277,8 @@ export class ReservaService {
       if (error) throw error;
     }
 
-    // Actualizar contador de asientos disponibles
     await this.actualizarAsientosDisponibles(idplanificacion);
   }
-
-  // ========== CANCELACIÓN DE RESERVAS ==========
 
   async cancelarReserva(
     idplanificacion: string,
@@ -299,17 +301,15 @@ export class ReservaService {
     await this.actualizarAsientosDisponibles(idplanificacion);
   }
 
-  /**
-   * Cancela la reserva del personal en un viaje y opcionalmente en su retorno
-   */
   async cancelarReservaConRetorno(
     idplanificacion: string,
     idusuario: string,
     cancelarRetorno: boolean = false
   ): Promise<void> {
-    const idasignaciondestino = await this.getAsignacionActivaPersonal(idusuario);
+    const idasignaciondestino = await this.getAsignacionActivaPersonal(
+      idusuario
+    );
 
-    // Cancelar en el viaje principal
     const { error } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .update({ estado: 'cancelado' })
@@ -321,7 +321,6 @@ export class ReservaService {
 
     await this.actualizarAsientosDisponibles(idplanificacion);
 
-    // Si se solicita, cancelar también en el retorno
     if (cancelarRetorno) {
       const { existe, idplanificacionRetorno } =
         await this.retornoService.tieneRetorno(idplanificacion);
@@ -341,16 +340,15 @@ export class ReservaService {
     }
   }
 
-  // ========== CAMBIO DE RESERVAS ==========
-
   async cambiarReserva(
     idusuario: string,
     idplanificacionNueva: string,
     asientoNuevo: number
   ): Promise<void> {
-    const idasignaciondestino = await this.getAsignacionActivaPersonal(idusuario);
+    const idasignaciondestino = await this.getAsignacionActivaPersonal(
+      idusuario
+    );
 
-    // Buscar la reserva actual en el viaje específico
     const { data: reservaEnEsteViaje } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idplanificacion, nroasiento')
@@ -359,7 +357,6 @@ export class ReservaService {
       .eq('estado', 'reservado')
       .maybeSingle();
 
-    // Si ya tiene reserva EN ESTE VIAJE, solo actualizar el asiento
     if (reservaEnEsteViaje) {
       const { error } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
@@ -374,7 +371,6 @@ export class ReservaService {
       return;
     }
 
-    // Si no tiene reserva en este viaje, buscar en otros viajes
     const { data: reservaEnOtroViaje } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idplanificacion, nroasiento')
@@ -382,9 +378,7 @@ export class ReservaService {
       .eq('estado', 'reservado')
       .maybeSingle();
 
-    // Cambiar de un viaje a otro
     if (reservaEnOtroViaje) {
-      // Cancelar reserva en el viaje anterior
       const { error: cancelError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .update({ estado: 'cancelado' })
@@ -394,9 +388,10 @@ export class ReservaService {
 
       if (cancelError) throw cancelError;
 
-      await this.actualizarAsientosDisponibles(reservaEnOtroViaje.idplanificacion);
+      await this.actualizarAsientosDisponibles(
+        reservaEnOtroViaje.idplanificacion
+      );
 
-      // Crear nueva reserva en el viaje nuevo
       const { error: reservaError } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .insert({
@@ -412,9 +407,9 @@ export class ReservaService {
     }
   }
 
-  // ========== HELPERS PRIVADOS ==========
-
-  private async getAsignacionActivaPersonal(idusuario: string): Promise<string> {
+  private async getAsignacionActivaPersonal(
+    idusuario: string
+  ): Promise<string> {
     const { data: personal, error: personalError } = await this.supabase
       .from('personal')
       .select('nroficha')
@@ -442,7 +437,6 @@ export class ReservaService {
   private async actualizarAsientosDisponibles(
     idplanificacion: string
   ): Promise<void> {
-    // Obtener el CVE asociado al viaje
     const { data: viaje } = await this.supabase
       .from('planificacion_viaje')
       .select('idconductorvehiculoempresa')
@@ -451,7 +445,6 @@ export class ReservaService {
 
     if (!viaje?.idconductorvehiculoempresa) return;
 
-    // Obtener el total de asientos del vehículo
     const { data: cve } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .select('vehiculo:vehiculo(nroasientos)')
@@ -460,7 +453,6 @@ export class ReservaService {
 
     const totalAsientos = (cve as any)?.vehiculo?.nroasientos || 0;
 
-    // Contar asientos reservados
     const { count: reservadosPersonal } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('*', { count: 'exact', head: true })
