@@ -22,6 +22,14 @@ import { UserService } from '../../../../../../services/user.service';
 import { DestinyService } from '../../../../../../../shared/services/destiny.service';
 import { CommonModule } from '@angular/common';
 
+type EtapaViaje = 'salida' | 'pregunta-retorno' | 'retorno';
+
+interface DatosViaje {
+  viaje: any;
+  step1: any;
+  vehiculo: any;
+}
+
 @Component({
   selector: 'app-register-trip-dialog',
   standalone: true,
@@ -48,20 +56,24 @@ export class RegisterTripDialog {
   private tripService = inject(TripPlanningService);
   private userService = inject(UserService);
 
+  // Datos del formulario
   destinos = signal<any[]>([]);
-  destinosRetorno = signal<any[]>([]);
+  destinoBolivar = signal<any | null>(null);
   conductores = signal<any[]>([]);
   vehiculos = signal<any[]>([]);
   empresas = signal<any[]>([]);
-  selectedVehiculo: any = null;
 
-  loadingConductores = signal<boolean>(true);
-  loadingVehiculos = signal<boolean>(true);
-  loadingData = signal<boolean>(true);
+  // Estados de carga
+  loading = signal<boolean>(true);
 
-  etapaActual = signal<'salida' | 'pregunta-retorno' | 'retorno'>('salida');
-  datosViajeSalida: any = null;
+  // Control de etapas
+  etapaActual = signal<EtapaViaje>('salida');
+  datosViajeSalida = signal<DatosViaje | null>(null);
 
+  // Vehículo seleccionado
+  selectedVehiculo = signal<any>(null);
+
+  // Control de turnos
   turnos = [
     { value: 'manana', label: 'Mañana', inicio: 6, fin: 12 },
     { value: 'tarde', label: 'Tarde', inicio: 12, fin: 18 },
@@ -70,32 +82,30 @@ export class RegisterTripDialog {
   ];
 
   turnoSeleccionado = signal<string | null>(null);
-
   todasLasHoras = this.generarHoras();
-
-  horasFiltradas = computed(() => {
-    return this.filtrarHorasPorTurno(this.turnoSeleccionado());
-  });
+  horasFiltradas = computed(() => this.filtrarHorasPorTurno(this.turnoSeleccionado()));
 
   formTrip!: FormGroup;
 
   constructor() {
+    // Habilitar/deshabilitar controles según disponibilidad de datos
     effect(() => {
-      const hayConductores = this.conductores().length > 0;
-      const hayVehiculos = this.vehiculos().length > 0;
-      const isLoading = this.loadingData();
+      if (!this.formTrip) return;
 
-      if (this.formTrip) {
-        const nroplacaControl = this.step1Form.get('nroplaca');
-        const idempresaControl = this.step1Form.get('idempresa');
+      const hayDatos =
+        this.conductores().length > 0 &&
+        this.vehiculos().length > 0 &&
+        !this.loading();
 
-        if (!hayConductores || !hayVehiculos || isLoading) {
-          nroplacaControl?.disable({ emitEvent: false });
-          idempresaControl?.disable({ emitEvent: false });
-        } else {
-          nroplacaControl?.enable({ emitEvent: false });
-          idempresaControl?.enable({ emitEvent: false });
-        }
+      const nroplacaControl = this.step1Form.get('nroplaca');
+      const idempresaControl = this.step1Form.get('idempresa');
+
+      if (hayDatos) {
+        nroplacaControl?.enable({ emitEvent: false });
+        idempresaControl?.enable({ emitEvent: false });
+      } else {
+        nroplacaControl?.disable({ emitEvent: false });
+        idempresaControl?.disable({ emitEvent: false });
       }
     });
   }
@@ -114,52 +124,44 @@ export class RegisterTripDialog {
       }),
       step2: this.fb.group({
         fechapartida: ['', Validators.required],
-        fechallegada: [
-          '',
-          [Validators.required, this.validarFechaLlegada.bind(this)],
-        ],
+        fechallegada: ['', [Validators.required, this.validarFechaLlegada.bind(this)]],
         horapartida: [{ value: '', disabled: true }, Validators.required],
         iddestino: ['', Validators.required],
       }),
     });
 
+    // Revalidar fecha de llegada cuando cambia la fecha de partida
     this.step2Form.get('fechapartida')?.valueChanges.subscribe(() => {
-      this.step2Form
-        .get('fechallegada')
-        ?.updateValueAndValidity({ emitEvent: false });
+      this.step2Form.get('fechallegada')?.updateValueAndValidity({ emitEvent: false });
     });
   }
 
   private async loadData() {
     try {
-      this.loadingData.set(true);
-      this.loadingConductores.set(true);
-      this.loadingVehiculos.set(true);
+      this.loading.set(true);
 
-      const [destinos, destinoBolivar, conductores, vehiculos, empresas] =
-        await Promise.all([
-          this.destinyService.getDestinosParaViajes(),
-          this.destinyService.getDestinoBolivar(),
-          this.userService.getConductoresDisponibles(),
-          this.tripService.getVehiculosDisponibles(),
-          this.tripService.getEmpresas(),
-        ]);
+      const [destinos, destinoBolivar, conductores, vehiculos, empresas] = await Promise.all([
+        this.destinyService.getDestinosParaViajes(),
+        this.destinyService.getDestinoBolivar(),
+        this.userService.getConductoresDisponibles(),
+        this.tripService.getVehiculosDisponibles(),
+        this.tripService.getEmpresas(),
+      ]);
 
       this.destinos.set(destinos);
-
-      this.destinosRetorno.set(destinoBolivar ? [destinoBolivar] : []);
-
+      this.destinoBolivar.set(destinoBolivar);
       this.conductores.set(conductores);
       this.vehiculos.set(vehiculos);
       this.empresas.set(empresas);
     } catch (error) {
       console.error('Error cargando datos:', error);
+      alert('Error al cargar datos. Por favor, intente nuevamente.');
     } finally {
-      this.loadingConductores.set(false);
-      this.loadingVehiculos.set(false);
-      this.loadingData.set(false);
+      this.loading.set(false);
     }
   }
+
+  // ========== GETTERS ==========
 
   get step1Form(): FormGroup {
     return this.formTrip.get('step1') as FormGroup;
@@ -169,213 +171,31 @@ export class RegisterTripDialog {
     return this.formTrip.get('step2') as FormGroup;
   }
 
+  // ========== EVENTOS DE FORMULARIO ==========
+
   onVehiculoSelected(nroplaca: string) {
-    this.selectedVehiculo = this.vehiculos().find(
-      (v) => v.nroplaca === nroplaca
-    );
-  }
-
-  async onSubmitSalida() {
-    this.formTrip.markAllAsTouched();
-
-    const horaPartida = this.step2Form.get('horapartida');
-
-    if (horaPartida?.disabled) {
-      alert('Debe seleccionar un turno para las horas');
-      return;
-    }
-
-    if (this.formTrip.invalid) {
-      return;
-    }
-
-    const step1 = this.formTrip.get('step1')?.value;
-    const step2 = {
-      ...this.step2Form.value,
-      horapartida: this.step2Form.get('horapartida')?.value,
-      tipo: 'salida',
-    };
-
-    try {
-      const viaje = await this.tripService.registrarViaje(
-        step1,
-        step2,
-        this.selectedVehiculo,
-        null
-      );
-
-      this.datosViajeSalida = { viaje, step1 };
-
-      this.etapaActual.set('pregunta-retorno');
-    } catch (err) {
-      console.error('Error al registrar viaje', err);
-    }
-  }
-
-  onDecidirRetorno(crearRetorno: boolean) {
-    if (crearRetorno) {
-      this.etapaActual.set('retorno');
-
-      setTimeout(() => {
-        this.step2Form.reset();
-
-        this.turnoSeleccionado.set(null);
-
-        const horaPartidaControl = this.step2Form.get('horapartida');
-        if (horaPartidaControl) {
-          horaPartidaControl.disable({ emitEvent: false });
-          horaPartidaControl.setValue('', { emitEvent: false });
-        }
-
-        if (this.destinosRetorno().length > 0) {
-          const destinoControl = this.step2Form.get('iddestino');
-          const destinoBolivar = this.destinosRetorno()[0];
-
-          if (destinoControl && destinoBolivar) {
-            destinoControl.setValue(destinoBolivar.iddestino);
-            destinoControl.markAsTouched();
-            destinoControl.updateValueAndValidity();
-          }
-        }
-
-        this.step2Form.get('fechapartida')?.setValue(null);
-        this.step2Form.get('fechallegada')?.setValue(null);
-      }, 0);
-    } else {
-      this.dialogRef.close({
-        viaje: this.datosViajeSalida.viaje,
-        retorno: null,
-      });
-    }
-  }
-
-  async onSubmitRetorno() {
-    this.step2Form.markAllAsTouched();
-
-    const horaPartida = this.step2Form.get('horapartida');
-
-    if (horaPartida?.disabled) {
-      alert('Debe seleccionar un turno para las horas del retorno');
-      return;
-    }
-
-    if (this.step2Form.invalid) {
-      alert('Por favor complete todos los campos requeridos');
-      return;
-    }
-
-    const step2Retorno = {
-      ...this.step2Form.value,
-      horapartida: this.step2Form.get('horapartida')?.value,
-      tipo: 'retorno',
-    };
-
-    try {
-      const viajeRetorno = await this.tripService.registrarViaje(
-        this.datosViajeSalida.step1,
-        step2Retorno,
-        this.selectedVehiculo,
-        this.datosViajeSalida.viaje.idplanificacion
-      );
-
-      this.dialogRef.close({
-        viaje: this.datosViajeSalida.viaje,
-        retorno: viajeRetorno,
-      });
-    } catch (err) {
-      console.error('Error al registrar retorno', err);
-    }
-  }
-
-  onCancel() {
-    this.dialogRef.close();
-  }
-
-  volverASalida() {
-    if (this.datosViajeSalida?.viaje) {
-      this.tripService
-        .eliminarViaje(this.datosViajeSalida.viaje.idplanificacion)
-        .catch((err) => console.error('Error eliminando viaje:', err));
-    }
-    this.datosViajeSalida = null;
-    this.etapaActual.set('salida');
-  }
-
-  volverAPregunta() {
-    this.etapaActual.set('pregunta-retorno');
-  }
-
-  private generarHoras(): string[] {
-    const horas: string[] = [];
-    for (let h = 0; h < 24; h++) {
-      for (let m = 0; m < 60; m += 15) {
-        const hora = h.toString().padStart(2, '0');
-        const minuto = m.toString().padStart(2, '0');
-        horas.push(`${hora}:${minuto}`);
-      }
-    }
-    return horas;
-  }
-
-  trackByHora(index: number, hora: string): string {
-    return hora;
-  }
-
-  trackByTurno(index: number, turno: any): string {
-    return turno.value;
-  }
-
-  trackByDestino(index: number, destino: any): string | number {
-    return destino.iddestino;
-  }
-
-  trackByConductor(index: number, conductor: any): string | number {
-    return conductor.idconductor;
-  }
-
-  trackByVehiculo(index: number, vehiculo: any): string {
-    return vehiculo.nroplaca;
-  }
-
-  trackByEmpresa(index: number, empresa: any): string | number {
-    return empresa.idempresa;
-  }
-
-  private filtrarHorasPorTurno(turnoSeleccionado: string | null): string[] {
-    if (!turnoSeleccionado) {
-      return this.todasLasHoras;
-    }
-
-    const turno = this.turnos.find((t) => t.value === turnoSeleccionado);
-    if (!turno) {
-      return this.todasLasHoras;
-    }
-
-    const horasFiltradas: string[] = [];
-    this.todasLasHoras.forEach((hora) => {
-      const [h] = hora.split(':').map(Number);
-      if (h >= turno.inicio && h < turno.fin) {
-        horasFiltradas.push(hora);
-      }
-    });
-    return horasFiltradas;
+    const vehiculo = this.vehiculos().find((v) => v.nroplaca === nroplaca);
+    this.selectedVehiculo.set(vehiculo);
   }
 
   toggleTurno(turnoValue: string, checked: boolean) {
+    const horaPartidaControl = this.step2Form.get('horapartida');
+
     if (checked) {
       this.turnoSeleccionado.set(turnoValue);
-      this.step2Form.get('horapartida')?.enable();
+      horaPartidaControl?.enable();
     } else {
       if (this.turnoSeleccionado() === turnoValue) {
         this.turnoSeleccionado.set(null);
-        this.step2Form.get('horapartida')?.setValue('');
-        this.step2Form.get('horapartida')?.disable();
+        horaPartidaControl?.setValue('');
+        horaPartidaControl?.disable();
       }
     }
 
-    const horaPartida = this.step2Form.get('horapartida')?.value;
-    if (horaPartida && !this.horasFiltradas().includes(horaPartida)) {
-      this.step2Form.get('horapartida')?.setValue('');
+    // Limpiar hora si no está en el nuevo turno
+    const horaActual = horaPartidaControl?.value;
+    if (horaActual && !this.horasFiltradas().includes(horaActual)) {
+      horaPartidaControl?.setValue('');
     }
   }
 
@@ -383,9 +203,162 @@ export class RegisterTripDialog {
     return this.turnoSeleccionado() === turnoValue;
   }
 
-  private validarFechaLlegada(
-    control: AbstractControl
-  ): ValidationErrors | null {
+  // ========== SUBMIT VIAJE DE SALIDA ==========
+
+  async onSubmitSalida() {
+    if (!this.validarFormulario()) return;
+
+    const step1 = this.step1Form.value;
+    const step2 = this.step2Form.value;
+
+    try {
+      const viaje = await this.tripService.registrarViaje(
+        step1,
+        step2,
+        this.selectedVehiculo()
+      );
+
+      this.datosViajeSalida.set({
+        viaje,
+        step1,
+        vehiculo: this.selectedVehiculo(),
+      });
+
+      this.etapaActual.set('pregunta-retorno');
+    } catch (err) {
+      console.error('Error al registrar viaje:', err);
+      alert('Error al registrar el viaje. Por favor, intente nuevamente.');
+    }
+  }
+
+  // ========== DECISIÓN DE RETORNO ==========
+
+  onDecidirRetorno(crearRetorno: boolean) {
+    if (crearRetorno) {
+      this.prepararFormularioRetorno();
+      this.etapaActual.set('retorno');
+    } else {
+      this.cerrarDialogoConResultado(false);
+    }
+  }
+
+  private prepararFormularioRetorno() {
+    // Resetear formulario con un pequeño delay para evitar problemas de Angular
+    setTimeout(() => {
+      this.step2Form.reset();
+      this.turnoSeleccionado.set(null);
+
+      const horaPartidaControl = this.step2Form.get('horapartida');
+      horaPartidaControl?.disable({ emitEvent: false });
+      horaPartidaControl?.setValue('', { emitEvent: false });
+
+      // Pre-seleccionar destino Bolívar para el retorno
+      const destinoControl = this.step2Form.get('iddestino');
+      const destino = this.destinoBolivar();
+
+      if (destinoControl && destino) {
+        destinoControl.setValue(destino.iddestino);
+        destinoControl.markAsTouched();
+      }
+    }, 0);
+  }
+
+  // ========== SUBMIT VIAJE DE RETORNO ==========
+
+  async onSubmitRetorno() {
+    if (!this.validarFormulario('retorno')) return;
+
+    const datosIda = this.datosViajeSalida();
+    if (!datosIda) return;
+
+    const step2Retorno = this.step2Form.value;
+
+    try {
+      // Crear SOLO el viaje de retorno
+      const viajeRetorno = await this.tripService.registrarViaje(
+        datosIda.step1,
+        step2Retorno,
+        this.selectedVehiculo()
+      );
+
+      // Crear la relación en retorno_viaje
+      await this.tripService.crearRelacionRetorno(
+        datosIda.viaje.idplanificacion,
+        viajeRetorno.idplanificacion
+      );
+
+      this.cerrarDialogoConResultado(true, viajeRetorno);
+    } catch (err) {
+      console.error('Error al registrar retorno:', err);
+      alert('Error al registrar el retorno. Por favor, intente nuevamente.');
+    }
+  }
+
+  // ========== NAVEGACIÓN ==========
+
+  async volverASalida() {
+    const datosIda = this.datosViajeSalida();
+    if (datosIda?.viaje) {
+      try {
+        await this.tripService.eliminarViaje(datosIda.viaje.idplanificacion);
+      } catch (err) {
+        console.error('Error eliminando viaje:', err);
+      }
+    }
+
+    this.datosViajeSalida.set(null);
+    this.etapaActual.set('salida');
+  }
+
+  volverAPregunta() {
+    this.etapaActual.set('pregunta-retorno');
+  }
+
+  onCancel() {
+    this.dialogRef.close();
+  }
+
+  // ========== HELPERS PRIVADOS ==========
+
+  private validarFormulario(tipo: 'salida' | 'retorno' = 'salida'): boolean {
+    const esRetorno = tipo === 'retorno';
+    const form = esRetorno ? this.step2Form : this.formTrip;
+
+    form.markAllAsTouched();
+
+    const horaPartida = this.step2Form.get('horapartida');
+    if (horaPartida?.disabled) {
+      alert(`Debe seleccionar un turno para las horas${esRetorno ? ' del retorno' : ''}`);
+      return false;
+    }
+
+    if (form.invalid) {
+      alert('Por favor complete todos los campos requeridos');
+      return false;
+    }
+
+    return true;
+  }
+
+  private obtenerDatosViajeOriginal(viaje: any) {
+    return {
+      fechapartida: viaje.fechapartida,
+      fechallegada: viaje.fechallegada,
+      horapartida: viaje.horapartida,
+      iddestino: viaje.destino.iddestino,
+    };
+  }
+
+  private cerrarDialogoConResultado(conRetorno: boolean, viajeRetorno?: any) {
+    const datosIda = this.datosViajeSalida();
+
+    this.dialogRef.close({
+      viaje: datosIda?.viaje,
+      retorno: conRetorno ? viajeRetorno : null,
+    });
+  }
+
+  private validarFechaLlegada(control: AbstractControl): ValidationErrors | null {
     const fechaLlegada = control.value;
     const fechaPartida = control.parent?.get('fechapartida')?.value;
 
@@ -405,4 +378,37 @@ export class RegisterTripDialog {
 
     return null;
   }
+
+  private generarHoras(): string[] {
+    const horas: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 15) {
+        const hora = h.toString().padStart(2, '0');
+        const minuto = m.toString().padStart(2, '0');
+        horas.push(`${hora}:${minuto}`);
+      }
+    }
+    return horas;
+  }
+
+  private filtrarHorasPorTurno(turnoSeleccionado: string | null): string[] {
+    if (!turnoSeleccionado) return this.todasLasHoras;
+
+    const turno = this.turnos.find((t) => t.value === turnoSeleccionado);
+    if (!turno) return this.todasLasHoras;
+
+    return this.todasLasHoras.filter((hora) => {
+      const [h] = hora.split(':').map(Number);
+      return h >= turno.inicio && h < turno.fin;
+    });
+  }
+
+  // ========== TRACK BY FUNCTIONS ==========
+
+  trackByHora = (_: number, hora: string) => hora;
+  trackByTurno = (_: number, turno: any) => turno.value;
+  trackByDestino = (_: number, destino: any) => destino.iddestino;
+  trackByConductor = (_: number, conductor: any) => conductor.idconductor;
+  trackByVehiculo = (_: number, vehiculo: any) => vehiculo.nroplaca;
+  trackByEmpresa = (_: number, empresa: any) => empresa.idempresa;
 }

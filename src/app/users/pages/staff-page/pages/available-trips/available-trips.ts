@@ -1,10 +1,9 @@
-import { Component, signal, inject, OnInit, effect } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatDialog } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TripCardComponent } from './components/trip-card/trip-card';
 import { TripPlanningService } from '../../../admin-page/services/trip-planning.service';
-import { UserDataService } from '../../../../../auth/services/userdata.service';
 import { SupabaseService } from '../../../../../shared/services/supabase.service';
 import { SeatsDialog } from '../../../admin-page/pages/trip-planning-page/components/seats-dialog/seats-dialog';
 import { Emptystate } from '../../../../components/emptystate/emptystate';
@@ -34,21 +33,9 @@ export class AvailableTrips implements OnInit {
   private userStateService = inject(UserStateService);
 
   currentUser = this.userStateService.currentUser;
-  userName = this.userStateService.userName;
-
-  constructor() {
-    effect(() => {
-      const usuario = this.currentUser();
-      if (usuario && this.loading()) {
-        setTimeout(() => this.cargarDatos(), 0);
-      }
-    });
-  }
 
   async ngOnInit() {
-    if (this.currentUser()) {
-      await this.cargarDatos();
-    }
+    await this.cargarDatos();
   }
 
   private async cargarDatos() {
@@ -59,11 +46,11 @@ export class AvailableTrips implements OnInit {
       const usuario = this.currentUser();
 
       if (!usuario) {
-
+        this.error.set('No se encontró usuario autenticado');
         return;
       }
 
-
+      // Obtener personal
       const { data: personal, error: personalError } =
         await this.supabaseService.supabase
           .from('personal')
@@ -82,7 +69,7 @@ export class AvailableTrips implements OnInit {
         return;
       }
 
-
+      // Obtener asignación de destino
       const { data: asignacion, error: asignacionError } =
         await this.supabaseService.supabase
           .from('asignacion_destino')
@@ -102,34 +89,37 @@ export class AvailableTrips implements OnInit {
         return;
       }
 
-
-
       const destinoInfo: any = asignacion.destino;
       const nombreDestino = Array.isArray(destinoInfo)
         ? destinoInfo[0]?.nomdestino
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
-      const viajes = await this.tripService.getViajesDisponiblesPorDestino(
+      // Obtener viajes con retorno
+      const viajesConRetorno = await this.tripService.getViajesDisponiblesPorDestino(
         asignacion.iddestino
       );
 
+      // Mapear solo los viajes (no los retornos)
       this.viajes.set(
-        viajes.map((v: any) => {
-          const destinoViaje: any = v.destino;
+        viajesConRetorno.map((viajeData: any) => {
+          const viaje = viajeData.viaje;
+          const destinoViaje: any = viaje.destino;
           const nombreDestinoViaje = Array.isArray(destinoViaje)
             ? destinoViaje[0]?.nomdestino
             : destinoViaje?.nomdestino;
 
-          return {
-            idviaje: v.idplanificacion,
-            fechaPartida: v.fechapartida,
-            fechaLlegada: v.fechallegada,
-            horaPartida: v.horapartida,
+          const cve = Array.isArray(viaje.conductor_vehiculo_empresa)
+            ? viaje.conductor_vehiculo_empresa[0]
+            : viaje.conductor_vehiculo_empresa;
 
+          return {
+            idviaje: viaje.idplanificacion,
+            fechaPartida: viaje.fechapartida,
+            fechaLlegada: viaje.fechallegada,
+            horaPartida: viaje.horapartida,
             destino: nombreDestinoViaje ?? 'Sin destino',
-            asientosDisponibles:
-              v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
+            asientosDisponibles: cve?.cantdisponibleasientos ?? 0,
           };
         })
       );
@@ -151,7 +141,7 @@ export class AvailableTrips implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
+      if (result?.cambiosRealizados) {
         this.cargarDatos();
       }
     });

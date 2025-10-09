@@ -7,7 +7,7 @@
             <ng-template matStepLabel>Asociar Conductor</ng-template>
 
             <div class="form-row">
-              @if (loadingConductores()) {
+              @if (loading()) {
                 <mat-form-field appearance="outline" class="form-field">
                   <mat-label>Cargando conductores...</mat-label>
                   <mat-select [disabled]="true">
@@ -35,7 +35,7 @@
                 </mat-form-field>
               }
 
-              @if (loadingVehiculos()) {
+              @if (loading()) {
                 <mat-form-field appearance="outline" class="form-field">
                   <mat-label>Cargando vehículos...</mat-label>
                   <mat-select [disabled]="true">
@@ -84,7 +84,7 @@
               <button
                 mat-button
                 matStepperNext
-                [disabled]="loadingData() || step1Form.invalid || conductores().length === 0 || vehiculos().length === 0"
+                [disabled]="loading() || step1Form.invalid || conductores().length === 0 || vehiculos().length === 0"
               >
                 Siguiente
               </button>
@@ -207,6 +207,7 @@
       </div>
     </div>
   }
+
   @if (etapaActual() === 'retorno') {
     <div class="retorno-header">
       <mat-icon>keyboard_return</mat-icon>
@@ -216,7 +217,7 @@
     <form [formGroup]="step2Form" class="retorno-form">
       <div class="destino-fijo">
         <mat-icon>place</mat-icon>
-        <span>Destino: <strong>{{ destinosRetorno()[0]?.nomdestino || 'Bolívar' }}</strong></span>
+        <span>Destino: <strong>{{ destinoBolivar()?.nomdestino || 'Bolívar' }}</strong></span>
       </div>
 
       <input type="hidden" formControlName="iddestino" />
@@ -278,7 +279,6 @@
           <mat-error>Requerido</mat-error>
         }
       </mat-form-field>
-
 
       <div class="actions">
         <button mat-button (click)="volverAPregunta()">Cancelar</button>

@@ -1,9 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { SupabaseService } from '../../../../shared/services/supabase.service';
+import { RetornoService } from './retorno.service';
 
 @Injectable({ providedIn: 'root' })
 export class TripPlanningService {
   private supabase = inject(SupabaseService).supabase;
+  private retornoService = inject(RetornoService);
+
+  // ========== CONSULTAS DE VEHÍCULOS ==========
 
   async getVehiculos() {
     const { data, error } = await this.supabase.from('vehiculo').select('*');
@@ -42,6 +46,8 @@ export class TripPlanningService {
     );
   }
 
+  // ========== CONSULTAS DE EMPRESAS Y CONDUCTORES ==========
+
   async getEmpresas() {
     const { data, error } = await this.supabase
       .from('empresa_contratista')
@@ -60,6 +66,8 @@ export class TripPlanningService {
     return data || [];
   }
 
+  // ========== CONSULTAS DE VIAJES ==========
+
   async getViaje(idplanificacion: string) {
     const { data, error } = await this.supabase
       .from('planificacion_viaje')
@@ -69,7 +77,6 @@ export class TripPlanningService {
         fechapartida,
         horapartida,
         fechallegada,
-        tipo,
         destino:destino(iddestino, nomdestino),
         vehiculo:conductor_vehiculo_empresa(
           idconductorvehiculoempresa,
@@ -77,7 +84,6 @@ export class TripPlanningService {
           nroplaca,
           idempresa,
           cantdisponibleasientos,
-          tipo,
           vehiculo:vehiculo(nroplaca, nroasientos, tipovehiculo, imageUrl),
           empresa:empresa_contratista(idempresa, nomempresa, nomcontacto, celcontacto, imageUrl),
           conductor:conductor(idconductor, usuario:usuario(idusuario, nomusuario, patusuario, matusuario, ci, numcelular))
@@ -100,169 +106,161 @@ export class TripPlanningService {
       .from('planificacion_viaje')
       .select(
         `
-      idplanificacion,
-      fechapartida,
-      horapartida,
-      tipo,
-      idviaje_relacionado,
-      destino: destino(iddestino, nomdestino),
-      conductor_vehiculo_empresa!inner(
-        idconductorvehiculoempresa,
-        cantdisponibleasientos,
-        tipo
-      )
-    `
-      )
-      .eq('tipo', 'salida');
-
-    if (error) throw error;
-    return data;
-  }
-
-  async getRetornoAsociadoASalida(idplanificacionSalida: string) {
-    const { data, error } = await this.supabase
-      .from('planificacion_viaje')
-      .select(
-        `
         idplanificacion,
         fechapartida,
         horapartida,
-        tipo,
         destino: destino(iddestino, nomdestino),
         conductor_vehiculo_empresa!inner(
           idconductorvehiculoempresa,
-          cantdisponibleasientos,
-          tipo
+          cantdisponibleasientos
         )
       `
       )
-      .eq('tipo', 'retorno')
-      .eq('idviaje_relacionado', idplanificacionSalida)
-      .maybeSingle();
-
-    if (error) throw error;
-    return data;
-  }
-
-  async getRetornos() {
-    const { data, error } = await this.supabase
-      .from('planificacion_viaje')
-      .select(
-        `
-      idplanificacion,
-      fechapartida,
-      horapartida,
-      tipo,
-      idviaje_relacionado,
-      destino: destino(iddestino, nomdestino),
-      conductor_vehiculo_empresa!inner(
-        idconductorvehiculoempresa,
-        cantdisponibleasientos,
-        tipo
-      )
-    `
-      )
-      .eq('tipo', 'retorno');
-
-    if (error) throw error;
-    return data;
-  }
-
-  async getViajesDisponiblesPorDestino(iddestino: string) {
-    const { data, error } = await this.supabase
-      .from('planificacion_viaje')
-      .select(
-        `
-        idplanificacion,
-        fechapartida,
-        fechallegada,
-        horapartida,
-        tipo,
-        destino: destino(iddestino, nomdestino),
-        conductor_vehiculo_empresa!inner(
-          idconductorvehiculoempresa,
-          cantdisponibleasientos,
-          tipo
-        )
-      `
-      )
-      .eq('iddestino', iddestino)
-      .eq('tipo', 'salida')
-      .gte('fechapartida', new Date().toISOString().split('T')[0])
       .order('fechapartida', { ascending: true });
 
     if (error) throw error;
     return data;
   }
 
-  async registrarViaje(
-    step1: any,
-    step2: any,
-    vehiculo: any,
-    idviajeRelacionado?: string | null
-  ) {
+  /**
+   * Obtiene viajes disponibles por destino con información de retorno
+   */
+  async getViajesDisponiblesPorDestino(iddestino: string) {
+    return await this.retornoService.getViajesDisponiblesPorDestinoConRetorno(
+      iddestino
+    );
+  }
+
+  // ========== CREACIÓN DE VIAJES ==========
+
+  /**
+   * Registra un viaje simple (sin retorno)
+   */
+  async registrarViaje(step1: any, step2: any, vehiculo: any) {
     const now = new Date().toISOString();
-    const tipoViaje = step2.tipo || 'salida';
 
-    let cve: any = null;
-    try {
-      // Siempre crear una nueva asociación para cada tipo de viaje
-      const { data: cveInserted, error: errCve } = await this.supabase
-        .from('conductor_vehiculo_empresa')
-        .insert({
-          idconductor: step1.idconductor,
-          nroplaca: step1.nroplaca,
-          idempresa: step1.idempresa,
-          fechainicio: now,
-          fechafin: null,
-          cantdisponibleasientos: vehiculo?.nroasientos ?? 0,
-          estado: 'asignado',
-          tipo: tipoViaje, // Agregar el campo tipo
-        })
-        .select()
-        .single();
+    // Crear asociación conductor-vehículo-empresa
+    const { data: cve, error: errCve } = await this.supabase
+      .from('conductor_vehiculo_empresa')
+      .insert({
+        idconductor: step1.idconductor,
+        nroplaca: step1.nroplaca,
+        idempresa: step1.idempresa,
+        fechainicio: now,
+        fechafin: null,
+        cantdisponibleasientos: vehiculo?.nroasientos ?? 0,
+        estado: 'asignado',
+      })
+      .select()
+      .single();
 
-      if (errCve) throw errCve;
-      cve = cveInserted;
-    } catch (err) {
-      console.error('Error creando asociación CVE:', err);
-      throw err;
-    }
+    if (errCve) throw errCve;
 
-    try {
-      const { data: viaje, error: errPlan } = await this.supabase
-        .from('planificacion_viaje')
-        .insert({
-          fechapartida: step2.fechapartida,
-          fechallegada: step2.fechallegada,
-          fechaplanificacion: now,
-          horapartida: step2.horapartida,
-          tipo: tipoViaje,
-          idconductorvehiculoempresa: cve.idconductorvehiculoempresa,
-          iddestino: step2.iddestino,
-          idviaje_relacionado: idviajeRelacionado ?? null,
-        })
-        .select(
-          `
+    // Crear planificación de viaje
+    const { data: viaje, error: errPlan } = await this.supabase
+      .from('planificacion_viaje')
+      .insert({
+        fechapartida: step2.fechapartida,
+        fechallegada: step2.fechallegada,
+        fechaplanificacion: now,
+        horapartida: step2.horapartida,
+        idconductorvehiculoempresa: cve.idconductorvehiculoempresa,
+        iddestino: step2.iddestino,
+      })
+      .select(
+        `
         idplanificacion,
         fechapartida,
         fechallegada,
         horapartida,
-        tipo,
         destino:destino(iddestino, nomdestino)
       `
-        )
-        .single();
+      )
+      .single();
 
-      if (errPlan) throw errPlan;
-      return viaje;
-    } catch (err) {
-      console.error('Error creando planificacion_viaje:', err);
-      throw err;
-    }
+    if (errPlan) throw errPlan;
+    return viaje;
   }
 
-  async actualizarAsociacion(idplanificacion: string | number, data: any) {
+  /**
+   * Registra un viaje con su retorno
+   */
+  async registrarViajeConRetorno(
+    step1Ida: any,
+    step2Ida: any,
+    vehiculoIda: any,
+    step1Retorno: any,
+    step2Retorno: any,
+    vehiculoRetorno: any,
+    observaciones?: string
+  ) {
+    // Registrar viaje de ida
+    const viajeIda = await this.registrarViaje(step1Ida, step2Ida, vehiculoIda);
+
+    // Registrar viaje de retorno
+    const viajeRetorno = await this.registrarViaje(
+      step1Retorno,
+      step2Retorno,
+      vehiculoRetorno
+    );
+
+    // Crear la relación de retorno
+    await this.retornoService.crearRetornoViaje(
+      viajeIda.idplanificacion,
+      viajeRetorno.idplanificacion,
+      observaciones
+    );
+
+    return {
+      viajeIda,
+      viajeRetorno,
+    };
+  }
+
+  /**
+   * Crea una relación de retorno entre dos viajes existentes
+   */
+  async crearRelacionRetorno(
+    idplanificacionIda: string,
+    idplanificacionRetorno: string,
+    observaciones?: string
+  ) {
+    return await this.retornoService.crearRetornoViaje(
+      idplanificacionIda,
+      idplanificacionRetorno,
+      observaciones
+    );
+  }
+
+  // ========== ACTUALIZACIÓN DE VIAJES ==========
+
+  async actualizarPlanificacion(idplanificacion: string, data: any) {
+    const { fechapartida, fechallegada, horapartida, iddestino } = data;
+
+    const { data: updated, error } = await this.supabase
+      .from('planificacion_viaje')
+      .update({
+        fechapartida,
+        fechallegada,
+        horapartida,
+        iddestino,
+      })
+      .eq('idplanificacion', idplanificacion)
+      .select(
+        `idplanificacion, fechapartida, fechallegada, horapartida,
+         destino:destino(iddestino, nomdestino)`
+      )
+      .single();
+
+    if (error) {
+      console.error('Error actualizando planificación:', error);
+      throw error;
+    }
+
+    return updated;
+  }
+
+  async actualizarAsociacion(idplanificacion: string, data: any) {
     const { idconductor, nroplaca, idempresa } = data;
 
     const { data: viajeData, error: errorViaje } = await this.supabase
@@ -297,14 +295,29 @@ export class TripPlanningService {
     return updated;
   }
 
+  // ========== ELIMINACIÓN DE VIAJES ==========
+
+  /**
+   * Elimina un viaje simple (sin retorno)
+   */
   async eliminarViaje(idplanificacion: string) {
-    // Primero obtener el idconductorvehiculoempresa antes de eliminar
+    // Verificar si tiene retorno asociado
+    const { existe } = await this.retornoService.tieneRetorno(idplanificacion);
+
+    if (existe) {
+      throw new Error(
+        'Este viaje tiene un retorno asociado. Use eliminarViajeConRetorno() en su lugar.'
+      );
+    }
+
+    // Obtener el CVE antes de eliminar
     const { data: viajeData } = await this.supabase
       .from('planificacion_viaje')
       .select('idconductorvehiculoempresa')
       .eq('idplanificacion', idplanificacion)
       .single();
 
+    // Eliminar el viaje
     const { error } = await this.supabase
       .from('planificacion_viaje')
       .delete()
@@ -315,7 +328,7 @@ export class TripPlanningService {
       throw error;
     }
 
-    // Eliminar la asociación CVE si existe
+    // Eliminar la asociación CVE
     if (viajeData?.idconductorvehiculoempresa) {
       await this.supabase
         .from('conductor_vehiculo_empresa')
@@ -326,73 +339,80 @@ export class TripPlanningService {
     return true;
   }
 
-  async actualizarPlanificacion(idplanificacion: string, data: any) {
-    const { fechapartida, fechallegada, horapartida, iddestino, tipo } = data;
+  /**
+   * Elimina un viaje con su retorno asociado
+   */
+  async eliminarViajeConRetorno(idplanificacionIda: string) {
+    // Obtener el retorno asociado
+    const { existe, idplanificacionRetorno } =
+      await this.retornoService.tieneRetorno(idplanificacionIda);
 
-    const { data: updated, error } = await this.supabase
+    // Obtener los CVEs de ambos viajes
+    const viajes = [];
+
+    const { data: viajeIda } = await this.supabase
       .from('planificacion_viaje')
-      .update({
-        fechapartida,
-        fechallegada,
-        horapartida,
-        tipo,
-        iddestino,
-      })
-      .eq('idplanificacion', idplanificacion)
-      .select(
-        `idplanificacion, fechapartida, fechallegada, horapartida, tipo,
-         destino:destino(iddestino, nomdestino)`
-      )
+      .select('idconductorvehiculoempresa')
+      .eq('idplanificacion', idplanificacionIda)
       .single();
 
-    if (error) {
-      console.error('Error actualizando planificación:', error);
-      throw error;
+    if (viajeIda) viajes.push(viajeIda);
+
+    if (existe && idplanificacionRetorno) {
+      const { data: viajeRetorno } = await this.supabase
+        .from('planificacion_viaje')
+        .select('idconductorvehiculoempresa')
+        .eq('idplanificacion', idplanificacionRetorno)
+        .single();
+
+      if (viajeRetorno) viajes.push(viajeRetorno);
     }
 
-    return updated;
-  }
+    // Eliminar la relación de retorno (esto eliminará ambos viajes por CASCADE)
+    if (existe) {
+      await this.retornoService.eliminarRetorno(idplanificacionIda);
+    }
 
-  async eliminarViajeConRetorno(idplanificacionSalida: string) {
-    // Obtener los IDs de las asociaciones CVE antes de eliminar
-    const { data: viajes } = await this.supabase
-      .from('planificacion_viaje')
-      .select('idplanificacion, idconductorvehiculoempresa, tipo')
-      .or(`idplanificacion.eq.${idplanificacionSalida},idviaje_relacionado.eq.${idplanificacionSalida}`);
-
-    // Obtener IDs de retornos para retornarlos
-    const retornosIds = (viajes || [])
-      .filter((v: any) => v.tipo === 'retorno')
-      .map((v: any) => v.idplanificacion);
-
-    // Eliminar retornos relacionados
-    await this.supabase
+    // Eliminar el viaje de ida
+    const { error: errorIda } = await this.supabase
       .from('planificacion_viaje')
       .delete()
-      .eq('idviaje_relacionado', idplanificacionSalida);
+      .eq('idplanificacion', idplanificacionIda);
 
-    // Eliminar el viaje de salida
-    const { error } = await this.supabase
-      .from('planificacion_viaje')
-      .delete()
-      .eq('idplanificacion', idplanificacionSalida);
+    if (errorIda) throw errorIda;
 
-    if (error) throw error;
+    // Eliminar el viaje de retorno si existe
+    if (existe && idplanificacionRetorno) {
+      const { error: errorRetorno } = await this.supabase
+        .from('planificacion_viaje')
+        .delete()
+        .eq('idplanificacion', idplanificacionRetorno);
+
+      if (errorRetorno) throw errorRetorno;
+    }
 
     // Eliminar las asociaciones CVE
-    if (viajes && viajes.length > 0) {
-      const cveIds = viajes
-        .map((v: any) => v.idconductorvehiculoempresa)
-        .filter((id: any) => id != null);
+    const cveIds = viajes
+      .map((v) => v.idconductorvehiculoempresa)
+      .filter((id) => id != null);
 
-      if (cveIds.length > 0) {
-        await this.supabase
-          .from('conductor_vehiculo_empresa')
-          .delete()
-          .in('idconductorvehiculoempresa', cveIds);
-      }
+    if (cveIds.length > 0) {
+      await this.supabase
+        .from('conductor_vehiculo_empresa')
+        .delete()
+        .in('idconductorvehiculoempresa', cveIds);
     }
 
-    return { retornosEliminados: retornosIds };
+    return {
+      viajeIda: idplanificacionIda,
+      viajeRetorno: idplanificacionRetorno || null,
+    };
+  }
+
+  /**
+   * Obtiene todos los viajes con sus retornos asociados (para listados)
+   */
+  async getViajesConRetorno() {
+    return await this.retornoService.getViajesConRetorno();
   }
 }

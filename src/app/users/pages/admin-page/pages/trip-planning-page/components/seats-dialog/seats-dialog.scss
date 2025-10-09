@@ -29,12 +29,22 @@
     position: absolute;
     width: 8px;
     height: calc(100% - 48px);
-    background: linear-gradient(to bottom, transparent 0%, rgba(99, 179, 237, 0.2) 10%, rgba(99, 179, 237, 0.2) 90%, transparent 100%);
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(99, 179, 237, 0.2) 10%,
+      rgba(99, 179, 237, 0.2) 90%,
+      transparent 100%
+    );
     top: 24px;
     border-radius: 4px;
   }
-  &::before { left: 4px; }
-  &::after { right: 4px; }
+  &::before {
+    left: 4px;
+  }
+  &::after {
+    right: 4px;
+  }
 }
 
 .fila {
@@ -77,7 +87,9 @@
     background: #e2e8f0;
     border-radius: 2px;
   }
-  .seat-number { margin-top: 8px; }
+  .seat-number {
+    margin-top: 8px;
+  }
 }
 
 .seat.libre {
@@ -86,11 +98,14 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3), inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.05);
     border-color: #4ade80;
     cursor: pointer;
   }
-  &::before { background: #86efac; }
+  &::before {
+    background: #86efac;
+  }
 }
 
 .seat.ocupado {
@@ -98,13 +113,16 @@
   border-color: #fbbf24;
   color: #92400e;
 
-  &::before { background: #fbbf24; }
+  &::before {
+    background: #fbbf24;
+  }
 
   &.clickable {
     cursor: pointer;
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(251, 191, 36, 0.4), inset 0 -2px 4px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 8px rgba(251, 191, 36, 0.4),
+        inset 0 -2px 4px rgba(0, 0, 0, 0.05);
       border-color: #f59e0b;
     }
     &::after {
@@ -132,9 +150,12 @@
   border-color: #1e3a8a;
   grid-column: 1 / 3;
   height: 70px;
-  box-shadow: 0 4px 6px rgba(30, 64, 175, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 6px rgba(30, 64, 175, 0.3),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2);
 
-  &::before { display: none; }
+  &::before {
+    display: none;
+  }
   .conductor-icon {
     font-size: 32px;
     width: 32px;
@@ -154,7 +175,9 @@
   box-shadow: none;
   position: relative;
 
-  &::before { display: none; }
+  &::before {
+    display: none;
+  }
   &::after {
     content: "";
     position: absolute;
@@ -163,7 +186,13 @@
     transform: translate(-50%, -50%);
     width: 2px;
     height: 40px;
-    background: repeating-linear-gradient(to bottom, #cbd5e0 0px, #cbd5e0 4px, transparent 4px, transparent 8px);
+    background: repeating-linear-gradient(
+      to bottom,
+      #cbd5e0 0px,
+      #cbd5e0 4px,
+      transparent 4px,
+      transparent 8px
+    );
   }
 }
 
@@ -171,7 +200,9 @@
   background: transparent;
   border: none;
   box-shadow: none;
-  &::before { display: none; }
+  &::before {
+    display: none;
+  }
 }
 
 .leyenda {
@@ -293,7 +324,9 @@
   font-weight: 600;
 }
 
-.back-button { margin-right: 8px; }
+.back-button {
+  margin-right: 8px;
+}
 
 mat-dialog-actions {
   padding: 16px 24px;
@@ -324,88 +357,294 @@ mat-dialog-actions {
 }
 
 @media (max-width: 1024px) {
-  .dialog-wrapper { min-width: 350px; }
-  .bus-body { padding: 20px 16px; }
-  .fila { grid-template-columns: repeat(5, 55px); gap: 8px; }
-  .seat { height: 55px; font-size: 15px; }
-  .detalle-container { min-width: 350px; }
-  .pasajero-card { padding: 28px; }
+  .dialog-wrapper {
+    min-width: 350px;
+  }
+  .bus-body {
+    padding: 20px 16px;
+  }
+  .fila {
+    grid-template-columns: repeat(5, 55px);
+    gap: 8px;
+  }
+  .seat {
+    height: 55px;
+    font-size: 15px;
+  }
+  .detalle-container {
+    min-width: 350px;
+  }
+  .pasajero-card {
+    padding: 28px;
+  }
 }
 
 @media (max-width: 767px) {
-  .dialog-wrapper { min-width: 300px; }
-  .bus-container { gap: 20px; padding: 16px 0; }
-  .bus-body { padding: 16px 12px; border-radius: 20px; border-width: 2px; max-width: 100%; overflow-x: auto;
-    &::before, &::after { width: 6px; }
+  .dialog-wrapper {
+    min-width: 300px;
   }
-  .fila { grid-template-columns: repeat(5, 50px); gap: 6px;
-    &.fila-conductor { margin-bottom: 10px; padding-bottom: 10px; }
+  .bus-container {
+    gap: 20px;
+    padding: 16px 0;
   }
-  .seat { height: 50px; font-size: 14px; border-radius: 6px 6px 10px 10px;
-    &::before { width: 24px; height: 3px; top: 6px; }
-    .seat-number { margin-top: 6px; }
-  }
-  .seat.conductor { height: 60px;
-    .conductor-icon { font-size: 28px; width: 28px; height: 28px; }
-    .conductor-label { font-size: 9px; }
-  }
-  .leyenda { gap: 16px; padding: 12px 16px; border-radius: 10px; flex-wrap: wrap; }
-  .leyenda-item { gap: 8px; font-size: 13px; }
-  .mini-seat { width: 28px; height: 28px; }
-  .detalle-container { padding: 16px; min-width: 300px; }
-  .pasajero-card { padding: 24px; border-radius: 14px; }
-  .pasajero-avatar { width: 70px; height: 70px; margin-bottom: 20px;
-    mat-icon { font-size: 42px; width: 42px; height: 42px; }
-  }
-  .pasajero-info { gap: 16px; }
-  .info-row { padding: 14px; gap: 12px; }
-  .info-icon { font-size: 22px; width: 22px; height: 22px; }
-  .info-label { font-size: 11px; }
-  .info-value { font-size: 15px; }
-  mat-dialog-actions { padding: 12px 16px; gap: 6px;
-    button { font-size: 14px; padding: 8px 12px;
-      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+  .bus-body {
+    padding: 16px 12px;
+    border-radius: 20px;
+    border-width: 2px;
+    max-width: 100%;
+    overflow-x: auto;
+    &::before,
+    &::after {
+      width: 6px;
     }
   }
-  .loading-container { height: 200px; }
+  .fila {
+    grid-template-columns: repeat(5, 50px);
+    gap: 6px;
+    &.fila-conductor {
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+    }
+  }
+  .seat {
+    height: 50px;
+    font-size: 14px;
+    border-radius: 6px 6px 10px 10px;
+    &::before {
+      width: 24px;
+      height: 3px;
+      top: 6px;
+    }
+    .seat-number {
+      margin-top: 6px;
+    }
+  }
+  .seat.conductor {
+    height: 60px;
+    .conductor-icon {
+      font-size: 28px;
+      width: 28px;
+      height: 28px;
+    }
+    .conductor-label {
+      font-size: 9px;
+    }
+  }
+  .leyenda {
+    gap: 16px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    flex-wrap: wrap;
+  }
+  .leyenda-item {
+    gap: 8px;
+    font-size: 13px;
+  }
+  .mini-seat {
+    width: 28px;
+    height: 28px;
+  }
+  .detalle-container {
+    padding: 16px;
+    min-width: 300px;
+  }
+  .pasajero-card {
+    padding: 24px;
+    border-radius: 14px;
+  }
+  .pasajero-avatar {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 20px;
+    mat-icon {
+      font-size: 42px;
+      width: 42px;
+      height: 42px;
+    }
+  }
+  .pasajero-info {
+    gap: 16px;
+  }
+  .info-row {
+    padding: 14px;
+    gap: 12px;
+  }
+  .info-icon {
+    font-size: 22px;
+    width: 22px;
+    height: 22px;
+  }
+  .info-label {
+    font-size: 11px;
+  }
+  .info-value {
+    font-size: 15px;
+  }
+  mat-dialog-actions {
+    padding: 12px 16px;
+    gap: 6px;
+    button {
+      font-size: 14px;
+      padding: 8px 12px;
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+  .loading-container {
+    height: 200px;
+  }
 }
 
 @media (max-width: 480px) {
-  .dialog-wrapper { min-width: 280px; }
-  .bus-container { gap: 16px; padding: 12px 0; }
-  .bus-body { padding: 14px 10px; border-radius: 16px; gap: 8px; }
-  .fila { grid-template-columns: repeat(5, 44px); gap: 5px;
-    &.fila-conductor { margin-bottom: 8px; padding-bottom: 8px; }
+  .dialog-wrapper {
+    min-width: 280px;
   }
-  .seat { height: 44px; font-size: 13px; border-radius: 5px 5px 8px 8px; border-width: 1.5px;
-    &::before { width: 20px; height: 2.5px; top: 5px; }
-    .seat-number { margin-top: 4px; }
+  .bus-container {
+    gap: 16px;
+    padding: 12px 0;
   }
-  .seat.conductor { height: 52px;
-    .conductor-icon { font-size: 24px; width: 24px; height: 24px; }
-    .conductor-label { font-size: 8px; }
+  .bus-body {
+    padding: 14px 10px;
+    border-radius: 16px;
+    gap: 8px;
   }
-  .seat.ocupado.clickable::after { width: 14px; height: 14px; font-size: 10px; top: 3px; right: 3px; }
-  .leyenda { gap: 12px; padding: 10px 12px; border-radius: 8px; }
-  .leyenda-item { gap: 6px; font-size: 12px; }
-  .mini-seat { width: 24px; height: 24px; border-radius: 4px 4px 6px 6px; }
-  .detalle-container { padding: 12px; min-width: 280px; }
-  .pasajero-card { padding: 20px; border-radius: 12px; }
-  .pasajero-avatar { width: 60px; height: 60px; margin-bottom: 16px;
-    mat-icon { font-size: 36px; width: 36px; height: 36px; }
-  }
-  .pasajero-info { gap: 14px; }
-  .info-row { padding: 12px; gap: 10px; border-radius: 10px; }
-  .info-icon { font-size: 20px; width: 20px; height: 20px; }
-  .info-label { font-size: 10px; }
-  .info-value { font-size: 14px; }
-  mat-dialog-actions { padding: 10px 12px; gap: 6px;
-    button { font-size: 13px; padding: 6px 10px; flex: 1 1 auto; min-width: 0;
-      mat-icon { font-size: 14px; width: 14px; height: 14px; }
+  .fila {
+    grid-template-columns: repeat(5, 44px);
+    gap: 5px;
+    &.fila-conductor {
+      margin-bottom: 8px;
+      padding-bottom: 8px;
     }
   }
-  .back-button { margin-right: 4px; }
-  .loading-container { height: 180px; padding: 16px;
-    p { font-size: 14px; }
+  .seat {
+    height: 44px;
+    font-size: 13px;
+    border-radius: 5px 5px 8px 8px;
+    border-width: 1.5px;
+    &::before {
+      width: 20px;
+      height: 2.5px;
+      top: 5px;
+    }
+    .seat-number {
+      margin-top: 4px;
+    }
+  }
+  .seat.conductor {
+    height: 52px;
+    .conductor-icon {
+      font-size: 24px;
+      width: 24px;
+      height: 24px;
+    }
+    .conductor-label {
+      font-size: 8px;
+    }
+  }
+  .seat.ocupado.clickable::after {
+    width: 14px;
+    height: 14px;
+    font-size: 10px;
+    top: 3px;
+    right: 3px;
+  }
+  .leyenda {
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+  .leyenda-item {
+    gap: 6px;
+    font-size: 12px;
+  }
+  .mini-seat {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px 4px 6px 6px;
+  }
+  .detalle-container {
+    padding: 12px;
+    min-width: 280px;
+  }
+  .pasajero-card {
+    padding: 20px;
+    border-radius: 12px;
+  }
+  .pasajero-avatar {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+    mat-icon {
+      font-size: 36px;
+      width: 36px;
+      height: 36px;
+    }
+  }
+  .pasajero-info {
+    gap: 14px;
+  }
+  .info-row {
+    padding: 12px;
+    gap: 10px;
+    border-radius: 10px;
+  }
+  .info-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+  .info-label {
+    font-size: 10px;
+  }
+  .info-value {
+    font-size: 14px;
+  }
+  mat-dialog-actions {
+    padding: 10px 12px;
+    gap: 6px;
+    button {
+      font-size: 13px;
+      padding: 6px 10px;
+      flex: 1 1 auto;
+      min-width: 0;
+      mat-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+  .back-button {
+    margin-right: 4px;
+  }
+  .loading-container {
+    height: 180px;
+    padding: 16px;
+    p {
+      font-size: 14px;
+    }
+  }
+}
+.seat.modo-cambio {
+  animation: pulse-cambio 1.5s ease-in-out infinite;
+  border: 2px solid #ff9800 !important;
+
+  &:hover {
+    transform: scale(1.15);
+    border-color: #f57c00 !important;
+    box-shadow: 0 0 15px rgba(255, 152, 0, 0.5);
+  }
+}
+
+@keyframes pulse-cambio {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(255, 152, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(255, 152, 0, 0.6);
   }
 }
