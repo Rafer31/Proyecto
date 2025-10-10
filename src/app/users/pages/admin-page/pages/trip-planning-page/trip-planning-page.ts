@@ -11,6 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { EditTripDialog } from './components/edit-trip-dialog/edit-trip-dialog';
 import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dialog';
+import { SeatsDialog } from './components/seats-dialog/seats-dialog';
 
 interface ViajeCard {
   idviaje: string;
@@ -19,6 +20,8 @@ interface ViajeCard {
   horapartida: string;
   cantdisponibleasientos?: number;
   tieneRetorno?: boolean;
+  esRetorno?: boolean;
+  viajeIdaDestino?: string;
 }
 
 @Component({
@@ -84,6 +87,9 @@ export class TripPlanningPage implements OnInit {
             destino: viajeData.retorno.destino?.nomdestino ?? 'Sin destino',
             horapartida: viajeData.retorno.horapartida,
             cantdisponibleasientos: cveRetorno?.cantdisponibleasientos ?? 0,
+            esRetorno: true,
+            viajeIdaDestino:
+              viajeData.viaje.destino?.nomdestino ?? 'Sin destino',
           });
         }
       });
@@ -230,5 +236,22 @@ export class TripPlanningPage implements OnInit {
 
   onTabChange(index: number) {
     this.selectedTabIndex.set(index);
+  }
+
+  abrirDialogoAsientos(idviaje: string) {
+    const dialogRef = this.dialog.open(SeatsDialog, {
+      width: '700px',
+      data: {
+        idplanificacion: idviaje,
+        isStaff: true,
+        isAdmin: true,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((result) => {
+      if (result?.cambiosRealizados) {
+        this.actualizarAsientosDisponibles(idviaje);
+      }
+    });
   }
 }

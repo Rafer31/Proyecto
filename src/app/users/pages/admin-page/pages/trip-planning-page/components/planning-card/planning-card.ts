@@ -26,6 +26,9 @@ export class PlanningCardComponent {
   idviaje = input.required<string>();
   horaPartida = input<string>('');
   cantdisponibleasientos = input<number | undefined>(undefined);
+  tieneRetorno = input<boolean>(false);
+  esRetorno = input<boolean>(false);
+  viajeIdaDestino = input<string>('');
 
   verMas = output<string>();
   editar = output<string>();
@@ -43,7 +46,6 @@ export class PlanningCardComponent {
     Potosí: '#9c27b0',
   };
 
-
   cardColorComputed = computed(() => {
     const destino = this.destino();
     const normalized = destino.trim().toLowerCase();
@@ -53,13 +55,20 @@ export class PlanningCardComponent {
     return match ? this.destinoColors[match] : '#607d8b';
   });
 
+
+  tituloCard = computed(() => {
+    if (this.esRetorno()) {
+      return 'Retorno programado a:';
+    }
+    return this.tieneRetorno() ? 'Viaje programado a: (con retorno)' : 'Viaje programado a:';
+  });
+
   lightenColor(color: string, percent: number): string {
     const num = parseInt(color.replace('#', ''), 16);
     const amt = Math.round(2.55 * percent);
     const R = (num >> 16) + amt;
     const G = ((num >> 8) & 0x00ff) + amt;
     const B = (num & 0x0000ff) + amt;
-
     return (
       '#' +
       (
@@ -87,7 +96,11 @@ export class PlanningCardComponent {
   onSeatDialog() {
     const dialogRef = this.dialog.open(SeatsDialog, {
       width: '700px',
-      data: { idplanificacion: this.idviaje() },
+      data: {
+        idplanificacion: this.idviaje(),
+        isStaff: true,
+        isAdmin: true
+      },
     });
 
     dialogRef.afterClosed().subscribe((result) => {

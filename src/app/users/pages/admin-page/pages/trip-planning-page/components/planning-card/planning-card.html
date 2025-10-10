@@ -7,8 +7,19 @@
     }"
   >
     <div class="header-text">
-      <div class="header-title">Viaje programado a:</div>
+      <div class="header-title">
+        {{ tituloCard() }}
+        @if (tieneRetorno() && !esRetorno()) {
+          <mat-icon class="retorno-icon">sync_alt</mat-icon>
+        }
+      </div>
       <div class="header-destino">{{ destino() }}</div>
+      @if (esRetorno() && viajeIdaDestino()) {
+        <div class="retorno-info">
+          <mat-icon>arrow_back</mat-icon>
+          Retorno desde {{ viajeIdaDestino() }}
+        </div>
+      }
     </div>
   </div>
 
@@ -17,11 +28,11 @@
       <mat-icon>event</mat-icon>
       <span>{{ fechaViaje() | date: "EEEE, d 'de' MMMM 'de' y" }}</span>
     </div>
+
     <div class="info-row">
       <mat-icon>schedule</mat-icon>
-      <span>Salida: {{ horaPartida().slice(0,5) }}</span>
+      <span>{{ esRetorno() ? 'Retorno' : 'Salida' }}: {{ horaPartida().slice(0,5) }}</span>
     </div>
-
 
     <div class="info-row">
       <mat-icon>event_seat</mat-icon>

@@ -126,7 +126,7 @@ export class ReservaService {
   async verificarReservaExistente(
     idusuario: string,
     idplanificacionActual: string,
-    isStaff: boolean
+    isStaff: boolean = true
   ): Promise<{
     tieneReserva: boolean;
     idplanificacion?: string;
@@ -134,10 +134,20 @@ export class ReservaService {
     destinoCorrecto: boolean;
   }> {
     if (!isStaff) {
+      const { data: visitante } = await this.supabase
+        .from('visitante')
+        .select('idvisitante')
+        .eq('idusuario', idusuario)
+        .maybeSingle();
+
+      if (!visitante) {
+        return { tieneReserva: false, destinoCorrecto: true };
+      }
+
       const { data: reservaExistente } = await this.supabase
         .from('visitante_planificacionviaje')
         .select('idplanificacion, nroasiento, estado')
-        .eq('idusuario', idusuario)
+        .eq('idvisitante', visitante.idvisitante)
         .eq('estado', 'reservado')
         .maybeSingle();
 
@@ -180,7 +190,9 @@ export class ReservaService {
       .eq('idplanificacion', idplanificacionActual)
       .single();
 
-    const destinoCorrecto = viajeActual?.iddestino === asignacion.iddestino;
+    const destinoCorrecto =
+      viajeActual?.iddestino?.toString().toLowerCase() ===
+      asignacion.iddestino?.toString().toLowerCase();
 
     const { data: reservaExistente } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
@@ -221,6 +233,61 @@ export class ReservaService {
         );
       }
     }
+  }
+
+  async reservarAsientoVisitante(
+    idplanificacion: string,
+    asiento: number,
+    idusuario: string
+  ): Promise<void> {
+    const idvisitante = await this.getVisitante(idusuario);
+
+    const { data: existenteActiva } = await this.supabase
+      .from('visitante_planificacionviaje')
+      .select('*')
+      .eq('idvisitante', idvisitante)
+      .eq('idplanificacion', idplanificacion)
+      .eq('estado', 'reservado')
+      .maybeSingle();
+
+    if (existenteActiva) {
+      throw new Error('Ya tienes un asiento reservado en este viaje');
+    }
+
+    const { data: existenteCancelada } = await this.supabase
+      .from('visitante_planificacionviaje')
+      .select('*')
+      .eq('idvisitante', idvisitante)
+      .eq('idplanificacion', idplanificacion)
+      .eq('estado', 'cancelado')
+      .maybeSingle();
+
+    if (existenteCancelada) {
+      const { error } = await this.supabase
+        .from('visitante_planificacionviaje')
+        .update({
+          estado: 'reservado',
+          nroasiento: asiento,
+        })
+        .eq('idvisitante', idvisitante)
+        .eq('idplanificacion', idplanificacion)
+        .eq('estado', 'cancelado');
+
+      if (error) throw error;
+    } else {
+      const { error } = await this.supabase
+        .from('visitante_planificacionviaje')
+        .insert({
+          idplanificacion,
+          nroasiento: asiento,
+          idvisitante,
+          estado: 'reservado',
+        });
+
+      if (error) throw error;
+    }
+
+    await this.actualizarAsientosDisponibles(idplanificacion);
   }
 
   private async crearReservaPersonal(
@@ -434,6 +501,20 @@ export class ReservaService {
     return asignacion.idasignaciondestino;
   }
 
+  private async getVisitante(idusuario: string): Promise<string> {
+    const { data: visitante, error } = await this.supabase
+      .from('visitante')
+      .select('idvisitante')
+      .eq('idusuario', idusuario)
+      .maybeSingle();
+
+    if (error || !visitante) {
+      throw new Error('No se encontró información de visitante');
+    }
+
+    return visitante.idvisitante;
+  }
+
   private async actualizarAsientosDisponibles(
     idplanificacion: string
   ): Promise<void> {
@@ -473,5 +554,24 @@ export class ReservaService {
       .from('conductor_vehiculo_empresa')
       .update({ cantdisponibleasientos: disponibles })
       .eq('idconductorvehiculoempresa', viaje.idconductorvehiculoempresa);
+  }
+  async cambiarReservaVisitante(
+    idusuario: string,
+    idplanificacion: string,
+    nroasiento: number
+  ): Promise<void> {
+
+    const idvisitante = await this.getVisitante(idusuario);
+
+    const { error } = await this.supabase
+      .from('visitante_planificacionviaje')
+      .update({ nroasiento })
+      .eq('idvisitante', idvisitante)
+      .eq('idplanificacion', idplanificacion)
+      .eq('estado', 'reservado');
+
+    if (error) throw error;
+
+    await this.actualizarAsientosDisponibles(idplanificacion);
   }
 }

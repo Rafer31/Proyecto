@@ -1,5 +1,4 @@
 <div class="dialog-wrapper">
-
   @if (cargando()) {
     <div class="loading-container">
       <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
@@ -107,7 +106,7 @@
           Volver al Mapa
         </button>
 
-        @if (esUsuarioActual(pasajeroSeleccionado()!)) {
+        @if (esUsuarioActual(pasajeroSeleccionado()!) || data.isAdmin) {
           <button
             mat-stroked-button
             color="accent"
@@ -118,14 +117,25 @@
           </button>
         }
 
-        <button
-          mat-stroked-button
-          color="warn"
-          (click)="cancelarReserva(pasajeroSeleccionado()!)"
-        >
-          <mat-icon>cancel</mat-icon>
-          Cancelar Reserva
-        </button>
+        @if (data.isAdmin) {
+          <button
+            mat-stroked-button
+            color="warn"
+            (click)="cancelarReserva(pasajeroSeleccionado()!)"
+          >
+            <mat-icon>cancel</mat-icon>
+            Cancelar Reserva
+          </button>
+        } @else if (esUsuarioActual(pasajeroSeleccionado()!)) {
+          <button
+            mat-stroked-button
+            color="warn"
+            (click)="cancelarReserva(pasajeroSeleccionado()!)"
+          >
+            <mat-icon>cancel</mat-icon>
+            Cancelar Reserva
+          </button>
+        }
 
         <button mat-stroked-button color="primary" (click)="cerrar()">
           Cerrar

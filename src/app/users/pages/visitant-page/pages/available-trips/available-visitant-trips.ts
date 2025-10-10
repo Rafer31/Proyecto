@@ -30,14 +30,34 @@ export class AvailableVisitantTrips implements OnInit {
   private tripService = inject(TripPlanningService);
   private userStateService = inject(UserStateService);
   private userDataService = inject(UserDataService);
-
+  private supabaseService = inject(SupabaseService);
   currentUser = this.userStateService.currentUser;
   userName = this.userStateService.userName;
 
   async ngOnInit() {
+    await this.cargarUsuario();
     await this.cargarDatos();
   }
+  private async cargarUsuario() {
+    try {
+      const supabase = this.supabaseService.supabase;
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
+      if (error || !user) {
+        console.error('Error obteniendo usuario visitante:', error);
+        this.error.set('Usuario no encontrado');
+        return;
+      }
+
+      await this.userDataService.loadUserAndUpdateState(user.id);
+    } catch (err) {
+      console.error('Error cargando usuario visitante:', err);
+      this.error.set('Error al cargar datos del usuario');
+    }
+  }
   async cargarDatos() {
     try {
       this.loading.set(true);
@@ -50,8 +70,17 @@ export class AvailableVisitantTrips implements OnInit {
       }
       const viajes = await this.tripService.getViajes();
 
+      const viajesFiltrados = viajes.filter((v: any) => {
+        const destinoViaje: any = v.destino;
+        const nombreDestinoViaje = Array.isArray(destinoViaje)
+          ? destinoViaje[0]?.nomdestino
+          : destinoViaje?.nomdestino;
+
+        return nombreDestinoViaje?.trim() !== 'Bolivar';
+      });
+
       this.viajes.set(
-        viajes.map((v: any) => {
+        viajesFiltrados.map((v: any) => {
           const destinoViaje: any = v.destino;
           const nombreDestinoViaje = Array.isArray(destinoViaje)
             ? destinoViaje[0]?.nomdestino
@@ -62,7 +91,6 @@ export class AvailableVisitantTrips implements OnInit {
             fechaPartida: v.fechapartida,
             fechaLlegada: v.fechallegada,
             horaPartida: v.horapartida,
-
             destino: nombreDestinoViaje ?? 'Sin destino',
             asientosDisponibles:
               v.conductor_vehiculo_empresa?.cantdisponibleasientos ?? 0,
@@ -83,6 +111,7 @@ export class AvailableVisitantTrips implements OnInit {
       data: {
         idplanificacion: idviaje,
         isStaff: false,
+        isAdmin: false,
       },
     });
 

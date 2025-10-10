@@ -62,11 +62,8 @@ export class AvailableTrips implements OnInit {
       const usuario = this.currentUser();
 
       if (!usuario) {
-        console.log('No hay usuario en currentUser()');
         return;
       }
-
-      console.log('Cargando datos para usuario:', usuario.idusuario);
 
       const { data: personal, error: personalError } =
         await this.supabaseService.supabase
@@ -113,14 +110,10 @@ export class AvailableTrips implements OnInit {
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
-      console.log('Buscando viajes para destino:', asignacion.iddestino);
-
       const viajesConRetorno =
         await this.tripService.getViajesDisponiblesPorDestino(
           asignacion.iddestino
         );
-
-      console.log('Viajes encontrados:', viajesConRetorno);
 
       this.viajes.set(
         viajesConRetorno.map((viajeData: any) => {
@@ -144,8 +137,6 @@ export class AvailableTrips implements OnInit {
           };
         })
       );
-
-      console.log('Viajes mapeados:', this.viajes());
     } catch (err) {
       console.error('Error cargando viajes:', err);
       this.error.set('Error al cargar los viajes disponibles');
@@ -160,6 +151,7 @@ export class AvailableTrips implements OnInit {
       data: {
         idplanificacion: idviaje,
         isStaff: true,
+        isAdmin: false,
       },
     });
 

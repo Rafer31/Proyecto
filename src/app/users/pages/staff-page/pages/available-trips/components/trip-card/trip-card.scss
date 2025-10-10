@@ -1,18 +1,54 @@
+/* Espaciado entre tarjetas cuando el grid colapsa a una sola columna */
+:host {
+  display: block;
+  width: 100%;
+  margin-bottom: 0; /* Sin espacio por defecto (desktop usa gap del grid) */
+}
+
+/* Tablets */
+@media (max-width: 1024px) {
+  :host {
+    margin-bottom: 28px;
+  }
+}
+
+/* Celulares grandes */
+@media (max-width: 768px) {
+  :host {
+    margin-bottom: 44px;
+  }
+}
+
+/* Celulares pequeños */
+@media (max-width: 480px) {
+  :host {
+    margin-bottom: 56px;
+  }
+}
+
+/* Evita espacio extra en la última tarjeta */
+:host(:last-child) {
+  margin-bottom: 0;
+}
+
+/* === Estilos originales mejorados === */
 .trip-card {
   display: flex;
   flex-direction: column;
   height: 100%;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
   }
 
   mat-card-header {
     padding: 20px;
     margin: -16px -16px 0 -16px;
-    border-radius: 4px 4px 0 0;
+    border-radius: 10px 10px 0 0;
     color: white;
 
     .card-title {
@@ -95,6 +131,7 @@
   }
 }
 
+/* === Responsivo === */
 @media (max-width: 768px) {
   .trip-card {
     mat-card-header {

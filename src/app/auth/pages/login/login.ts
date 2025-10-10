@@ -19,7 +19,6 @@ export default class Login {
   private snackBar = inject(MatSnackBar);
 
   constructor() {
-    // Detectar evento PWA
     window.addEventListener('beforeinstallprompt', (event: any) => {
       event.preventDefault();
       this.deferredPrompt = event;
@@ -31,7 +30,6 @@ export default class Login {
     });
   }
 
-  // Mostrar snackbar
   private showInstallSnackbar() {
     this.snackBar.openFromComponent(InstallBannerComponent, {
       data: {

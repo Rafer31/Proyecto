@@ -1,66 +1,55 @@
 <div class="register-container">
   <form [formGroup]="formUser">
     <mat-horizontal-stepper linear>
-
       <mat-step [stepControl]="step1Form">
         <form [formGroup]="step1Form">
           <ng-template matStepLabel>Datos básicos</ng-template>
- 
-          <!-- Nombre -->
+
           <mat-form-field appearance="outline" class="full-width mt-2">
             <mat-label>Nombre</mat-label>
             <input matInput formControlName="nombre" required />
             @if (step1Form.get('nombre')?.hasError('required')) {
-              <mat-error>El nombre es requerido</mat-error>
-            }
-            @if (step1Form.get('nombre')?.hasError('minlength')) {
-              <mat-error>Debe tener al menos 2 caracteres</mat-error>
+            <mat-error>El nombre es requerido</mat-error>
+            } @if (step1Form.get('nombre')?.hasError('minlength')) {
+            <mat-error>Debe tener al menos 2 caracteres</mat-error>
             }
           </mat-form-field>
 
-          <!-- Apellido Paterno -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Apellido Paterno</mat-label>
             <input matInput formControlName="paterno" required />
             @if (step1Form.get('paterno')?.hasError('required')) {
-              <mat-error>El apellido paterno es requerido</mat-error>
-            }
-            @if (step1Form.get('paterno')?.hasError('minlength')) {
-              <mat-error>Debe tener al menos 2 caracteres</mat-error>
+            <mat-error>El apellido paterno es requerido</mat-error>
+            } @if (step1Form.get('paterno')?.hasError('minlength')) {
+            <mat-error>Debe tener al menos 2 caracteres</mat-error>
             }
           </mat-form-field>
 
-          <!-- Apellido Materno -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Apellido Materno</mat-label>
             <input matInput formControlName="materno" />
           </mat-form-field>
 
-          <!-- CI -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>CI</mat-label>
             <input matInput formControlName="ci" required />
             @if (step1Form.get('ci')?.hasError('required')) {
-              <mat-error>El CI es requerido</mat-error>
-            }
-            @if (step1Form.get('ci')?.hasError('pattern')) {
-              <mat-error>Debe tener entre 7 y 10 dígitos</mat-error>
+            <mat-error>El CI es requerido</mat-error>
+            } @if (step1Form.get('ci')?.hasError('pattern')) {
+            <mat-error>Debe tener entre 7 y 10 dígitos</mat-error>
             }
           </mat-form-field>
 
-          <!-- Celular -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Número de celular</mat-label>
             <input matInput formControlName="numcelular" required />
             @if (step1Form.get('numcelular')?.hasError('required')) {
-              <mat-error>El número de celular es requerido</mat-error>
-            }
-            @if (step1Form.get('numcelular')?.hasError('pattern')) {
-              <mat-error>Debe comenzar con 6 o 7 y tener 8 dígitos</mat-error>
+            <mat-error>El número de celular es requerido</mat-error>
+            } @if (step1Form.get('numcelular')?.hasError('pattern')) {
+            <mat-error>Debe comenzar con 6 o 7 y tener 8 dígitos</mat-error>
             }
           </mat-form-field>
 
-          <!-- Rol -->
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Rol</mat-label>
             <mat-select formControlName="rol" required>
@@ -68,7 +57,7 @@
               <mat-option value="Visitante">Visitante</mat-option>
             </mat-select>
             @if (step1Form.get('rol')?.hasError('required')) {
-              <mat-error>Debe seleccionar un rol</mat-error>
+            <mat-error>Debe seleccionar un rol</mat-error>
             }
           </mat-form-field>
 
@@ -78,77 +67,71 @@
         </form>
       </mat-step>
 
-      <!-- ==================== STEP 2: DATOS ADICIONALES ==================== -->
       <mat-step [stepControl]="step2Form">
         <form [formGroup]="step2Form">
           <ng-template matStepLabel>Datos adicionales</ng-template>
 
-          <!-- ======= BLOQUE PARA PERSONAL ======= -->
           @if (selectedRole() === 'Personal') {
-            <div [attr.data-key]="selectedRole()" class="role-block">
+          <div [attr.data-key]="selectedRole()" class="role-block">
+            <mat-form-field appearance="outline" class="full-width mt-2">
+              <mat-label>Nro de Ficha</mat-label>
+              <input matInput formControlName="nroficha" required />
+              @if (step2Form.get('nroficha')?.hasError('required')) {
+              <mat-error>El número de ficha es requerido</mat-error>
+              }
+            </mat-form-field>
 
-              <mat-form-field appearance="outline" class="full-width mt-2">
-                <mat-label>Nro de Ficha</mat-label>
-                <input matInput formControlName="nroficha" required />
-                @if (step2Form.get('nroficha')?.hasError('required')) {
-                  <mat-error>El número de ficha es requerido</mat-error>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Operación</mat-label>
+              <mat-select formControlName="operacion" required>
+                <mat-option value="Bolívar">Bolívar</mat-option>
+                <mat-option value="Porco">Porco</mat-option>
+                <mat-option value="La Paz">La Paz</mat-option>
+                <mat-option value="Tres Amigos">Tres Amigos</mat-option>
+                <mat-option value="Caballo Blanco">Caballo Blanco</mat-option>
+                <mat-option value="Colquechaquita">Colquechaquita</mat-option>
+              </mat-select>
+              @if (step2Form.get('operacion')?.hasError('required')) {
+              <mat-error>La operación es requerida</mat-error>
+              }
+            </mat-form-field>
+
+            <p class="text-sm text-orange-700 mb-2">
+              Ten en cuenta que el destino que selecciones no podrás cambiarlo
+              después. Si necesitas modificarlo, deberás solicitar otra
+              asignación a administración.
+            </p>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Destino</mat-label>
+              <mat-select formControlName="iddestino" required>
+                @for (d of destinos(); track d.iddestino) {
+                <mat-option [value]="d.iddestino">
+                  {{ d.nomdestino }}
+                </mat-option>
                 }
-              </mat-form-field>
-
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Operación</mat-label>
-                <mat-select formControlName="operacion" required>
-                  <mat-option value="Bolívar">Bolívar</mat-option>
-                  <mat-option value="Porco">Porco</mat-option>
-                  <mat-option value="La Paz">La Paz</mat-option>
-                  <mat-option value="Tres Amigos">Tres Amigos</mat-option>
-                  <mat-option value="Caballo Blanco">Caballo Blanco</mat-option>
-                  <mat-option value="Colquechaquita">Colquechaquita</mat-option>
-                </mat-select>
-                @if (step2Form.get('operacion')?.hasError('required')) {
-                  <mat-error>La operación es requerida</mat-error>
-                }
-              </mat-form-field>
-
-              <p class="text-sm text-orange-700 mb-2">
-                Ten en cuenta que el destino que selecciones no podrás cambiarlo
-                después. Si necesitas modificarlo, deberás solicitar otra asignación
-                a administración.
-              </p>
-
-              <mat-form-field appearance="outline" class="full-width">
-                <mat-label>Destino</mat-label>
-                <mat-select formControlName="iddestino" required>
-                  @for (d of destinos(); track d.iddestino) {
-                    <mat-option [value]="d.iddestino">
-                      {{ d.nomdestino }}
-                    </mat-option>
-                  }
-                </mat-select>
-                @if (step2Form.get('iddestino')?.hasError('required')) {
-                  <mat-error>Debe seleccionar un destino</mat-error>
-                }
-              </mat-form-field>
-            </div>
-          }
-
-          <!-- ======= BLOQUE PARA VISITANTE ======= -->
-          @if (selectedRole() === 'Visitante') {
-            <div [attr.data-key]="selectedRole()" class="role-block">
-              <mat-form-field appearance="outline" class="full-width mt-2">
-                <mat-label>Información adicional</mat-label>
-                <textarea
-                  matInput
-                  formControlName="informacion"
-                  rows="4"
-                  required
-                  placeholder="Empresa minera Bolívar"
-                ></textarea>
-                @if (step2Form.get('informacion')?.hasError('required')) {
-                  <mat-error>La información es requerida</mat-error>
-                }
-              </mat-form-field>
-            </div>
+              </mat-select>
+              @if (step2Form.get('iddestino')?.hasError('required')) {
+              <mat-error>Debe seleccionar un destino</mat-error>
+              }
+            </mat-form-field>
+          </div>
+          } @if (selectedRole() === 'Visitante') {
+          <div [attr.data-key]="selectedRole()" class="role-block">
+            <mat-form-field appearance="outline" class="full-width mt-2">
+              <mat-label>Información adicional</mat-label>
+              <textarea
+                matInput
+                formControlName="informacion"
+                rows="4"
+                required
+                placeholder="Empresa minera Bolívar"
+              ></textarea>
+              @if (step2Form.get('informacion')?.hasError('required')) {
+              <mat-error>La información es requerida</mat-error>
+              }
+            </mat-form-field>
+          </div>
           }
 
           <div class="actions">

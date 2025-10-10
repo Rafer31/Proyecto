@@ -15,7 +15,7 @@ export interface LoadingDialogData {
 })
 export class LoadingDialog {
   private dialogRef = inject(MatDialogRef)
-  private data = inject<LoadingDialogData>(MAT_DIALOG_DATA)
+  data = inject<LoadingDialogData>(MAT_DIALOG_DATA)
 
   close(){
     this.dialogRef.close()

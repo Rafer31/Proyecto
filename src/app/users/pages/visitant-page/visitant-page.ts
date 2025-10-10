@@ -45,20 +45,34 @@ export class VisitantPage {
     try {
       this.userStateService.setLoading(true);
 
-      const {
-        data: { user },
-        error: authError,
-      } = await this.supabaseService.supabase.auth.getUser();
+      const supabase = this.supabaseService.supabase;
 
-      if (authError || !user) {
-        console.error('Error obteniendo usuario autenticado:', authError);
-        this.userStateService.setError('Error de autenticación');
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error('Error obteniendo sesión:', sessionError);
+        this.userStateService.setError('Error al obtener sesión');
         return;
       }
 
-      await this.userDataService.loadUserAndUpdateState(user.id);
+      if (session?.user) {
+        await this.userDataService.loadUserAndUpdateState(session.user.id);
+        return;
+      }
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await this.userDataService.loadUserAndUpdateState(session!.user.id);
+          subscription.unsubscribe();
+        }
+      });
     } catch (error) {
-      console.error('Error cargando datos del usuario:', error);
+      console.error('Error cargando datos del usuario visitante:', error);
       this.userStateService.setError('Error al cargar datos del usuario');
     } finally {
       this.userStateService.setLoading(false);
