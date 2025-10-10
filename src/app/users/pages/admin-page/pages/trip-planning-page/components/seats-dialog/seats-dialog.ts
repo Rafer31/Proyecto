@@ -256,64 +256,71 @@ export class SeatsDialog {
       return;
     }
 
+    // Si está en modo cambio de asiento, procesarlo directamente
+    if (this.modoCambioAsiento() && this.pasajeroCambiando()) {
+      await this.procesarCambioAsiento(seat);
+      return;
+    }
+
     this.mostrarLoading('Procesando tu reserva...', 'Reservando asiento');
 
     try {
-      // Obtener idasignaciondestino
-      const idasignaciondestino =
-        await this.reservaService.getAsignacionActivaPersonal(
-          usuario.idusuario
+      // Verificar estado de reservas del usuario
+      const verificacion =
+        await this.reservaService.verificarReservaExistente(
+          usuario.idusuario,
+          this.data.idplanificacion,
+          this.data.isStaff ?? true
         );
 
-      // Verificar cuántas reservas activas tiene el usuario
-      const { tieneMaximo, total, reservas } =
-        await this.reservaService.verificarReservasActivas(usuario.idusuario);
-
-      // Si tiene 2 reservas activas (salida + retorno), bloquear hasta cancelar
-      if (tieneMaximo) {
+      // Validación: destino correcto
+      if (this.data.isStaff && !verificacion.destinoCorrecto) {
         this.cerrarLoading();
         this.snackBar.open(
-          'Ya tienes reservas activas en salida y retorno. Debes cancelar tus reservas actuales para poder reservar otro asiento en otro viaje.',
+          'No puedes reservar en este viaje. El destino no coincide con tu asignación.',
+          'Cerrar',
+          { duration: 4000 }
+        );
+        return;
+      }
+
+      // Si tiene reserva en el mismo viaje, es un cambio de asiento
+      if (verificacion.tieneReserva && verificacion.esMismoViaje) {
+        this.cerrarLoading();
+        this.snackBar.open(
+          `Ya tienes reservado el asiento ${verificacion.asiento}. Usa la opción "Cambiar asiento" desde el detalle de tu reserva.`,
+          'Cerrar',
+          { duration: 4000 }
+        );
+        return;
+      }
+
+      // Si tiene reserva en otro viaje al mismo destino, BLOQUEAR
+      if (
+        verificacion.tieneReserva &&
+        verificacion.esAlMismoDestino &&
+        !verificacion.esMismoViaje
+      ) {
+        this.cerrarLoading();
+        this.snackBar.open(
+          'Ya tienes una reserva en otro viaje al mismo destino. Debes cancelar esa reserva antes de reservar en este viaje.',
           'Cerrar',
           { duration: 5000 }
         );
         return;
       }
 
-      // Si está en modo cambio de asiento
-      if (this.modoCambioAsiento() && this.pasajeroCambiando()) {
-        await this.procesarCambioAsiento(seat);
-        return;
-      }
+      // Si tiene reserva en otro destino diferente, verificar límite
+      if (verificacion.tieneReserva && !verificacion.esAlMismoDestino) {
+        const { tieneMaximo } =
+          await this.reservaService.verificarReservasActivas(usuario.idusuario);
 
-      // Validación para personal: destino correcto
-      if (this.data.isStaff) {
-        const verificacionDestino =
-          await this.reservaService.verificarReservaExistente(
-            usuario.idusuario,
-            this.data.idplanificacion,
-            true
-          );
-
-        if (!verificacionDestino.destinoCorrecto) {
+        if (tieneMaximo) {
           this.cerrarLoading();
           this.snackBar.open(
-            'No puedes reservar en este viaje. El destino no coincide con tu asignación.',
+            'Ya tienes el máximo de reservas activas (salida + retorno). Debes cancelar tus reservas actuales para poder reservar en otro destino.',
             'Cerrar',
-            { duration: 4000 }
-          );
-          return;
-        }
-
-        if (
-          verificacionDestino.tieneReserva &&
-          verificacionDestino.esAlMismoDestino
-        ) {
-          this.cerrarLoading();
-          this.snackBar.open(
-            'Ya tienes una reserva en otro viaje al mismo destino. Debes cancelar esa reserva antes de reservar en otro viaje.',
-            'Cerrar',
-            { duration: 4000 }
+            { duration: 5000 }
           );
           return;
         }
@@ -380,128 +387,6 @@ export class SeatsDialog {
     }
   }
 
-  private async procesarNuevaReserva(seat: Asiento, usuario: any) {
-    let reservarRetorno = false;
-    const esPersonal = this.data.isStaff ?? true;
-
-    // 🔹 NUEVA VALIDACIÓN: Bloquear si ya tiene 2 reservas activas
-    const verificacion = await this.reservaService.verificarReservasActivas(
-      usuario.idasignaciondestino
-    );
-    if (verificacion.tieneMaximo) {
-      this.snackBar.open(
-        `Ya tienes ${verificacion.total} reservas activas (salida y retorno). 
-    Cancela alguna antes de hacer una nueva reserva.`,
-        'Cerrar',
-        { duration: 5000 }
-      );
-      return;
-    }
-
-    // 🔹 Lógica anterior: preguntar si desea también reservar el retorno
-    if (esPersonal && this.tieneRetorno()) {
-      const dialogRef = this.dialog.open(ConfirmDialog, {
-        data: {
-          title: 'Reservar con retorno',
-          message: `Este viaje tiene un retorno programado. ¿Deseas reservar el asiento ${seat.num} también para el viaje de retorno?`,
-          cancelText: 'No',
-          confirmText: 'Sí, reservar para retorno',
-        },
-      });
-
-      reservarRetorno = await dialogRef.afterClosed().toPromise();
-    }
-
-    const mensaje = reservarRetorno
-      ? `¿Confirmas reservar el asiento ${seat.num} para la salida y el retorno?`
-      : `¿Desea reservar el asiento ${seat.num}?`;
-
-    const dialogRef = this.dialog.open(ConfirmDialog, {
-      data: {
-        title: 'Confirmar reserva',
-        message: mensaje,
-        mensaje,
-      },
-    });
-
-    const confirmado = await dialogRef.afterClosed().toPromise();
-    if (!confirmado) return;
-
-    this.mostrarLoading('Reservando asiento...', 'Procesando');
-
-    try {
-      if (esPersonal) {
-        await this.reservaService.reservarAsientoPersonal(
-          this.data.idplanificacion,
-          seat.num!,
-          usuario.idusuario,
-          reservarRetorno
-        );
-      } else {
-        await this.reservaService.reservarAsientoVisitante(
-          this.data.idplanificacion,
-          seat.num!,
-          usuario.idusuario
-        );
-      }
-
-      const mensajeExito = reservarRetorno
-        ? `Asiento ${seat.num} reservado correctamente para salida y retorno`
-        : `Asiento ${seat.num} reservado correctamente`;
-
-      this.cerrarLoading();
-      this.snackBar.open(mensajeExito, 'Cerrar', { duration: 3000 });
-      await this.recargarYCerrar();
-    } catch (error) {
-      this.cerrarLoading();
-      throw error;
-    }
-  }
-
-  private async procesarCambioReserva(
-    verificacion: any,
-    seat: Asiento,
-    usuario: any
-  ) {
-    const esElMismoViaje =
-      verificacion.idplanificacion === this.data.idplanificacion;
-
-    const mensaje = esElMismoViaje
-      ? `Ya tienes reservado el asiento ${verificacion.asiento} en este viaje. ¿Deseas cambiar al asiento ${seat.num}?`
-      : `Ya tienes una reserva en otro viaje (asiento ${verificacion.asiento}). ¿Deseas cambiar tu reserva a este viaje en el asiento ${seat.num}?`;
-
-    const dialogRef = this.dialog.open(ConfirmDialog, {
-      data: {
-        title: 'Cambiar reserva',
-        message: mensaje,
-      },
-    });
-
-    const confirmado = await dialogRef.afterClosed().toPromise();
-    if (!confirmado) return;
-
-    this.mostrarLoading('Cambiando tu reserva...', 'Procesando');
-
-    try {
-      await this.reservaService.cambiarReserva(
-        usuario.idusuario,
-        this.data.idplanificacion,
-        seat.num!
-      );
-
-      this.cerrarLoading();
-      this.snackBar.open(
-        `Reserva cambiada exitosamente al asiento ${seat.num}`,
-        'Cerrar',
-        { duration: 3000 }
-      );
-
-      await this.recargarYCerrar();
-    } catch (error) {
-      this.cerrarLoading();
-      throw error;
-    }
-  }
 
   async cambiarAsiento(pasajero: ReservaPasajero) {
     if (!pasajero) return;
@@ -574,25 +459,28 @@ export class SeatsDialog {
           this.data.idplanificacion,
           seat.num!
         );
+
+        // Cambiar también en retorno si existe (solo para personal)
+        if (this.tieneRetorno() && this.idRetorno()) {
+          await this.reservaService.cambiarReserva(
+            usuario.idusuario,
+            this.idRetorno()!,
+            seat.num!
+          );
+        }
       } else {
-        await this.reservaService.cambiarReservaVisitante?.(
+        // Para visitantes, solo cambiar asiento (visitantes no tienen retorno)
+        await this.reservaService.cambiarReservaVisitante(
           usuario.idusuario,
           this.data.idplanificacion,
           seat.num!
         );
       }
 
-      if (this.tieneRetorno() && this.idRetorno()) {
-        await this.reservaService.cambiarReserva(
-          usuario.idusuario,
-          this.idRetorno()!,
-          seat.num!
-        );
-      }
-
-      const mensajeExito = this.tieneRetorno()
-        ? `Asiento cambiado exitosamente al ${seat.num} en salida y retorno`
-        : `Asiento cambiado exitosamente al ${seat.num}`;
+      const mensajeExito =
+        this.data.isStaff && this.tieneRetorno()
+          ? `Asiento cambiado exitosamente al ${seat.num} en salida y retorno`
+          : `Asiento cambiado exitosamente al ${seat.num}`;
 
       this.cerrarLoading();
       this.snackBar.open(mensajeExito, 'Cerrar', { duration: 3000 });

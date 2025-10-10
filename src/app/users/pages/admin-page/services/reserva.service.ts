@@ -132,7 +132,8 @@ export class ReservaService {
     idplanificacion?: string;
     asiento?: number;
     destinoCorrecto: boolean;
-    esAlMismoDestino?: boolean | null; // NUEVO
+    esAlMismoDestino?: boolean | null;
+    esMismoViaje?: boolean;
   }> {
     if (!isStaff) {
       const { data: visitante } = await this.supabase
@@ -153,19 +154,21 @@ export class ReservaService {
         .maybeSingle();
 
       if (reservaExistente) {
+        const esMismoViaje = reservaExistente.idplanificacion === idplanificacionActual;
         return {
           tieneReserva: true,
           idplanificacion: reservaExistente.idplanificacion,
           asiento: reservaExistente.nroasiento,
           destinoCorrecto: true,
           esAlMismoDestino: false,
+          esMismoViaje,
         };
       }
 
       return { tieneReserva: false, destinoCorrecto: true };
     }
 
-    // Para personal
+    // Para personal - buscar asignación activa
     const { data: personal, error: personalError } = await this.supabase
       .from('personal')
       .select('nroficha')
@@ -198,92 +201,299 @@ export class ReservaService {
       viajeActual?.iddestino?.toString().toLowerCase() ===
       asignacion.iddestino?.toString().toLowerCase();
 
-    // Buscar reserva existente
-    const { data: reservaExistente } = await this.supabase
+    // Buscar TODAS las reservas activas (no solo una)
+    const { data: reservasActivas } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idplanificacion, nroasiento, estado')
       .eq('idasignaciondestino', asignacion.idasignaciondestino)
-      .eq('estado', 'reservado')
-      .maybeSingle();
+      .eq('estado', 'reservado');
 
-    if (!reservaExistente) {
+    if (!reservasActivas || reservasActivas.length === 0) {
       return { tieneReserva: false, destinoCorrecto };
     }
 
-    // Si la reserva es en el mismo viaje, no hay conflicto
-    if (reservaExistente.idplanificacion === idplanificacionActual) {
+    // Buscar si alguna reserva es en el mismo viaje
+    const reservaMismoViaje = reservasActivas.find(
+      (r) => r.idplanificacion === idplanificacionActual
+    );
+
+    if (reservaMismoViaje) {
       return {
         tieneReserva: true,
-        idplanificacion: reservaExistente.idplanificacion,
-        asiento: reservaExistente.nroasiento,
+        idplanificacion: reservaMismoViaje.idplanificacion,
+        asiento: reservaMismoViaje.nroasiento,
         destinoCorrecto,
-        esAlMismoDestino: false, // No es problema porque es el mismo viaje
+        esAlMismoDestino: false,
+        esMismoViaje: true,
       };
     }
 
-    // Verificar si la reserva existente es al mismo destino
-    const { data: viajeReservado } = await this.supabase
+    // Obtener destinos de todas las reservas activas
+    const idsReservas = reservasActivas.map((r) => r.idplanificacion);
+    const { data: viajesReservados } = await this.supabase
       .from('planificacion_viaje')
-      .select('iddestino')
-      .eq('idplanificacion', reservaExistente.idplanificacion)
-      .single();
+      .select('idplanificacion, iddestino')
+      .in('idplanificacion', idsReservas);
 
-    const esAlMismoDestino =
-      viajeReservado &&
-      viajeReservado.iddestino?.toString().toLowerCase() ===
-        viajeActual?.iddestino?.toString().toLowerCase();
+    // Verificar si alguna reserva es al mismo destino que el viaje actual
+    const reservaAlMismoDestino = viajesReservados?.find(
+      (v) =>
+        v.iddestino?.toString().toLowerCase() ===
+        viajeActual?.iddestino?.toString().toLowerCase()
+    );
 
+    if (reservaAlMismoDestino) {
+      const reserva = reservasActivas.find(
+        (r) => r.idplanificacion === reservaAlMismoDestino.idplanificacion
+      );
+      return {
+        tieneReserva: true,
+        idplanificacion: reserva!.idplanificacion,
+        asiento: reserva!.nroasiento,
+        destinoCorrecto,
+        esAlMismoDestino: true,
+        esMismoViaje: false,
+      };
+    }
+
+    // Tiene reserva pero en otro destino diferente
     return {
       tieneReserva: true,
-      idplanificacion: reservaExistente.idplanificacion,
-      asiento: reservaExistente.nroasiento,
+      idplanificacion: reservasActivas[0].idplanificacion,
+      asiento: reservasActivas[0].nroasiento,
       destinoCorrecto,
-      esAlMismoDestino, // NUEVO: indica si es al mismo destino
+      esAlMismoDestino: false,
+      esMismoViaje: false,
     };
   }
 
   async reservarAsientoPersonal(
     idplanificacion: string,
-    asiento: number,
+    nroAsiento: number,
     idusuario: string,
-    reservarRetorno: boolean = false
-  ): Promise<void> {
-    // 🔹 1. Verificar si ya tiene el máximo de reservas activas (ida y retorno)
-    const verificacion = await this.verificarReservasActivas(idusuario);
+    reservarRetorno: boolean
+  ) {
+    const { data: personalData, error: errorPersonal } = await this.supabase
+      .from('personal')
+      .select('nroficha')
+      .eq('idusuario', idusuario)
+      .maybeSingle();
 
-    if (verificacion.tieneMaximo) {
-      throw new Error(
-        `Ya tienes ${verificacion.total} reservas activas (ida y retorno). 
-      Debes cancelar alguna antes de reservar en otro viaje.`
-      );
+    if (errorPersonal || !personalData) {
+      throw new Error('No se encontró la ficha del usuario');
     }
 
-    // 🔹 2. Crear la reserva principal
-    await this.crearReservaPersonal(idplanificacion, asiento, idusuario);
+    const { data: asignacionData, error: errorAsignacion } = await this.supabase
+      .from('asignacion_destino')
+      .select('idasignaciondestino, iddestino')
+      .eq('nroficha', personalData.nroficha)
+      .is('fechafin', null)
+      .maybeSingle();
 
-    // 🔹 3. Si el viaje tiene retorno y el usuario quiere reservar ambos
-    if (reservarRetorno) {
-      const { existe, idplanificacionRetorno } =
-        await this.retornoService.tieneRetorno(idplanificacion);
+    if (errorAsignacion || !asignacionData) {
+      throw new Error('No se encontró asignación del usuario');
+    }
 
-      if (existe && idplanificacionRetorno) {
-        // Antes de reservar el retorno, vuelve a validar el límite
-        const verificacion2 = await this.verificarReservasActivas(idusuario);
-        if (verificacion2.tieneMaximo) {
-          throw new Error(
-            `Ya alcanzaste el límite de reservas activas. No puedes reservar también el retorno.`
-          );
-        }
+    const idasignaciondestino = asignacionData.idasignaciondestino;
 
-        await this.crearReservaPersonal(
-          idplanificacionRetorno,
-          asiento,
-          idusuario
+    // VALIDACIÓN CRÍTICA: Verificar que no exista otra reserva activa al mismo destino
+    const { data: viajeActual } = await this.supabase
+      .from('planificacion_viaje')
+      .select('iddestino')
+      .eq('idplanificacion', idplanificacion)
+      .single();
+
+    const { data: reservasActivas } = await this.supabase
+      .from('asignaciondestino_planificacionviaje')
+      .select('idplanificacion')
+      .eq('idasignaciondestino', idasignaciondestino)
+      .eq('estado', 'reservado');
+
+    if (reservasActivas && reservasActivas.length > 0) {
+      const idsReservas = reservasActivas.map((r) => r.idplanificacion);
+      const { data: viajesReservados } = await this.supabase
+        .from('planificacion_viaje')
+        .select('idplanificacion, iddestino')
+        .in('idplanificacion', idsReservas);
+
+      // Verificar si ya tiene reserva al mismo destino en otro viaje
+      const tieneReservaAlMismoDestino = viajesReservados?.some(
+        (v) =>
+          v.idplanificacion !== idplanificacion &&
+          v.iddestino?.toString().toLowerCase() ===
+            viajeActual?.iddestino?.toString().toLowerCase()
+      );
+
+      if (tieneReservaAlMismoDestino) {
+        throw new Error(
+          'Ya tienes una reserva activa en otro viaje al mismo destino. Debes cancelarla primero.'
         );
       }
     }
+
+    // Buscar registros existentes al mismo destino (activos o cancelados)
+    const { data: todasReservas } = await this.supabase
+      .from('asignaciondestino_planificacionviaje')
+      .select('idplanificacion, estado')
+      .eq('idasignaciondestino', idasignaciondestino);
+
+    const datosReserva = {
+      idasignaciondestino,
+      idplanificacion,
+      nroasiento: nroAsiento,
+      estado: 'reservado',
+    };
+
+    // Buscar si existe registro para este viaje específico
+    const reservaEsteViaje = todasReservas?.find(
+      (r) => r.idplanificacion === idplanificacion
+    );
+
+    if (reservaEsteViaje) {
+      // Actualizar registro existente para este viaje
+      await this.supabase
+        .from('asignaciondestino_planificacionviaje')
+        .update(datosReserva)
+        .eq('idasignaciondestino', idasignaciondestino)
+        .eq('idplanificacion', idplanificacion);
+    } else {
+      // Buscar si hay registros cancelados al mismo destino para reutilizar
+      if (todasReservas && todasReservas.length > 0) {
+        const idsTodasReservas = todasReservas.map((r) => r.idplanificacion);
+        const { data: viajesExistentes } = await this.supabase
+          .from('planificacion_viaje')
+          .select('idplanificacion, iddestino')
+          .in('idplanificacion', idsTodasReservas);
+
+        // Buscar registro cancelado al mismo destino
+        const registroCanceladoMismoDestino = viajesExistentes?.find(
+          (v) =>
+            v.iddestino?.toString().toLowerCase() ===
+              viajeActual?.iddestino?.toString().toLowerCase() &&
+            todasReservas.find(
+              (r) =>
+                r.idplanificacion === v.idplanificacion && r.estado === 'cancelado'
+            )
+        );
+
+        if (registroCanceladoMismoDestino) {
+          // Reutilizar registro cancelado actualizándolo
+          await this.supabase
+            .from('asignaciondestino_planificacionviaje')
+            .update(datosReserva)
+            .eq('idasignaciondestino', idasignaciondestino)
+            .eq('idplanificacion', registroCanceladoMismoDestino.idplanificacion);
+        } else {
+          // Crear nuevo registro
+          await this.supabase
+            .from('asignaciondestino_planificacionviaje')
+            .insert(datosReserva);
+        }
+      } else {
+        // No hay registros previos, crear nuevo
+        await this.supabase
+          .from('asignaciondestino_planificacionviaje')
+          .insert(datosReserva);
+      }
+    }
+
+    // Manejo de retorno con la misma lógica de reutilización
+    if (reservarRetorno) {
+      const { data: retornoData } = await this.supabase
+        .from('retorno_viaje')
+        .select('idplanificacion_retorno')
+        .eq('idplanificacion_ida', idplanificacion)
+        .maybeSingle();
+
+      if (retornoData?.idplanificacion_retorno) {
+        const idPlanificacionRetorno = retornoData.idplanificacion_retorno;
+
+        const datosRetorno = {
+          idasignaciondestino,
+          idplanificacion: idPlanificacionRetorno,
+          nroasiento: nroAsiento,
+          estado: 'reservado',
+        };
+
+        // Buscar si existe registro para este retorno específico
+        const reservaRetornoEsteViaje = todasReservas?.find(
+          (r) => r.idplanificacion === idPlanificacionRetorno
+        );
+
+        if (reservaRetornoEsteViaje) {
+          // Actualizar registro existente para este retorno
+          await this.supabase
+            .from('asignaciondestino_planificacionviaje')
+            .update(datosRetorno)
+            .eq('idasignaciondestino', idasignaciondestino)
+            .eq('idplanificacion', idPlanificacionRetorno);
+        } else if (todasReservas && todasReservas.length > 0) {
+          // Buscar registro cancelado de retorno al mismo destino
+          const { data: viajeRetorno } = await this.supabase
+            .from('planificacion_viaje')
+            .select('iddestino')
+            .eq('idplanificacion', idPlanificacionRetorno)
+            .single();
+
+          const idsTodasReservas = todasReservas.map((r) => r.idplanificacion);
+          const { data: viajesExistentes } = await this.supabase
+            .from('planificacion_viaje')
+            .select('idplanificacion, iddestino')
+            .in('idplanificacion', idsTodasReservas);
+
+          const registroCanceladoRetorno = viajesExistentes?.find(
+            (v) =>
+              v.iddestino?.toString().toLowerCase() ===
+                viajeRetorno?.iddestino?.toString().toLowerCase() &&
+              todasReservas.find(
+                (r) =>
+                  r.idplanificacion === v.idplanificacion && r.estado === 'cancelado'
+              )
+          );
+
+          if (registroCanceladoRetorno) {
+            // Reutilizar registro cancelado de retorno
+            await this.supabase
+              .from('asignaciondestino_planificacionviaje')
+              .update(datosRetorno)
+              .eq('idasignaciondestino', idasignaciondestino)
+              .eq('idplanificacion', registroCanceladoRetorno.idplanificacion);
+          } else {
+            // Crear nuevo registro de retorno
+            await this.supabase
+              .from('asignaciondestino_planificacionviaje')
+              .insert(datosRetorno);
+          }
+        } else {
+          // No hay registros previos, crear nuevo
+          await this.supabase
+            .from('asignaciondestino_planificacionviaje')
+            .insert(datosRetorno);
+        }
+      }
+    }
+
+    await this.actualizarAsientosDisponibles(idplanificacion);
+    return true;
   }
 
+  async getPlanificacionRetorno(
+    idplanificacionIda: string
+  ): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('retorno_viaje')
+      .select('idplanificacion_retorno')
+      .eq('idplanificacion_ida', idplanificacionIda)
+      .eq('estado', 'activo')
+      .single();
+
+    if (error) {
+      console.error('Error al obtener planificacion de retorno:', error);
+      return null;
+    }
+
+    return data?.idplanificacion_retorno || null;
+  }
   async reservarAsientoVisitante(
     idplanificacion: string,
     asiento: number,
@@ -330,63 +540,6 @@ export class ReservaService {
           idplanificacion,
           nroasiento: asiento,
           idvisitante,
-          estado: 'reservado',
-        });
-
-      if (error) throw error;
-    }
-
-    await this.actualizarAsientosDisponibles(idplanificacion);
-  }
-
-  private async crearReservaPersonal(
-    idplanificacion: string,
-    asiento: number,
-    idusuario: string
-  ): Promise<void> {
-    const idasignaciondestino = await this.getAsignacionActivaPersonal(
-      idusuario
-    );
-
-    const { data: existenteActiva } = await this.supabase
-      .from('asignaciondestino_planificacionviaje')
-      .select('*')
-      .eq('idasignaciondestino', idasignaciondestino)
-      .eq('idplanificacion', idplanificacion)
-      .eq('estado', 'reservado')
-      .maybeSingle();
-
-    if (existenteActiva) {
-      throw new Error('Ya tienes un asiento reservado en este viaje');
-    }
-
-    const { data: existenteCancelada } = await this.supabase
-      .from('asignaciondestino_planificacionviaje')
-      .select('*')
-      .eq('idasignaciondestino', idasignaciondestino)
-      .eq('idplanificacion', idplanificacion)
-      .eq('estado', 'cancelado')
-      .maybeSingle();
-
-    if (existenteCancelada) {
-      const { error } = await this.supabase
-        .from('asignaciondestino_planificacionviaje')
-        .update({
-          estado: 'reservado',
-          nroasiento: asiento,
-        })
-        .eq('idasignaciondestino', idasignaciondestino)
-        .eq('idplanificacion', idplanificacion)
-        .eq('estado', 'cancelado');
-
-      if (error) throw error;
-    } else {
-      const { error } = await this.supabase
-        .from('asignaciondestino_planificacionviaje')
-        .insert({
-          idplanificacion,
-          nroasiento: asiento,
-          idasignaciondestino,
           estado: 'reservado',
         });
 
@@ -456,19 +609,17 @@ export class ReservaService {
     }
   }
 
-  // Reemplaza el método cambiarReserva en reserva.service.ts
-
   async cambiarReserva(
     idusuario: string,
-    idplanificacion: string,
+    idplanificacionNueva: string,
     nuevoAsiento: number
   ): Promise<void> {
-    // ✅ Obtener asignación activa del usuario (ficha)
+    // Obtener asignación activa del usuario
     const idasignaciondestino = await this.getAsignacionActivaPersonal(
       idusuario
     );
 
-    // ✅ Buscar reservas activas actuales (salida y retorno)
+    // Buscar todas las reservas activas del usuario
     const { data: reservasActuales, error: errorBuscar } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idasignaciondestino, idplanificacion, estado, nroasiento')
@@ -481,21 +632,48 @@ export class ReservaService {
       throw new Error('No se encontraron reservas activas para actualizar.');
     }
 
-    // ✅ Actualizar las reservas existentes (pueden ser salida y retorno)
-    const { error: errorActualizar } = await this.supabase
-      .from('asignaciondestino_planificacionviaje')
-      .update({
-        idplanificacion: idplanificacion,
-        nroasiento: nuevoAsiento,
-        estado: 'reservado',
-      })
-      .eq('idasignaciondestino', idasignaciondestino)
-      .eq('estado', 'reservado');
+    // Obtener destino de la nueva planificación
+    const { data: viajeNuevo } = await this.supabase
+      .from('planificacion_viaje')
+      .select('iddestino')
+      .eq('idplanificacion', idplanificacionNueva)
+      .single();
 
-    if (errorActualizar) throw errorActualizar;
+    // Actualizar asientos disponibles de los viajes antiguos
+    const viajesAntiguos = new Set(reservasActuales.map((r) => r.idplanificacion));
+    for (const idplanificacionAntigua of viajesAntiguos) {
+      await this.actualizarAsientosDisponibles(idplanificacionAntigua);
+    }
 
-    // ✅ Actualizar asientos disponibles del nuevo viaje
-    await this.actualizarAsientosDisponibles(idplanificacion);
+    // Para cada reserva, verificar si es al mismo destino
+    for (const reserva of reservasActuales) {
+      const { data: viajeAntiguo } = await this.supabase
+        .from('planificacion_viaje')
+        .select('iddestino')
+        .eq('idplanificacion', reserva.idplanificacion)
+        .single();
+
+      // Si es al mismo destino, actualizar el registro existente
+      if (
+        viajeAntiguo?.iddestino?.toString().toLowerCase() ===
+        viajeNuevo?.iddestino?.toString().toLowerCase()
+      ) {
+        const { error } = await this.supabase
+          .from('asignaciondestino_planificacionviaje')
+          .update({
+            idplanificacion: idplanificacionNueva,
+            nroasiento: nuevoAsiento,
+            estado: 'reservado',
+          })
+          .eq('idasignaciondestino', idasignaciondestino)
+          .eq('idplanificacion', reserva.idplanificacion);
+
+        if (error) throw error;
+      }
+    }
+
+    // Actualizar asientos disponibles del nuevo viaje
+    await this.actualizarAsientosDisponibles(idplanificacionNueva);
   }
 
   async getAsignacionActivaPersonal(idusuario: string): Promise<string> {
