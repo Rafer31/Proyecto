@@ -12,6 +12,7 @@ import { ManageUsersPage } from './pages/admin-page/pages/manage-users-page/mana
 import { AssignedTrips } from './pages/bus-driver-page/pages/assigned-trips/assigned-trips';
 import { PassengersList } from './pages/bus-driver-page/pages/passengers-list/passengers-list';
 import { AvailableTrips } from './pages/staff-page/pages/available-trips/available-trips';
+import { AvailableReturns } from './pages/staff-page/pages/available-returns/available-returns';
 import { AvailableVisitantTrips } from './pages/visitant-page/pages/available-trips/available-visitant-trips';
 
 export const userRoutes: Routes = [
@@ -53,6 +54,10 @@ export const userRoutes: Routes = [
           {
             path: 'available-trips',
             component: AvailableTrips,
+          },
+          {
+            path: 'available-returns',
+            component: AvailableReturns,
           },
           {
             path: '',

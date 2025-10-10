@@ -52,6 +52,63 @@
       </mat-dialog-actions>
     }
 
+    @if (vistaActual() === 'seleccion-retorno') {
+      <h2 mat-dialog-title>
+        <button mat-icon-button (click)="volverASeleccionSalida()" class="back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+        Selecciona Asiento para el Retorno
+      </h2>
+      <mat-dialog-content class="bus-container">
+        <div class="info-banner">
+          <mat-icon>info</mat-icon>
+          <span>Has seleccionado el asiento {{ asientoSalidaSeleccionado() }} para la SALIDA. Ahora elige un asiento para el RETORNO.</span>
+        </div>
+
+        <div class="bus-body">
+          @for (fila of filasRetorno(); track $index) {
+            <div class="fila" [class.fila-conductor]="fila.tipo === 'conductor'">
+              @for (seat of fila.asientos; track $index) {
+                <div
+                  class="seat"
+                  [class.ocupado]="seat.tipo === 'asiento' && seat.ocupado"
+                  [class.libre]="seat.tipo === 'asiento' && !seat.ocupado"
+                  [class.conductor]="seat.tipo === 'conductor'"
+                  [class.pasillo]="seat.tipo === 'pasillo'"
+                  [class.vacio]="seat.tipo === 'vacio'"
+                  [class.clickable]="seat.tipo === 'asiento' && !seat.ocupado"
+                  (click)="seat.tipo === 'asiento' && !seat.ocupado ? reservarAsientoRetorno(seat) : null"
+                >
+                  @if (seat.tipo === 'asiento') {
+                    <span class="seat-number">{{ seat.num }}</span>
+                  } @if (seat.tipo === 'conductor') {
+                    <mat-icon class="conductor-icon">person</mat-icon>
+                    <span class="conductor-label">{{ seat.label }}</span>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="leyenda">
+          <div class="leyenda-item">
+            <div class="mini-seat libre"></div>
+            <span>Disponible</span>
+          </div>
+          <div class="leyenda-item">
+            <div class="mini-seat ocupado"></div>
+            <span>Ocupado</span>
+          </div>
+        </div>
+      </mat-dialog-content>
+      <mat-dialog-actions align="end">
+        <button mat-stroked-button color="warn" (click)="volverASeleccionSalida()">
+          Cancelar
+        </button>
+      </mat-dialog-actions>
+    }
+
     @if (vistaActual() === 'detalle' && pasajeroSeleccionado()) {
       <h2 mat-dialog-title>
         <button mat-icon-button (click)="volverAlMapa()" class="back-button">

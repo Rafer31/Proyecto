@@ -50,6 +50,7 @@
     margin: -16px -16px 0 -16px;
     border-radius: 10px 10px 0 0;
     color: white;
+    position: relative;
 
     .card-title {
       display: flex;
@@ -64,6 +65,20 @@
         width: 28px;
         height: 28px;
       }
+    }
+
+    .return-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.3);
+      backdrop-filter: blur(10px);
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      border: 1px solid rgba(255, 255, 255, 0.5);
     }
   }
 

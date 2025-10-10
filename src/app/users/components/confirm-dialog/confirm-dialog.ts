@@ -7,6 +7,8 @@ interface ConfirmDialogData {
   message: string;
   cancelText?: string;
   confirmText?: string;
+  showExtraButton?: boolean;
+  extraButtonText?: string;
 }
 
 @Component({
@@ -22,6 +24,8 @@ export class ConfirmDialog {
 
   public cancelText = this.data.cancelText ?? 'Cancelar';
   public confirmText = this.data.confirmText ?? 'Aceptar';
+  public showExtraButton = this.data.showExtraButton ?? false;
+  public extraButtonText = this.data.extraButtonText ?? 'Opción Extra';
 
   onConfirm() {
     this.dialogRef.close(true);
@@ -29,5 +33,9 @@ export class ConfirmDialog {
 
   onCancel() {
     this.dialogRef.close(false);
+  }
+
+  onExtra() {
+    this.dialogRef.close('extra');
   }
 }

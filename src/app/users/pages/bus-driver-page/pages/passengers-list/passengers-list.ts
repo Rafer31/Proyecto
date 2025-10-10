@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -10,7 +10,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { DriverService, PasajeroViaje, ViajeAsignado } from '../../services/driver.service';
+import { PassengerDetailSheet } from './components/passenger-detail-sheet/passenger-detail-sheet';
 
 interface AsientoInfo {
   numero: number;
@@ -40,12 +42,19 @@ export class PassengersList implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
+  private bottomSheet = inject(MatBottomSheet);
 
   idplanificacion = signal<string>('');
   pasajeros = signal<PasajeroViaje[]>([]);
   totalAsientos = signal<number>(0);
   cargando = signal<boolean>(true);
   pasajeroSeleccionado = signal<PasajeroViaje | null>(null);
+  isMobile = signal<boolean>(false);
+
+  @HostListener('window:resize')
+  onResize() {
+    this.checkIfMobile();
+  }
 
   // Computed para generar el mapa de asientos
   asientos = computed<AsientoInfo[]>(() => {
@@ -66,6 +75,8 @@ export class PassengersList implements OnInit {
   });
 
   async ngOnInit() {
+    this.checkIfMobile();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.router.navigate(['/users/bus-driver/assigned-trips']);
@@ -74,6 +85,10 @@ export class PassengersList implements OnInit {
 
     this.idplanificacion.set(id);
     await this.cargarDatos();
+  }
+
+  private checkIfMobile() {
+    this.isMobile.set(window.innerWidth < 1200);
   }
 
   private async cargarDatos() {
@@ -106,7 +121,20 @@ export class PassengersList implements OnInit {
 
   seleccionarAsiento(asiento: AsientoInfo) {
     if (asiento.ocupado && asiento.pasajero) {
-      this.pasajeroSeleccionado.set(asiento.pasajero);
+      if (this.isMobile()) {
+        // En móvil, abrir bottom sheet
+        this.bottomSheet.open(PassengerDetailSheet, {
+          data: {
+            pasajero: asiento.pasajero,
+            onMarcarAsistencia: (asistio: boolean) => {
+              this.marcarAsistencia(asiento.pasajero!, asistio);
+            },
+          },
+        });
+      } else {
+        // En desktop, mostrar en el sidebar
+        this.pasajeroSeleccionado.set(asiento.pasajero);
+      }
     }
   }
 

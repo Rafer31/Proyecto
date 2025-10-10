@@ -19,6 +19,7 @@ export class TripCardComponent {
 
   destino = input<string>();
   asientosDisponibles = input<number>();
+  esRetorno = input<boolean>(false);
 
   reservar = output<string>();
 

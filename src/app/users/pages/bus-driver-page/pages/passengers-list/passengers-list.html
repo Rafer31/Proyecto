@@ -58,23 +58,24 @@
 
       <!-- Detalle del pasajero seleccionado -->
       @if (pasajeroSeleccionado()) {
-        <mat-card class="passenger-detail">
-          <mat-card-header>
-            <div mat-card-avatar class="passenger-avatar">
-              <mat-icon>{{ pasajeroSeleccionado()!.tipo === 'personal' ? 'badge' : 'person' }}</mat-icon>
-            </div>
-            <mat-card-title>{{ pasajeroSeleccionado()!.nombre }}</mat-card-title>
-            <mat-card-subtitle>
-              <span class="tipo-badge" 
-                [class.personal]="pasajeroSeleccionado()!.tipo === 'personal'" 
-                [class.visitante]="pasajeroSeleccionado()!.tipo === 'visitante'">
-                {{ getTipoBadge(pasajeroSeleccionado()!.tipo) }}
-              </span>
-            </mat-card-subtitle>
-            <button mat-icon-button (click)="cerrarDetalle()" class="close-button">
-              <mat-icon>close</mat-icon>
-            </button>
-          </mat-card-header>
+        <div class="passenger-detail-wrapper" (click)="cerrarDetalle()">
+          <mat-card class="passenger-detail" (click)="$event.stopPropagation()">
+            <mat-card-header>
+              <div mat-card-avatar class="passenger-avatar">
+                <mat-icon>{{ pasajeroSeleccionado()!.tipo === 'personal' ? 'badge' : 'person' }}</mat-icon>
+              </div>
+              <mat-card-title>{{ pasajeroSeleccionado()!.nombre }}</mat-card-title>
+              <mat-card-subtitle>
+                <span class="tipo-badge"
+                  [class.personal]="pasajeroSeleccionado()!.tipo === 'personal'"
+                  [class.visitante]="pasajeroSeleccionado()!.tipo === 'visitante'">
+                  {{ getTipoBadge(pasajeroSeleccionado()!.tipo) }}
+                </span>
+              </mat-card-subtitle>
+              <button mat-icon-button (click)="cerrarDetalle()" class="close-button">
+                <mat-icon>close</mat-icon>
+              </button>
+            </mat-card-header>
 
           <mat-card-content>
             <div class="passenger-info">
@@ -126,7 +127,8 @@
               <span class="estado-final">Estado final registrado</span>
             }
           </mat-card-actions>
-        </mat-card>
+          </mat-card>
+        </div>
       }
     </div>
   }

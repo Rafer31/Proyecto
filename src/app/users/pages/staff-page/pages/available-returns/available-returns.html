@@ -1,0 +1,50 @@
+<div class="available-returns-container">
+  <div class="header">
+    <h1 class="title">Retornos Disponibles</h1>
+    @if (usuarioDestino()) {
+      <p class="subtitle">Retornos desde tu destino asignado: <strong>{{ usuarioDestino() }}</strong></p>
+    }
+  </div>
+
+  @if (loading()) {
+    <div class="loading-container">
+      <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+      <p>Cargando retornos disponibles...</p>
+    </div>
+  }
+
+  @else if (error()) {
+    <div class="error-container">
+      <app-emptystate
+        [imageSrc]="'no-data.svg'"
+        [title]="'Error'"
+        [description]="error()!"
+      />
+    </div>
+  }
+
+  @else if (retornos().length === 0) {
+    <app-emptystate
+      [imageSrc]="'no-trips.svg'"
+      [title]="'No hay retornos disponibles'"
+      [description]="'Primero debes hacer una reserva de salida para ver los retornos disponibles'"
+    />
+  }
+
+  @else {
+    <div class="trips-grid">
+      @for (retorno of retornos(); track retorno.idviaje) {
+        <app-trip-card
+          [idviaje]="retorno.idviaje"
+          [fechaPartida]="retorno.fechaPartida"
+          [fechaLlegada]="retorno.fechaLlegada"
+          [horaPartida]="retorno.horaPartida"
+          [destino]="retorno.destino"
+          [asientosDisponibles]="retorno.asientosDisponibles"
+          [esRetorno]="true"
+          (reservar)="abrirDialogoReserva($event)"
+        ></app-trip-card>
+      }
+    </div>
+  }
+</div>

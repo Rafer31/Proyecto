@@ -1,4 +1,11 @@
-import { Component, input, output, inject, signal, computed } from '@angular/core';
+import {
+  Component,
+  input,
+  output,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -55,12 +62,13 @@ export class PlanningCardComponent {
     return match ? this.destinoColors[match] : '#607d8b';
   });
 
-
   tituloCard = computed(() => {
     if (this.esRetorno()) {
       return 'Retorno programado a:';
     }
-    return this.tieneRetorno() ? 'Viaje programado a: (con retorno)' : 'Viaje programado a:';
+    return this.tieneRetorno()
+      ? 'Viaje programado a: (con retorno)'
+      : 'Viaje programado a:';
   });
 
   lightenColor(color: string, percent: number): string {
@@ -99,7 +107,7 @@ export class PlanningCardComponent {
       data: {
         idplanificacion: this.idviaje(),
         isStaff: true,
-        isAdmin: true
+        isAdmin: true,
       },
     });
 

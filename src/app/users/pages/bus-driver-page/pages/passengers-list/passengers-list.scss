@@ -1,6 +1,6 @@
 .passengers-container {
   padding: 2rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 
   .header {
@@ -39,47 +39,188 @@
     }
   }
 
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px;
-    text-align: center;
-
-    .empty-icon {
-      font-size: 80px;
-      width: 80px;
-      height: 80px;
-      color: #ccc;
-      margin-bottom: 1rem;
-    }
-
-    h2 {
-      color: #666;
-      margin-bottom: 0.5rem;
-    }
-
-    p {
-      color: #999;
-    }
-  }
-
-  .passengers-list {
+  .bus-layout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    align-items: start;
 
-    .passenger-card {
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    .legend {
+      display: flex;
+      gap: 1.5rem;
+      padding: 1rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1rem;
+      grid-column: 1 / -1;
 
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .legend-box {
+          width: 24px;
+          height: 24px;
+          border-radius: 4px;
+          border: 2px solid #ddd;
+
+          &.libre {
+            background-color: white;
+          }
+
+          &.reservado {
+            background-color: #fff3e0;
+            border-color: #ff9800;
+          }
+
+          &.asistio {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+          }
+
+          &.inasistio {
+            background-color: #ffebee;
+            border-color: #f44336;
+          }
+        }
+
+        span {
+          font-size: 0.9rem;
+          color: #666;
+        }
+      }
+    }
+
+    .bus-container {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+      .bus-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px 8px 0 0;
+        color: white;
+        font-weight: 600;
+        margin: -2rem -2rem 1.5rem -2rem;
+
+        mat-icon {
+          font-size: 28px;
+          width: 28px;
+          height: 28px;
+        }
       }
 
+      .seats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        max-width: 400px;
+        margin: 0 auto;
+
+        .seat {
+          aspect-ratio: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0.25rem;
+          border: 2px solid #ddd;
+          border-radius: 8px;
+          background-color: white;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          padding: 0.5rem;
+
+          .seat-icon {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+            color: #999;
+          }
+
+          .seat-number {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+          }
+
+          &.libre {
+            background-color: white;
+            cursor: not-allowed;
+
+            &:hover {
+              background-color: #f5f5f5;
+            }
+          }
+
+          &.reservado {
+            background-color: #fff3e0;
+            border-color: #ff9800;
+
+            .seat-icon {
+              color: #ff9800;
+            }
+
+            &:hover {
+              background-color: #ffe0b2;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 8px rgba(255, 152, 0, 0.3);
+            }
+          }
+
+          &.asistio {
+            background-color: #e3f2fd;
+            border-color: #2196f3;
+
+            .seat-icon {
+              color: #2196f3;
+            }
+
+            &:hover {
+              background-color: #bbdefb;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+            }
+          }
+
+          &.inasistio {
+            background-color: #ffebee;
+            border-color: #f44336;
+
+            .seat-icon {
+              color: #f44336;
+            }
+
+            &:hover {
+              background-color: #ffcdd2;
+              transform: translateY(-2px);
+              box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+            }
+          }
+
+          &:disabled {
+            cursor: not-allowed;
+          }
+        }
+      }
+    }
+
+    .passenger-detail {
+      position: sticky;
+      top: 2rem;
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+
       mat-card-header {
-        margin-bottom: 1rem;
+        position: relative;
 
         .passenger-avatar {
           width: 48px;
@@ -115,6 +256,12 @@
             background-color: #f3e5f5;
             color: #7b1fa2;
           }
+        }
+
+        .close-button {
+          position: absolute;
+          top: 0;
+          right: 0;
         }
       }
 
@@ -174,7 +321,6 @@
       }
 
       mat-card-actions {
-        padding: 16px;
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
@@ -188,9 +334,9 @@
           gap: 0.25rem;
 
           mat-icon {
-            font-size: 20px;
-            width: 20px;
-            height: 20px;
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
           }
         }
 
@@ -206,6 +352,20 @@
   }
 }
 
+@media (max-width: 1200px) {
+  .passengers-container {
+    .bus-layout {
+      grid-template-columns: 1fr;
+
+      .passenger-detail-wrapper,
+      .passenger-detail {
+        display: none !important;
+      }
+    }
+  }
+}
+
+
 @media (max-width: 768px) {
   .passengers-container {
     padding: 1rem;
@@ -216,8 +376,25 @@
       }
     }
 
-    .passengers-list {
-      grid-template-columns: 1fr;
+    .bus-layout {
+      .legend {
+        flex-wrap: wrap;
+        gap: 1rem;
+      }
+
+      .bus-container {
+        padding: 1rem;
+
+        .bus-header {
+          margin: -1rem -1rem 1rem -1rem;
+        }
+
+        .seats-grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.5rem;
+          max-width: 100%;
+        }
+      }
     }
   }
 }

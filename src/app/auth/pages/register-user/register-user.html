@@ -51,7 +51,7 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
-            <mat-label>Rol</mat-label>
+            <mat-label>Estatus</mat-label>
             <mat-select formControlName="rol" required>
               <mat-option value="Personal">Personal</mat-option>
               <mat-option value="Visitante">Visitante</mat-option>
@@ -125,7 +125,7 @@
                 formControlName="informacion"
                 rows="4"
                 required
-                placeholder="Empresa minera Bolívar"
+                placeholder="Empresa contratista"
               ></textarea>
               @if (step2Form.get('informacion')?.hasError('required')) {
               <mat-error>La información es requerida</mat-error>

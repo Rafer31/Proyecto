@@ -50,7 +50,7 @@ interface Fila {
 export class SeatsDialog {
   filas = signal<Fila[]>([]);
 
-  vistaActual = signal<'mapa' | 'detalle'>('mapa');
+  vistaActual = signal<'mapa' | 'detalle' | 'seleccion-retorno'>('mapa');
   pasajeroSeleccionado = signal<ReservaPasajero | null>(null);
   cargando = signal<boolean>(true);
   loadingDialogRef: MatDialogRef<LoadingDialog> | null = null;
@@ -62,6 +62,11 @@ export class SeatsDialog {
 
   tieneRetorno = signal<boolean>(false);
   idRetorno = signal<string | null>(null);
+
+  // Para manejar reserva con asientos independientes
+  reservandoConRetorno = signal<boolean>(false);
+  asientoSalidaSeleccionado = signal<number | null>(null);
+  filasRetorno = signal<Fila[]>([]);
 
   constructor(
     private dialog: MatDialog,
@@ -77,6 +82,7 @@ export class SeatsDialog {
       idplanificacion: string;
       isStaff?: boolean;
       isAdmin?: boolean;
+      isRetorno?: boolean;
     }
   ) {}
 
@@ -270,7 +276,8 @@ export class SeatsDialog {
         await this.reservaService.verificarReservaExistente(
           usuario.idusuario,
           this.data.idplanificacion,
-          this.data.isStaff ?? false
+          this.data.isStaff ?? false,
+          this.data.isRetorno ?? false
         );
 
       // Validación: destino correcto
@@ -338,28 +345,35 @@ export class SeatsDialog {
         }
       }
 
-      // Confirmar si es personal y hay retorno
+      // Confirmar si es personal y hay retorno - PERMITIR SELECCIÓN INDEPENDIENTE
       let reservarRetorno = false;
       if (this.data.isStaff && this.tieneRetorno()) {
         const dialogRef = this.dialog.open(ConfirmDialog, {
           data: {
             title: 'Reservar con retorno',
-            message: `Este viaje tiene un retorno programado. ¿Deseas reservar el asiento ${seat.num} también para el viaje de retorno?`,
-            cancelText: 'No',
-            confirmText: 'Sí, reservar para retorno',
+            message: `Este viaje tiene un retorno programado. ¿Deseas reservar también un asiento para el viaje de retorno?`,
+            cancelText: 'No, solo salida',
+            confirmText: 'Sí, elegir asiento de retorno',
           },
         });
 
         reservarRetorno = await dialogRef.afterClosed().toPromise();
       }
 
-      // Confirmación final de la reserva
-      const mensaje = reservarRetorno
-        ? `¿Confirmas reservar el asiento ${seat.num} para la salida y el retorno?`
-        : `¿Desea reservar el asiento ${seat.num}?`;
+      if (reservarRetorno) {
+        // Guardar asiento de salida y cambiar a vista de selección de retorno
+        this.asientoSalidaSeleccionado.set(seat.num!);
+        this.cerrarLoading();
+        await this.cargarAsientosRetorno();
+        return;
+      }
 
+      // Confirmación final de la reserva (solo salida)
       const confirmDialog = this.dialog.open(ConfirmDialog, {
-        data: { title: 'Confirmar reserva', message: mensaje },
+        data: {
+          title: 'Confirmar reserva',
+          message: `¿Desea reservar el asiento ${seat.num} para la salida?`
+        },
       });
 
       const confirmado = await confirmDialog.afterClosed().toPromise();
@@ -368,13 +382,13 @@ export class SeatsDialog {
         return;
       }
 
-      // Ejecutar reserva
+      // Ejecutar reserva solo salida
       if (this.data.isStaff) {
         await this.reservaService.reservarAsientoPersonal(
           this.data.idplanificacion,
           seat.num!,
           usuario.idusuario,
-          reservarRetorno
+          false // No reservar retorno automáticamente
         );
       } else {
         await this.reservaService.reservarAsientoVisitante(
@@ -384,12 +398,8 @@ export class SeatsDialog {
         );
       }
 
-      const mensajeExito = reservarRetorno
-        ? `Asiento ${seat.num} reservado correctamente para salida y retorno`
-        : `Asiento ${seat.num} reservado correctamente`;
-
       this.cerrarLoading();
-      this.snackBar.open(mensajeExito, 'Cerrar', { duration: 3000 });
+      this.snackBar.open(`Asiento ${seat.num} reservado correctamente`, 'Cerrar', { duration: 3000 });
 
       await this.recargarYCerrar();
     } catch (error) {
@@ -517,45 +527,176 @@ export class SeatsDialog {
     if (!pasajero) return;
     if (this.loadingDialogRef) return;
 
-    const { existe } = await this.retornoService.tieneRetorno(
+    const usuario = this.usuarioActual();
+    if (!usuario) return;
+
+    // Para visitantes, cancelación simple
+    if (!this.data.isStaff) {
+      const dialogRef = this.dialog.open(ConfirmDialog, {
+        data: {
+          title: 'Confirmar cancelación',
+          message: `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento}?`,
+        },
+      });
+
+      const confirmado = await dialogRef.afterClosed().toPromise();
+      if (!confirmado) return;
+
+      this.mostrarLoading('Cancelando reserva...', 'Procesando');
+
+      try {
+        await this.reservaService.cancelarReserva(
+          this.data.idplanificacion,
+          pasajero.asiento,
+          'visitante'
+        );
+
+        this.cerrarLoading();
+        this.snackBar.open(`Reserva del asiento ${pasajero.asiento} cancelada`, 'Cerrar', {
+          duration: 3000,
+        });
+        this.volverAlMapa();
+        await this.recargarYCerrar();
+      } catch (error) {
+        console.error('Error cancelando reserva:', error);
+        this.cerrarLoading();
+        this.snackBar.open(`Error: ${error}`, 'Cerrar', { duration: 3000 });
+      }
+      return;
+    }
+
+    // Para personal - verificar si tiene retorno y preguntar qué cancelar
+    const { existe, idplanificacionRetorno } = await this.retornoService.tieneRetorno(
       this.data.idplanificacion
     );
 
-    let mensaje = existe
-      ? `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento}? También se cancelará la reserva en el retorno asociado.`
-      : `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento}?`;
+    if (!existe || !idplanificacionRetorno) {
+      // No hay retorno, cancelar solo salida
+      const dialogRef = this.dialog.open(ConfirmDialog, {
+        data: {
+          title: 'Confirmar cancelación',
+          message: `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento} para la salida?`,
+        },
+      });
+
+      const confirmado = await dialogRef.afterClosed().toPromise();
+      if (!confirmado) return;
+
+      this.mostrarLoading('Cancelando reserva...', 'Procesando');
+
+      try {
+        await this.reservaService.cancelarReservaConRetorno(
+          this.data.idplanificacion,
+          usuario.idusuario,
+          false
+        );
+
+        this.cerrarLoading();
+        this.snackBar.open(`Reserva cancelada correctamente`, 'Cerrar', { duration: 3000 });
+        this.volverAlMapa();
+        await this.recargarYCerrar();
+      } catch (error) {
+        console.error('Error cancelando reserva:', error);
+        this.cerrarLoading();
+        this.snackBar.open(`Error: ${error}`, 'Cerrar', { duration: 3000 });
+      }
+      return;
+    }
+
+    // Verificar si tiene reserva en el retorno
+    const pasajerosRetorno = await this.reservaService.getPasajerosPorPlanificacion(
+      idplanificacionRetorno
+    );
+    const tieneReservaRetorno = pasajerosRetorno.some(
+      (p) => p.idusuario === usuario.idusuario
+    );
+
+    if (!tieneReservaRetorno) {
+      // Solo tiene reserva en salida
+      const dialogRef = this.dialog.open(ConfirmDialog, {
+        data: {
+          title: 'Confirmar cancelación',
+          message: `¿Está seguro de cancelar la reserva del asiento ${pasajero.asiento} para la salida?`,
+        },
+      });
+
+      const confirmado = await dialogRef.afterClosed().toPromise();
+      if (!confirmado) return;
+
+      this.mostrarLoading('Cancelando reserva...', 'Procesando');
+
+      try {
+        await this.reservaService.cancelarReservaConRetorno(
+          this.data.idplanificacion,
+          usuario.idusuario,
+          false
+        );
+
+        this.cerrarLoading();
+        this.snackBar.open(`Reserva de salida cancelada correctamente`, 'Cerrar', {
+          duration: 3000,
+        });
+        this.volverAlMapa();
+        await this.recargarYCerrar();
+      } catch (error) {
+        console.error('Error cancelando reserva:', error);
+        this.cerrarLoading();
+        this.snackBar.open(`Error: ${error}`, 'Cerrar', { duration: 3000 });
+      }
+      return;
+    }
+
+    // Tiene reserva en salida Y retorno - preguntar qué cancelar
+    const pasajeroRetorno = pasajerosRetorno.find((p) => p.idusuario === usuario.idusuario);
 
     const dialogRef = this.dialog.open(ConfirmDialog, {
       data: {
-        title: 'Confirmar cancelación',
-        message: mensaje,
+        title: 'Cancelar reserva',
+        message: `Tienes reservas en:\n- SALIDA: Asiento ${pasajero.asiento}\n- RETORNO: Asiento ${pasajeroRetorno?.asiento}\n\n¿Qué deseas cancelar?`,
+        cancelText: 'Solo SALIDA',
+        confirmText: 'Solo RETORNO',
+        showExtraButton: true,
+        extraButtonText: 'AMBAS'
       },
     });
 
-    const confirmado = await dialogRef.afterClosed().toPromise();
-    if (!confirmado) return;
+    const resultado = await dialogRef.afterClosed().toPromise();
 
-    this.mostrarLoading('Cancelando reserva...', 'Procesando');
+    // resultado puede ser: true (retorno), false (salida), 'extra' (ambas), null/undefined (cancelar)
+    if (resultado === null || resultado === undefined) return;
+
+    this.mostrarLoading('Cancelando reserva(s)...', 'Procesando');
 
     try {
-      const usuario = this.usuarioActual();
-      if (!usuario) {
-        this.cerrarLoading();
-        return;
+      if (resultado === 'extra') {
+        // Cancelar ambas
+        await this.reservaService.cancelarReservaConRetorno(
+          this.data.idplanificacion,
+          usuario.idusuario,
+          true
+        );
+        this.snackBar.open('Reservas de salida y retorno canceladas', 'Cerrar', {
+          duration: 3000,
+        });
+      } else if (resultado === false) {
+        // Cancelar solo salida
+        await this.reservaService.cancelarReservaConRetorno(
+          this.data.idplanificacion,
+          usuario.idusuario,
+          false
+        );
+        this.snackBar.open('Reserva de salida cancelada', 'Cerrar', { duration: 3000 });
+      } else if (resultado === true) {
+        // Cancelar solo retorno
+        await this.reservaService.cancelarReservaConRetorno(
+          idplanificacionRetorno,
+          usuario.idusuario,
+          false
+        );
+        this.snackBar.open('Reserva de retorno cancelada', 'Cerrar', { duration: 3000 });
       }
 
-      await this.reservaService.cancelarReservaConRetorno(
-        this.data.idplanificacion,
-        usuario.idusuario,
-        this.tieneRetorno()
-      );
-
-      const mensajeExito = this.tieneRetorno()
-        ? `Reserva del asiento ${pasajero.asiento} cancelada en salida y retorno`
-        : `Reserva del asiento ${pasajero.asiento} cancelada`;
-
       this.cerrarLoading();
-      this.snackBar.open(mensajeExito, 'Cerrar', { duration: 3000 });
       this.volverAlMapa();
       await this.recargarYCerrar();
     } catch (error) {
@@ -601,5 +742,157 @@ export class SeatsDialog {
         idplanificacion: this.data.idplanificacion,
       });
     }
+  }
+
+  private async cargarAsientosRetorno() {
+    try {
+      if (!this.idRetorno()) {
+        this.snackBar.open('No se encontró el retorno asociado', 'Cerrar', { duration: 3000 });
+        return;
+      }
+
+      this.cargando.set(true);
+
+      const viajeRetorno = await this.tripService.getViaje(this.idRetorno()!);
+      const cve = Array.isArray(viajeRetorno.vehiculo)
+        ? viajeRetorno.vehiculo[0]
+        : viajeRetorno.vehiculo;
+      const vehiculoData = Array.isArray(cve?.vehiculo)
+        ? cve.vehiculo[0]
+        : cve?.vehiculo;
+      const totalAsientos = vehiculoData?.nroasientos ?? 0;
+
+      const pasajerosRetorno = await this.reservaService.getPasajerosPorPlanificacion(
+        this.idRetorno()!
+      );
+
+      this.generarMapaAsientosRetorno(totalAsientos, pasajerosRetorno);
+      this.vistaActual.set('seleccion-retorno');
+      this.cargando.set(false);
+    } catch (error) {
+      console.error('Error cargando asientos del retorno:', error);
+      this.cargando.set(false);
+      this.snackBar.open('Error al cargar los asientos del retorno', 'Cerrar', {
+        duration: 3000,
+      });
+    }
+  }
+
+  private generarMapaAsientosRetorno(
+    totalAsientos: number,
+    pasajeros: ReservaPasajero[]
+  ) {
+    const ocupados = pasajeros.map((p) => p.asiento);
+    let numero = 1;
+    const filasTemp: Fila[] = [];
+
+    filasTemp.push({
+      tipo: 'conductor',
+      asientos: [
+        { num: null, label: 'CONDUCTOR', tipo: 'conductor', ocupado: false },
+        { num: null, tipo: 'vacio', ocupado: false },
+      ],
+    });
+
+    while (numero <= totalAsientos) {
+      const restantes = totalAsientos - numero + 1;
+      const asientosFila: Asiento[] = [];
+
+      if (restantes === 5) {
+        for (let i = 0; i < 2; i++) {
+          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        }
+        asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        for (let i = 0; i < 2; i++) {
+          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        }
+      } else {
+        const asientosEnFila = Math.min(restantes, 4);
+        const leftSide = Math.ceil(asientosEnFila / 2);
+        const rightSide = asientosEnFila - leftSide;
+
+        for (let i = 0; i < leftSide; i++) {
+          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        }
+        asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
+        for (let i = 0; i < rightSide; i++) {
+          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        }
+      }
+
+      filasTemp.push({ tipo: 'normal', asientos: asientosFila });
+    }
+
+    this.filasRetorno.set(filasTemp);
+  }
+
+  async reservarAsientoRetorno(seat: Asiento) {
+    if (!seat || seat.ocupado || seat.tipo !== 'asiento') return;
+
+    const asientoSalida = this.asientoSalidaSeleccionado();
+    if (!asientoSalida) {
+      this.snackBar.open('Error: No se encontró el asiento de salida', 'Cerrar', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    const usuario = this.usuarioActual();
+    if (!usuario) {
+      this.snackBar.open('No se encontró usuario logeado', 'Cerrar', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    // Confirmación
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      data: {
+        title: 'Confirmar reserva',
+        message: `¿Confirmas reservar:\n- Asiento ${asientoSalida} para la SALIDA\n- Asiento ${seat.num} para el RETORNO?`,
+      },
+    });
+
+    const confirmado = await dialogRef.afterClosed().toPromise();
+    if (!confirmado) return;
+
+    this.mostrarLoading('Reservando asientos...', 'Procesando');
+
+    try {
+      // Reservar salida
+      await this.reservaService.reservarAsientoPersonal(
+        this.data.idplanificacion,
+        asientoSalida,
+        usuario.idusuario,
+        false
+      );
+
+      // Reservar retorno con el asiento seleccionado
+      await this.reservaService.reservarAsientoPersonal(
+        this.idRetorno()!,
+        seat.num!,
+        usuario.idusuario,
+        false
+      );
+
+      this.cerrarLoading();
+      this.snackBar.open(
+        `Reservas realizadas:\n- Asiento ${asientoSalida} (Salida)\n- Asiento ${seat.num} (Retorno)`,
+        'Cerrar',
+        { duration: 4000 }
+      );
+
+      this.asientoSalidaSeleccionado.set(null);
+      await this.recargarYCerrar();
+    } catch (error) {
+      console.error('Error reservando asientos:', error);
+      this.cerrarLoading();
+      this.snackBar.open(`Error: ${error}`, 'Cerrar', { duration: 4000 });
+    }
+  }
+
+  volverASeleccionSalida() {
+    this.vistaActual.set('mapa');
+    this.asientoSalidaSeleccionado.set(null);
   }
 }

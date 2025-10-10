@@ -126,7 +126,8 @@ export class ReservaService {
   async verificarReservaExistente(
     idusuario: string,
     idplanificacionActual: string,
-    isStaff: boolean = true
+    isStaff: boolean = true,
+    isRetorno: boolean = false
   ): Promise<{
     tieneReserva: boolean;
     idplanificacion?: string;
@@ -197,9 +198,36 @@ export class ReservaService {
       .eq('idplanificacion', idplanificacionActual)
       .single();
 
-    const destinoCorrecto =
-      viajeActual?.iddestino?.toString().toLowerCase() ===
-      asignacion.iddestino?.toString().toLowerCase();
+    let destinoCorrecto = false;
+
+    if (isRetorno) {
+      // Para retornos, verificar que el origen del retorno coincida con la asignación
+      // El origen del retorno es el destino del viaje de ida
+      const { data: retornoInfo } = await this.supabase
+        .from('retorno_viaje')
+        .select(`
+          idplanificacion_ida,
+          planificacion_viaje!retorno_idplanificacion_ida_fkey(iddestino)
+        `)
+        .eq('idplanificacion_retorno', idplanificacionActual)
+        .maybeSingle();
+
+      if (retornoInfo) {
+        const viajeIda: any = retornoInfo.planificacion_viaje;
+        const iddestinoIda = Array.isArray(viajeIda) ? viajeIda[0]?.iddestino : viajeIda?.iddestino;
+
+        destinoCorrecto =
+          iddestinoIda?.toString().toLowerCase() ===
+          asignacion.iddestino?.toString().toLowerCase();
+      } else {
+        destinoCorrecto = false;
+      }
+    } else {
+      // Para viajes normales (salida), verificar que el destino coincida con la asignación
+      destinoCorrecto =
+        viajeActual?.iddestino?.toString().toLowerCase() ===
+        asignacion.iddestino?.toString().toLowerCase();
+    }
 
     // Buscar TODAS las reservas activas (no solo una)
     const { data: reservasActivas } = await this.supabase

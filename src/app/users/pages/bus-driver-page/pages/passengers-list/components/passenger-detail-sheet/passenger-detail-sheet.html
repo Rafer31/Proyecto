@@ -1,0 +1,73 @@
+<div class="sheet-container">
+  <div class="sheet-header">
+    <div class="passenger-avatar">
+      <mat-icon>{{ data.pasajero.tipo === 'personal' ? 'badge' : 'person' }}</mat-icon>
+    </div>
+    <div class="header-info">
+      <h2>{{ data.pasajero.nombre }}</h2>
+      <span class="tipo-badge"
+        [class.personal]="data.pasajero.tipo === 'personal'"
+        [class.visitante]="data.pasajero.tipo === 'visitante'">
+        {{ getTipoBadge(data.pasajero.tipo) }}
+      </span>
+    </div>
+    <button mat-icon-button (click)="cerrar()" class="close-button">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="sheet-content">
+    <div class="info-row">
+      <mat-icon>credit_card</mat-icon>
+      <span><strong>CI:</strong> {{ data.pasajero.ci }}</span>
+    </div>
+
+    <div class="info-row">
+      <mat-icon>phone</mat-icon>
+      <span><strong>Teléfono:</strong> {{ data.pasajero.telefono }}</span>
+    </div>
+
+    <div class="info-row">
+      <mat-icon>event_seat</mat-icon>
+      <span><strong>Asiento:</strong> {{ data.pasajero.asiento }}</span>
+    </div>
+
+    <mat-divider class="divider"></mat-divider>
+
+    <div class="estado-container">
+      <span class="estado-label">Estado de asistencia:</span>
+      <mat-chip [color]="getColorEstado(data.pasajero.estadoAsistencia)" highlighted>
+        {{ getTextoEstado(data.pasajero.estadoAsistencia) }}
+      </mat-chip>
+    </div>
+  </div>
+
+  @if (data.pasajero.estadoAsistencia === 'reservado') {
+    <div class="sheet-actions">
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="marcarAsistio()"
+        class="action-button"
+      >
+        <mat-icon>check_circle</mat-icon>
+        Asistió
+      </button>
+      <button
+        mat-raised-button
+        color="warn"
+        (click)="marcarInasistio()"
+        class="action-button"
+      >
+        <mat-icon>cancel</mat-icon>
+        Inasistió
+      </button>
+    </div>
+  } @else {
+    <div class="sheet-actions">
+      <span class="estado-final">Estado final registrado</span>
+    </div>
+  }
+</div>

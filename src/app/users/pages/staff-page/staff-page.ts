@@ -36,6 +36,11 @@ export class StaffPage implements OnInit {
       label: 'Viajes disponibles',
       route: '/users/staff/available-trips',
     },
+    {
+      icon: 'keyboard_return',
+      label: 'Retornos disponibles',
+      route: '/users/staff/available-returns',
+    },
   ];
 
   async ngOnInit() {

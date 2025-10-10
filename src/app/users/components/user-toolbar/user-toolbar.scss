@@ -7,20 +7,32 @@
   border-bottom: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   transition: background 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
   .title {
     margin-left: 0.75rem;
     font-weight: 500;
     font-size: 25px;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: calc(100vw - 250px);
+    flex-shrink: 1;
   }
+
   .spacer {
     flex: 1 1 auto;
+    min-width: 16px;
   }
 
   .avatar-btn {
     margin-left: 0.25rem;
+    flex-shrink: 0;
   }
+
   .avatar {
     width: 32px;
     height: 32px;
@@ -28,28 +40,39 @@
     object-fit: cover;
     transition: transform 0.25s ease;
   }
+
   .avatar-btn:hover .avatar {
     transform: scale(1.05);
   }
 }
 @media (max-width: 768px) {
   .toolbar {
+    gap: 0.25rem;
+
     .title {
-      margin-left: 0.75rem;
-      font-weight: 500;
+      margin-left: 0.5rem;
       font-size: 18px;
-      letter-spacing: 0.3px;
+      max-width: calc(100vw - 150px);
     }
   }
+}
 
-  @media (max-width: 376px) {
-    .toolbar {
-      .title {
-        margin-left: 0.55rem;
-        font-weight: 500;
-        font-size: 15px;
-        letter-spacing: 0.3px;
-      }
+@media (max-width: 480px) {
+  .toolbar {
+    .title {
+      margin-left: 0.25rem;
+      font-size: 16px;
+      max-width: calc(100vw - 130px);
+    }
+  }
+}
+
+@media (max-width: 376px) {
+  .toolbar {
+    .title {
+      margin-left: 0.25rem;
+      font-size: 15px;
+      max-width: calc(100vw - 120px);
     }
   }
 }
