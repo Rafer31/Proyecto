@@ -10,6 +10,7 @@ import { BusCompanyPage } from './pages/admin-page/pages/bus-company-page/bus-co
 import { TripPlanningPage } from './pages/admin-page/pages/trip-planning-page/trip-planning-page';
 import { ManageUsersPage } from './pages/admin-page/pages/manage-users-page/manage-users-page';
 import { AssignedTrips } from './pages/bus-driver-page/pages/assigned-trips/assigned-trips';
+import { PassengersList } from './pages/bus-driver-page/pages/passengers-list/passengers-list';
 import { AvailableTrips } from './pages/staff-page/pages/available-trips/available-trips';
 import { AvailableVisitantTrips } from './pages/visitant-page/pages/available-trips/available-visitant-trips';
 
@@ -82,6 +83,10 @@ export const userRoutes: Routes = [
           {
             path: 'assigned-trips',
             component: AssignedTrips,
+          },
+          {
+            path: 'assigned-trips/:id/passengers',
+            component: PassengersList,
           },
           {
             path: '',

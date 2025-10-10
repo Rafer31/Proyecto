@@ -101,12 +101,7 @@
         </div>
       </mat-dialog-content>
       <mat-dialog-actions align="end">
-        <button mat-stroked-button (click)="volverAlMapa()">
-          <mat-icon>map</mat-icon>
-          Volver al Mapa
-        </button>
-
-        @if (esUsuarioActual(pasajeroSeleccionado()!) || data.isAdmin) {
+        @if (esUsuarioActual(pasajeroSeleccionado()!)) {
           <button
             mat-stroked-button
             color="accent"
@@ -137,8 +132,8 @@
           </button>
         }
 
-        <button mat-stroked-button color="primary" (click)="cerrar()">
-          Cerrar
+        <button mat-stroked-button color="primary" (click)="volverAlMapa()">
+          Cancelar
         </button>
       </mat-dialog-actions>
     }

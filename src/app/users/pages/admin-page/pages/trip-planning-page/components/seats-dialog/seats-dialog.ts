@@ -270,7 +270,7 @@ export class SeatsDialog {
         await this.reservaService.verificarReservaExistente(
           usuario.idusuario,
           this.data.idplanificacion,
-          this.data.isStaff ?? true
+          this.data.isStaff ?? false
         );
 
       // Validación: destino correcto
@@ -310,8 +310,20 @@ export class SeatsDialog {
         return;
       }
 
-      // Si tiene reserva en otro destino diferente, verificar límite
+      // Si tiene reserva en otro viaje/destino diferente
       if (verificacion.tieneReserva && !verificacion.esAlMismoDestino) {
+        // Para visitantes: BLOQUEAR siempre (solo pueden tener 1 reserva)
+        if (!this.data.isStaff) {
+          this.cerrarLoading();
+          this.snackBar.open(
+            'Ya tienes una reserva activa en otro viaje. Debes cancelar esa reserva antes de reservar en este viaje.',
+            'Cerrar',
+            { duration: 5000 }
+          );
+          return;
+        }
+
+        // Para personal: verificar límite (salida + retorno = 2)
         const { tieneMaximo } =
           await this.reservaService.verificarReservasActivas(usuario.idusuario);
 

@@ -1,0 +1,133 @@
+<div class="passengers-container">
+  <div class="header">
+    <button mat-icon-button (click)="volver()" class="back-button">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <h1>Lista de Pasajeros</h1>
+  </div>
+
+  @if (cargando()) {
+    <div class="loading-container">
+      <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+      <p>Cargando pasajeros...</p>
+    </div>
+  } @else {
+    <div class="bus-layout">
+      <!-- Leyenda -->
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-box libre"></div>
+          <span>Libre</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box reservado"></div>
+          <span>Reservado</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box asistio"></div>
+          <span>Asistió</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-box inasistio"></div>
+          <span>Inasistió</span>
+        </div>
+      </div>
+
+      <!-- Mapa de asientos del bus -->
+      <div class="bus-container">
+        <div class="bus-header">
+          <mat-icon>directions_bus</mat-icon>
+          <span>{{ pasajeros().length }} / {{ totalAsientos() }} ocupados</span>
+        </div>
+
+        <div class="seats-grid">
+          @for (asiento of asientos(); track asiento.numero) {
+            <button
+              class="seat"
+              [class]="getClaseAsiento(asiento)"
+              [disabled]="!asiento.ocupado"
+              [matTooltip]="getTooltip(asiento)"
+              (click)="seleccionarAsiento(asiento)"
+            >
+              <mat-icon class="seat-icon">{{ getIconoAsiento(asiento) }}</mat-icon>
+              <span class="seat-number">{{ asiento.numero }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Detalle del pasajero seleccionado -->
+      @if (pasajeroSeleccionado()) {
+        <mat-card class="passenger-detail">
+          <mat-card-header>
+            <div mat-card-avatar class="passenger-avatar">
+              <mat-icon>{{ pasajeroSeleccionado()!.tipo === 'personal' ? 'badge' : 'person' }}</mat-icon>
+            </div>
+            <mat-card-title>{{ pasajeroSeleccionado()!.nombre }}</mat-card-title>
+            <mat-card-subtitle>
+              <span class="tipo-badge" 
+                [class.personal]="pasajeroSeleccionado()!.tipo === 'personal'" 
+                [class.visitante]="pasajeroSeleccionado()!.tipo === 'visitante'">
+                {{ getTipoBadge(pasajeroSeleccionado()!.tipo) }}
+              </span>
+            </mat-card-subtitle>
+            <button mat-icon-button (click)="cerrarDetalle()" class="close-button">
+              <mat-icon>close</mat-icon>
+            </button>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="passenger-info">
+              <div class="info-row">
+                <mat-icon>credit_card</mat-icon>
+                <span><strong>CI:</strong> {{ pasajeroSeleccionado()!.ci }}</span>
+              </div>
+
+              <div class="info-row">
+                <mat-icon>phone</mat-icon>
+                <span><strong>Teléfono:</strong> {{ pasajeroSeleccionado()!.telefono }}</span>
+              </div>
+
+              <div class="info-row">
+                <mat-icon>event_seat</mat-icon>
+                <span><strong>Asiento:</strong> {{ pasajeroSeleccionado()!.asiento }}</span>
+              </div>
+
+              <mat-divider class="divider"></mat-divider>
+
+              <div class="estado-container">
+                <span class="estado-label">Estado de asistencia:</span>
+                <mat-chip [color]="getColorEstado(pasajeroSeleccionado()!.estadoAsistencia)" highlighted>
+                  {{ getTextoEstado(pasajeroSeleccionado()!.estadoAsistencia) }}
+                </mat-chip>
+              </div>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            @if (pasajeroSeleccionado()!.estadoAsistencia === 'reservado') {
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="marcarAsistencia(pasajeroSeleccionado()!, true)"
+              >
+                <mat-icon>check_circle</mat-icon>
+                Asistió
+              </button>
+              <button
+                mat-raised-button
+                color="warn"
+                (click)="marcarAsistencia(pasajeroSeleccionado()!, false)"
+              >
+                <mat-icon>cancel</mat-icon>
+                Inasistió
+              </button>
+            } @else {
+              <span class="estado-final">Estado final registrado</span>
+            }
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+  }
+</div>

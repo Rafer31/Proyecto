@@ -1,1 +1,106 @@
-<p>assigned-trips works!</p>
+<div class="assigned-trips-container">
+  <h1 class="page-title">Mis Viajes Asignados</h1>
+
+  @if (cargando()) {
+    <div class="loading-container">
+      <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+      <p>Cargando viajes...</p>
+    </div>
+  } @else if (viajes().length === 0) {
+    <div class="empty-state">
+      <mat-icon class="empty-icon">directions_bus_filled</mat-icon>
+      <h2>No tienes viajes asignados</h2>
+      <p>Cuando se te asigne un viaje, aparecerá aquí.</p>
+    </div>
+  } @else {
+    <div class="trips-grid">
+      @for (viaje of viajes(); track viaje.idplanificacion) {
+        <mat-card class="trip-card">
+          <mat-card-header>
+            <div mat-card-avatar class="trip-avatar">
+              <mat-icon>place</mat-icon>
+            </div>
+            <mat-card-title>{{ viaje.destino.nomdestino }}</mat-card-title>
+            <mat-card-subtitle>{{ formatearFecha(viaje.fechaplanificacion) }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="trip-info">
+              <div class="info-item">
+                <mat-icon>directions_car</mat-icon>
+                <span>Placa: {{ viaje.vehiculo.placa }}</span>
+              </div>
+
+              <div class="info-item">
+                <mat-icon>event_seat</mat-icon>
+                <span>{{ viaje.asientosOcupados }} / {{ viaje.vehiculo.nroasientos }} ocupados</span>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <div class="horarios">
+                <div class="horario-item">
+                  <span class="label">Salida programada:</span>
+                  <span class="time">{{ formatearHora(viaje.horapartida) }}</span>
+                </div>
+
+                @if (viaje.horarealpartida) {
+                  <div class="horario-item">
+                    <span class="label">Salida real:</span>
+                    <span class="time real">{{ formatearHora(viaje.horarealpartida) }}</span>
+                  </div>
+                }
+
+                @if (viaje.horarealllegada) {
+                  <div class="horario-item">
+                    <span class="label">Llegada real:</span>
+                    <span class="time real">{{ formatearHora(viaje.horarealllegada) }}</span>
+                  </div>
+                }
+              </div>
+
+              <div class="estado-chip">
+                <mat-chip [color]="getColorEstado(viaje)" highlighted>
+                  {{ getEstadoViaje(viaje) }}
+                </mat-chip>
+              </div>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions align="end">
+            <button
+              mat-button
+              color="primary"
+              (click)="verPasajeros(viaje)"
+            >
+              <mat-icon>people</mat-icon>
+              Ver Pasajeros
+            </button>
+
+            @if (!viaje.horarealpartida) {
+              <button
+                mat-raised-button
+                color="primary"
+                (click)="iniciarViaje(viaje)"
+              >
+                <mat-icon>play_arrow</mat-icon>
+                Iniciar Viaje
+              </button>
+            }
+
+            @if (viaje.horarealpartida && !viaje.horarealllegada) {
+              <button
+                mat-raised-button
+                color="accent"
+                (click)="finalizarViaje(viaje)"
+              >
+                <mat-icon>flag</mat-icon>
+                Finalizar Viaje
+              </button>
+            }
+          </mat-card-actions>
+        </mat-card>
+      }
+    </div>
+  }
+</div>
