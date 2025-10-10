@@ -132,6 +132,7 @@ export class ReservaService {
     idplanificacion?: string;
     asiento?: number;
     destinoCorrecto: boolean;
+    esAlMismoDestino?: boolean | null; // NUEVO
   }> {
     if (!isStaff) {
       const { data: visitante } = await this.supabase
@@ -157,12 +158,14 @@ export class ReservaService {
           idplanificacion: reservaExistente.idplanificacion,
           asiento: reservaExistente.nroasiento,
           destinoCorrecto: true,
+          esAlMismoDestino: false,
         };
       }
 
       return { tieneReserva: false, destinoCorrecto: true };
     }
 
+    // Para personal
     const { data: personal, error: personalError } = await this.supabase
       .from('personal')
       .select('nroficha')
@@ -184,6 +187,7 @@ export class ReservaService {
       return { tieneReserva: false, destinoCorrecto: false };
     }
 
+    // Obtener destino del viaje actual
     const { data: viajeActual } = await this.supabase
       .from('planificacion_viaje')
       .select('iddestino')
@@ -194,6 +198,7 @@ export class ReservaService {
       viajeActual?.iddestino?.toString().toLowerCase() ===
       asignacion.iddestino?.toString().toLowerCase();
 
+    // Buscar reserva existente
     const { data: reservaExistente } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
       .select('idplanificacion, nroasiento, estado')
@@ -201,16 +206,40 @@ export class ReservaService {
       .eq('estado', 'reservado')
       .maybeSingle();
 
-    if (reservaExistente) {
+    if (!reservaExistente) {
+      return { tieneReserva: false, destinoCorrecto };
+    }
+
+    // Si la reserva es en el mismo viaje, no hay conflicto
+    if (reservaExistente.idplanificacion === idplanificacionActual) {
       return {
         tieneReserva: true,
         idplanificacion: reservaExistente.idplanificacion,
         asiento: reservaExistente.nroasiento,
         destinoCorrecto,
+        esAlMismoDestino: false, // No es problema porque es el mismo viaje
       };
     }
 
-    return { tieneReserva: false, destinoCorrecto };
+    // Verificar si la reserva existente es al mismo destino
+    const { data: viajeReservado } = await this.supabase
+      .from('planificacion_viaje')
+      .select('iddestino')
+      .eq('idplanificacion', reservaExistente.idplanificacion)
+      .single();
+
+    const esAlMismoDestino =
+      viajeReservado &&
+      viajeReservado.iddestino?.toString().toLowerCase() ===
+        viajeActual?.iddestino?.toString().toLowerCase();
+
+    return {
+      tieneReserva: true,
+      idplanificacion: reservaExistente.idplanificacion,
+      asiento: reservaExistente.nroasiento,
+      destinoCorrecto,
+      esAlMismoDestino, // NUEVO: indica si es al mismo destino
+    };
   }
 
   async reservarAsientoPersonal(
@@ -219,13 +248,33 @@ export class ReservaService {
     idusuario: string,
     reservarRetorno: boolean = false
   ): Promise<void> {
+    // 🔹 1. Verificar si ya tiene el máximo de reservas activas (ida y retorno)
+    const verificacion = await this.verificarReservasActivas(idusuario);
+
+    if (verificacion.tieneMaximo) {
+      throw new Error(
+        `Ya tienes ${verificacion.total} reservas activas (ida y retorno). 
+      Debes cancelar alguna antes de reservar en otro viaje.`
+      );
+    }
+
+    // 🔹 2. Crear la reserva principal
     await this.crearReservaPersonal(idplanificacion, asiento, idusuario);
 
+    // 🔹 3. Si el viaje tiene retorno y el usuario quiere reservar ambos
     if (reservarRetorno) {
       const { existe, idplanificacionRetorno } =
         await this.retornoService.tieneRetorno(idplanificacion);
 
       if (existe && idplanificacionRetorno) {
+        // Antes de reservar el retorno, vuelve a validar el límite
+        const verificacion2 = await this.verificarReservasActivas(idusuario);
+        if (verificacion2.tieneMaximo) {
+          throw new Error(
+            `Ya alcanzaste el límite de reservas activas. No puedes reservar también el retorno.`
+          );
+        }
+
         await this.crearReservaPersonal(
           idplanificacionRetorno,
           asiento,
@@ -407,76 +456,49 @@ export class ReservaService {
     }
   }
 
+  // Reemplaza el método cambiarReserva en reserva.service.ts
+
   async cambiarReserva(
     idusuario: string,
-    idplanificacionNueva: string,
-    asientoNuevo: number
+    idplanificacion: string,
+    nuevoAsiento: number
   ): Promise<void> {
+    // ✅ Obtener asignación activa del usuario (ficha)
     const idasignaciondestino = await this.getAsignacionActivaPersonal(
       idusuario
     );
 
-    const { data: reservaEnEsteViaje } = await this.supabase
+    // ✅ Buscar reservas activas actuales (salida y retorno)
+    const { data: reservasActuales, error: errorBuscar } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
-      .select('idplanificacion, nroasiento')
+      .select('idasignaciondestino, idplanificacion, estado, nroasiento')
       .eq('idasignaciondestino', idasignaciondestino)
-      .eq('idplanificacion', idplanificacionNueva)
-      .eq('estado', 'reservado')
-      .maybeSingle();
+      .eq('estado', 'reservado');
 
-    if (reservaEnEsteViaje) {
-      const { error } = await this.supabase
-        .from('asignaciondestino_planificacionviaje')
-        .update({ nroasiento: asientoNuevo })
-        .eq('idasignaciondestino', idasignaciondestino)
-        .eq('idplanificacion', idplanificacionNueva)
-        .eq('estado', 'reservado');
+    if (errorBuscar) throw errorBuscar;
 
-      if (error) throw error;
-
-      await this.actualizarAsientosDisponibles(idplanificacionNueva);
-      return;
+    if (!reservasActuales || reservasActuales.length === 0) {
+      throw new Error('No se encontraron reservas activas para actualizar.');
     }
 
-    const { data: reservaEnOtroViaje } = await this.supabase
+    // ✅ Actualizar las reservas existentes (pueden ser salida y retorno)
+    const { error: errorActualizar } = await this.supabase
       .from('asignaciondestino_planificacionviaje')
-      .select('idplanificacion, nroasiento')
+      .update({
+        idplanificacion: idplanificacion,
+        nroasiento: nuevoAsiento,
+        estado: 'reservado',
+      })
       .eq('idasignaciondestino', idasignaciondestino)
-      .eq('estado', 'reservado')
-      .maybeSingle();
+      .eq('estado', 'reservado');
 
-    if (reservaEnOtroViaje) {
-      const { error: cancelError } = await this.supabase
-        .from('asignaciondestino_planificacionviaje')
-        .update({ estado: 'cancelado' })
-        .eq('idasignaciondestino', idasignaciondestino)
-        .eq('idplanificacion', reservaEnOtroViaje.idplanificacion)
-        .eq('estado', 'reservado');
+    if (errorActualizar) throw errorActualizar;
 
-      if (cancelError) throw cancelError;
-
-      await this.actualizarAsientosDisponibles(
-        reservaEnOtroViaje.idplanificacion
-      );
-
-      const { error: reservaError } = await this.supabase
-        .from('asignaciondestino_planificacionviaje')
-        .insert({
-          idplanificacion: idplanificacionNueva,
-          nroasiento: asientoNuevo,
-          idasignaciondestino,
-          estado: 'reservado',
-        });
-
-      if (reservaError) throw reservaError;
-
-      await this.actualizarAsientosDisponibles(idplanificacionNueva);
-    }
+    // ✅ Actualizar asientos disponibles del nuevo viaje
+    await this.actualizarAsientosDisponibles(idplanificacion);
   }
 
-  private async getAsignacionActivaPersonal(
-    idusuario: string
-  ): Promise<string> {
+  async getAsignacionActivaPersonal(idusuario: string): Promise<string> {
     const { data: personal, error: personalError } = await this.supabase
       .from('personal')
       .select('nroficha')
@@ -560,7 +582,6 @@ export class ReservaService {
     idplanificacion: string,
     nroasiento: number
   ): Promise<void> {
-
     const idvisitante = await this.getVisitante(idusuario);
 
     const { error } = await this.supabase
@@ -573,5 +594,56 @@ export class ReservaService {
     if (error) throw error;
 
     await this.actualizarAsientosDisponibles(idplanificacion);
+  }
+  async verificarReservasActivas(idusuario: string): Promise<{
+    tieneMaximo: boolean;
+    total: number;
+    reservas?: string[];
+  }> {
+    try {
+      // 1️⃣ Obtener la asignación activa del usuario (empleado)
+      const idasignaciondestino = await this.getAsignacionActivaPersonal(
+        idusuario
+      );
+
+      // 2️⃣ Buscar todas las reservas activas (estado = 'reservado')
+      const { data: reservas, error } = await this.supabase
+        .from('asignaciondestino_planificacionviaje')
+        .select('idplanificacion, estado')
+        .eq('idasignaciondestino', idasignaciondestino)
+        .eq('estado', 'reservado');
+
+      if (error) throw error;
+
+      if (!reservas?.length) {
+        return { tieneMaximo: false, total: 0 };
+      }
+
+      // 3️⃣ Obtener los destinos de esas planificaciones
+      const idsPlanificaciones = reservas.map((r) => r.idplanificacion);
+
+      const { data: planificaciones, error: planError } = await this.supabase
+        .from('planificacion_viaje')
+        .select('idplanificacion, iddestino')
+        .in('idplanificacion', idsPlanificaciones);
+
+      if (planError) throw planError;
+
+      // 4️⃣ Contar cuántos destinos únicos tiene reservados
+      const destinosUnicos = new Set(planificaciones?.map((p) => p.iddestino));
+      const totalReservas = planificaciones?.length || 0;
+
+      // Si tiene 2 o más reservas activas, alcanza el máximo
+      const tieneMaximo = totalReservas >= 2 || destinosUnicos.size >= 2;
+
+      return {
+        tieneMaximo,
+        total: totalReservas,
+        reservas: planificaciones?.map((p) => p.idplanificacion) ?? [],
+      };
+    } catch (err) {
+      console.error('Error verificando reservas activas:', err);
+      return { tieneMaximo: false, total: 0 };
+    }
   }
 }
