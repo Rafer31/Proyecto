@@ -305,6 +305,8 @@ export class SeatsDialog {
         data: {
           title: 'Reservar con retorno',
           message: `Este viaje tiene un retorno programado. ¿Deseas reservar el asiento ${seat.num} también para el viaje de retorno?`,
+          cancelText: 'No',
+          confirmText: 'Sí, reservar para retorno',
         },
       });
 

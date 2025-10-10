@@ -26,7 +26,7 @@ export default class Login {
     });
 
     window.addEventListener('appinstalled', () => {
-      console.log('✅ Aplicación instalada');
+      console.log(' Aplicación instalada');
     });
   }
 
@@ -47,8 +47,8 @@ export default class Login {
     if (!this.deferredPrompt) return;
     this.deferredPrompt.prompt();
     const { outcome } = await this.deferredPrompt.userChoice;
-    if (outcome === 'accepted') console.log('👍 Usuario instaló la app');
-    else console.log('❌ Usuario rechazó la instalación');
+    if (outcome === 'accepted') console.log(' Usuario instaló la app');
+    else console.log(' Usuario rechazó la instalación');
     this.deferredPrompt = null;
     this.snackBar.dismiss();
   }
