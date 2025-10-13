@@ -1,12 +1,13 @@
 .planning-card {
   width: 320px;
-  height: 320px;
+  min-height: 320px;
+  height: auto;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   margin: 8px;
 
   &:hover {
@@ -46,5 +47,40 @@
 
   mat-card-actions {
     padding: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: flex-end;
+
+    button {
+      margin: 0 !important; // Override Material default margins
+      font-size: 13px;
+      padding: 4px 8px;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        margin-right: 4px;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .planning-card {
+    width: 100%;
+    max-width: 400px;
+    margin: 8px auto;
+
+    mat-card-actions {
+      justify-content: center;
+
+      button {
+        flex: 1 1 auto;
+        min-width: 90px;
+        font-size: 12px;
+      }
+    }
   }
 }

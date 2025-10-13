@@ -1,37 +1,31 @@
-/* Espaciado entre tarjetas cuando el grid colapsa a una sola columna */
 :host {
   display: block;
   width: 100%;
-  margin-bottom: 0; /* Sin espacio por defecto (desktop usa gap del grid) */
+  margin-bottom: 0;
 }
 
-/* Tablets */
 @media (max-width: 1024px) {
   :host {
     margin-bottom: 28px;
   }
 }
 
-/* Celulares grandes */
 @media (max-width: 768px) {
   :host {
     margin-bottom: 44px;
   }
 }
 
-/* Celulares pequeños */
 @media (max-width: 480px) {
   :host {
     margin-bottom: 56px;
   }
 }
 
-/* Evita espacio extra en la última tarjeta */
 :host(:last-child) {
   margin-bottom: 0;
 }
 
-/* === Estilos originales mejorados === */
 .trip-card {
   display: flex;
   flex-direction: column;
@@ -146,7 +140,6 @@
   }
 }
 
-/* === Responsivo === */
 @media (max-width: 768px) {
   .trip-card {
     mat-card-header {

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { NavItem } from '../../../shared/interfaces/nav-item';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,6 +8,7 @@ import { UserToolbar } from '../../components/user-toolbar/user-toolbar';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { UserDataService } from '../../../auth/services/userdata.service';
 import { UserStateService } from '../../../shared/services/user-state.service';
+import { PendingRatingsCheckerService } from '../../../shared/services/pending-ratings-checker.service';
 
 @Component({
   selector: 'app-staff-page',
@@ -21,14 +22,17 @@ import { UserStateService } from '../../../shared/services/user-state.service';
   templateUrl: './staff-page.html',
   styleUrl: './staff-page.scss',
 })
-export class StaffPage implements OnInit {
+export class StaffPage implements OnInit, OnDestroy {
   private supabaseService = inject(SupabaseService);
   private userDataService = inject(UserDataService);
   private userStateService = inject(UserStateService);
+  private pendingRatingsChecker = inject(PendingRatingsCheckerService);
 
   userName = this.userStateService.userName;
   isLoading = this.userStateService.isLoading;
   error = this.userStateService.error;
+
+  private unsubscribeRatings?: () => void;
 
   menu: NavItem[] = [
     {
@@ -47,6 +51,12 @@ export class StaffPage implements OnInit {
     await this.cargarUsuario();
   }
 
+  ngOnDestroy() {
+    if (this.unsubscribeRatings) {
+      this.unsubscribeRatings();
+    }
+  }
+
   private async cargarUsuario() {
     try {
       this.userStateService.setLoading(true);
@@ -63,6 +73,20 @@ export class StaffPage implements OnInit {
       }
 
       await this.userDataService.loadUserAndUpdateState(user.id);
+
+      const currentUser = this.userStateService.currentUser();
+      if (currentUser?.idusuario) {
+        setTimeout(() => {
+          this.pendingRatingsChecker.checkAndShowPendingRatings(
+            currentUser.idusuario
+          );
+        }, 1000);
+
+        this.unsubscribeRatings =
+          this.pendingRatingsChecker.subscribeToCompletedTrips(
+            currentUser.idusuario
+          );
+      }
     } catch (error) {
       console.error('Error cargando datos del usuario:', error);
       this.userStateService.setError('Error al cargar datos del usuario');

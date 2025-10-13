@@ -1,2 +1,13 @@
-<h1 class="text-2xl font-bold mt-5 ms-5">Gestión de usuarios </h1>
+<div class="header-container">
+  <h1 class="text-2xl font-bold mt-5 ms-5">Gestión de usuarios</h1>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="exportarReporteUsuarios()"
+    class="export-button"
+  >
+    <mat-icon>description</mat-icon>
+    Exportar Reporte
+  </button>
+</div>
 <app-list-users (totalChange)="updateUserCount($event)"></app-list-users>

@@ -1,0 +1,107 @@
+.rating-dialog {
+  min-width: 400px;
+
+  @media (max-width: 600px) {
+    min-width: 100%;
+  }
+}
+
+mat-dialog-content {
+  padding: 1.5rem 0;
+}
+
+.trip-info {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+
+  p {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+
+    mat-icon {
+      font-size: 1.25rem;
+      width: 1.25rem;
+      height: 1.25rem;
+      color: #666;
+    }
+  }
+
+  .trip-destination {
+    font-size: 1.1rem;
+
+    strong {
+      color: #333;
+    }
+  }
+
+  .trip-date {
+    font-size: 0.95rem;
+    color: #666;
+  }
+}
+
+.rating-section {
+  text-align: center;
+  margin-bottom: 1.5rem;
+
+  .rating-label {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 1rem;
+  }
+
+  .stars-container {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+
+    .star-button {
+      width: 56px;
+      height: 56px;
+      transition: transform 0.2s ease;
+
+      mat-icon {
+        font-size: 40px;
+        width: 40px;
+        height: 40px;
+      }
+
+      &:hover {
+        transform: scale(1.15);
+      }
+
+      &.selected,
+      &.hovered {
+        mat-icon {
+          color: #ffc107; // Color dorado
+        }
+      }
+    }
+  }
+
+  .rating-text {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #666;
+    margin-top: 0.5rem;
+  }
+}
+
+.full-width {
+  width: 100%;
+}
+
+mat-form-field {
+  margin-top: 0.5rem;
+}
+
+mat-dialog-actions {
+  padding: 1rem 0 0 0;
+  margin: 0;
+}

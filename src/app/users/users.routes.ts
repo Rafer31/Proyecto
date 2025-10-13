@@ -14,15 +14,20 @@ import { PassengersList } from './pages/bus-driver-page/pages/passengers-list/pa
 import { AvailableTrips } from './pages/staff-page/pages/available-trips/available-trips';
 import { AvailableReturns } from './pages/staff-page/pages/available-returns/available-returns';
 import { AvailableVisitantTrips } from './pages/visitant-page/pages/available-trips/available-visitant-trips';
+import { roleGuard } from '../auth/guards/role.guard';
+import { firstLoginGuard } from '../auth/guards/first-login.guard';
 
 export const userRoutes: Routes = [
   {
     path: '',
     component: UsersLayout,
+    canActivate: [firstLoginGuard],
     children: [
       {
         path: 'admin',
         component: AdminPage,
+        canActivate: [roleGuard],
+        data: { roles: ['administrador'] },
         children: [
           {
             path: 'charts',
@@ -50,6 +55,8 @@ export const userRoutes: Routes = [
       {
         path: 'staff',
         component: StaffPage,
+        canActivate: [roleGuard],
+        data: { roles: ['personal'] },
         children: [
           {
             path: 'available-trips',
@@ -69,6 +76,8 @@ export const userRoutes: Routes = [
       {
         path: 'visitant',
         component: VisitantPage,
+        canActivate: [roleGuard],
+        data: { roles: ['visitante'] },
         children: [
           {
             path: 'available-visitant-trips',
@@ -84,6 +93,8 @@ export const userRoutes: Routes = [
       {
         path: 'bus-driver',
         component: BusDriverPage,
+        canActivate: [roleGuard],
+        data: { roles: ['conductor'] },
         children: [
           {
             path: 'assigned-trips',
@@ -99,11 +110,6 @@ export const userRoutes: Routes = [
             pathMatch: 'full',
           },
         ],
-      },
-      {
-        path: '**',
-        redirectTo: '',
-        pathMatch: 'full',
       },
     ],
   },

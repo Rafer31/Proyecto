@@ -7,7 +7,7 @@ import {
   AbstractControl,
   ValidationErrors,
 } from '@angular/forms';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MatDialog } from '@angular/material/dialog';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -16,10 +16,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { TripPlanningService } from '../../../../services/trip-planning.service';
 import { UserService } from '../../../../../../services/user.service';
 import { DestinyService } from '../../../../../../../shared/services/destiny.service';
+import { TripTemplateService } from '../../../../../../../shared/services/trip-template.service';
+import { SelectTemplateDialog } from '../select-template-dialog/select-template-dialog';
 import { CommonModule } from '@angular/common';
 
 type EtapaViaje = 'salida' | 'pregunta-retorno' | 'retorno';
@@ -52,9 +55,12 @@ interface DatosViaje {
 export class RegisterTripDialog {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<RegisterTripDialog>);
+  private dialog = inject(MatDialog);
   private destinyService = inject(DestinyService);
   private tripService = inject(TripPlanningService);
   private userService = inject(UserService);
+  private templateService = inject(TripTemplateService);
+  private snackBar = inject(MatSnackBar);
 
   destinos = signal<any[]>([]);
   destinoBolivar = signal<any | null>(null);
@@ -389,6 +395,85 @@ export class RegisterTripDialog {
       const [h] = hora.split(':').map(Number);
       return h >= turno.inicio && h < turno.fin;
     });
+  }
+
+  async usarPlantilla() {
+    const dialogRef = this.dialog.open(SelectTemplateDialog, {
+      width: '700px',
+      maxHeight: '80vh',
+    });
+
+    const template = await dialogRef.afterClosed().toPromise();
+
+    if (template) {
+      this.aplicarPlantilla(template);
+
+      try {
+        await this.templateService.incrementUsage(template.idplantilla);
+      } catch (error) {
+        console.error('Error incrementando uso de plantilla:', error);
+      }
+    }
+  }
+
+  private aplicarPlantilla(template: any) {
+    const conductor = Array.isArray(template.conductor)
+      ? template.conductor[0]
+      : template.conductor;
+
+    const vehiculo = Array.isArray(template.vehiculo)
+      ? template.vehiculo[0]
+      : template.vehiculo;
+
+    const empresa = Array.isArray(template.empresa)
+      ? template.empresa[0]
+      : template.empresa;
+
+    const destino = Array.isArray(template.destino)
+      ? template.destino[0]
+      : template.destino;
+
+    this.step1Form.patchValue({
+      idconductor: conductor?.idconductor || template.idconductor,
+      nroplaca: vehiculo?.nroplaca || template.nroplaca,
+      idempresa: empresa?.idempresa || template.idempresa,
+    });
+
+    if (vehiculo || template.nroplaca) {
+      const vehiculoCompleto = this.vehiculos().find(
+        (v) => v.nroplaca === (vehiculo?.nroplaca || template.nroplaca)
+      );
+      if (vehiculoCompleto) {
+        this.selectedVehiculo.set(vehiculoCompleto);
+      }
+    }
+
+    const step2Updates: any = {};
+
+    if (destino || template.iddestino) {
+      step2Updates.iddestino = destino?.iddestino || template.iddestino;
+    }
+
+    if (template.horapartida_default) {
+      const [hora] = template.horapartida_default.split(':').map(Number);
+      const turno = this.turnos.find((t) => hora >= t.inicio && hora < t.fin);
+
+      if (turno) {
+        this.turnoSeleccionado.set(turno.value);
+        this.step2Form.get('horapartida')?.enable();
+        step2Updates.horapartida = template.horapartida_default.slice(0, 5);
+      }
+    }
+
+    this.step2Form.patchValue(step2Updates);
+
+    this.snackBar.open(
+      `Plantilla "${template.nombreplantilla}" aplicada`,
+      'Cerrar',
+      {
+        duration: 3000,
+      }
+    );
   }
 
   trackByHora = (_: number, hora: string) => hora;

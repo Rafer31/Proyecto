@@ -1,11 +1,13 @@
 import { inject, Injectable } from '@angular/core';
 import { SupabaseService } from '../../../../shared/services/supabase.service';
 import { RetornoService } from './retorno.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 @Injectable({ providedIn: 'root' })
 export class TripPlanningService {
   private supabase = inject(SupabaseService).supabase;
   private retornoService = inject(RetornoService);
+  private notificationService = inject(NotificationService);
 
   async getVehiculos() {
     const { data, error } = await this.supabase.from('vehiculo').select('*');
@@ -62,6 +64,12 @@ export class TripPlanningService {
     return data || [];
   }
 
+  async getDestinos() {
+    const { data, error } = await this.supabase.from('destino').select('*');
+    if (error) throw error;
+    return data || [];
+  }
+
   async getViaje(idplanificacion: string) {
     const { data, error } = await this.supabase
       .from('planificacion_viaje')
@@ -110,6 +118,7 @@ export class TripPlanningService {
         )
       `
       )
+      .is('horarealllegada', null)
       .order('fechapartida', { ascending: true });
 
     if (error) throw error;
@@ -163,6 +172,21 @@ export class TripPlanningService {
       .single();
 
     if (errPlan) throw errPlan;
+
+
+    try {
+      const destino = Array.isArray(viaje.destino) ? viaje.destino[0] : viaje.destino;
+      await this.notificationService.schedulePreTripNotification(
+        viaje.idplanificacion,
+        viaje.fechapartida,
+        viaje.horapartida,
+        destino?.nomdestino || 'su destino'
+      );
+    } catch (error) {
+      console.error('Error programando notificación:', error);
+
+    }
+
     return viaje;
   }
 

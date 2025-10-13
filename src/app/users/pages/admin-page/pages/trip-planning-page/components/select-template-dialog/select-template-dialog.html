@@ -1,0 +1,95 @@
+<h2 mat-dialog-title>
+  <mat-icon>bookmark</mat-icon>
+  Seleccionar Plantilla
+</h2>
+
+<mat-dialog-content>
+  @if (isLoading()) {
+    <div class="loading-container">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p>Cargando plantillas...</p>
+    </div>
+  } @else if (templates().length === 0) {
+    <div class="empty-state">
+      <mat-icon>bookmark_border</mat-icon>
+      <h3>No tienes plantillas guardadas</h3>
+      <p>Guarda un viaje como plantilla para reutilizarlo aquí</p>
+    </div>
+  } @else {
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Buscar plantilla</mat-label>
+      <input
+        matInput
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearch()"
+        placeholder="Buscar por nombre, destino..."
+      />
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+
+    @if (filteredTemplates().length === 0) {
+      <div class="no-results">
+        <p>No se encontraron plantillas con "{{ searchTerm }}"</p>
+      </div>
+    } @else {
+      <mat-list class="templates-list">
+        @for (template of filteredTemplates(); track template.idplantilla) {
+          <mat-list-item class="template-item" (click)="selectTemplate(template)">
+            <div class="template-content">
+              <div class="template-header">
+                <h3>{{ template.nombreplantilla }}</h3>
+                <mat-chip class="usage-chip">
+                  <mat-icon>repeat</mat-icon>
+                  {{ template.vecesusado }} usos
+                </mat-chip>
+              </div>
+
+              @if (template.descripcion) {
+                <p class="description">{{ template.descripcion }}</p>
+              }
+
+              <div class="template-details">
+                <div class="detail-item">
+                  <mat-icon>place</mat-icon>
+                  <span>{{ getDestinoName(template) }}</span>
+                </div>
+
+                <div class="detail-item">
+                  <mat-icon>person</mat-icon>
+                  <span>{{ getConductorName(template) }}</span>
+                </div>
+
+                <div class="detail-item">
+                  <mat-icon>directions_bus</mat-icon>
+                  <span>{{ getVehiculoInfo(template) }}</span>
+                </div>
+
+                <div class="detail-item">
+                  <mat-icon>business</mat-icon>
+                  <span>{{ getEmpresaName(template) }}</span>
+                </div>
+
+                @if (template.horapartida_default) {
+                  <div class="detail-item">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ template.horapartida_default.slice(0, 5) }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+
+            <mat-icon class="chevron">chevron_right</mat-icon>
+          </mat-list-item>
+
+          <mat-divider></mat-divider>
+        }
+      </mat-list>
+    }
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">
+    Cancelar
+  </button>
+</mat-dialog-actions>

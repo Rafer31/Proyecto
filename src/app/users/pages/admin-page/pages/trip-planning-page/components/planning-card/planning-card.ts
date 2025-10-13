@@ -41,6 +41,8 @@ export class PlanningCardComponent {
   editar = output<string>();
   eliminar = output<string>();
   actualizarAsientos = output<string>();
+  guardarPlantilla = output<string>();
+  exportarReporte = output<string>();
 
   private dialog = inject(MatDialog);
 
@@ -120,5 +122,13 @@ export class PlanningCardComponent {
 
   onEliminar() {
     this.eliminar.emit(this.idviaje());
+  }
+
+  onGuardarPlantilla() {
+    this.guardarPlantilla.emit(this.idviaje());
+  }
+
+  onExportarReporte() {
+    this.exportarReporte.emit(this.idviaje());
   }
 }

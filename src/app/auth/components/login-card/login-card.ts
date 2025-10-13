@@ -14,6 +14,7 @@ import { DialogService } from '../../../shared/services/dialog.service';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { Router } from '@angular/router';
 import { UserDataService } from '../../services/userdata.service';
+import { UserStateService } from '../../../shared/services/user-state.service';
 
 @Component({
   selector: 'login-card',
@@ -33,6 +34,7 @@ export class LoginCard {
   private dialogService = inject(DialogService);
   private supabaseClient = inject(SupabaseService).supabase;
   private userDataService = inject(UserDataService);
+  private userStateService = inject(UserStateService);
   private router = inject(Router);
 
   form = inject(FormBuilder).nonNullable.group({
@@ -63,6 +65,9 @@ export class LoginCard {
 
     try {
       this.isLoading.set(true);
+
+      this.userStateService.clearUser();
+
       this.dialogService.showLoadingDialog();
 
       const { data, error } = await this.supabaseClient.auth.signInWithPassword(
@@ -106,6 +111,7 @@ export class LoginCard {
         );
 
         await this.supabaseClient.auth.signOut();
+        this.userStateService.clearUser();
         return;
       }
       if (!role) {
@@ -115,35 +121,37 @@ export class LoginCard {
         );
         return;
       }
-      const dialogRef = this.dialogService.showSuccessDialog(
+
+      this.userStateService.setUser(usuario);
+
+      let target = '/login';
+      switch (role) {
+        case 'Administrador':
+          target = '/users/admin';
+          break;
+        case 'Conductor':
+          target = '/users/bus-driver';
+          break;
+        case 'Personal':
+          target = '/users/staff';
+          break;
+        case 'Visitante':
+          target = '/users/visitant';
+          break;
+      }
+
+      const loadingRef = this.dialogService.showLoadingDialog();
+
+      await this.router.navigate([target]);
+
+      this.dialogService.closeLoadingDialog();
+
+      this.form.reset();
+
+      this.dialogService.showSuccessDialog(
         `¡Bienvenido! Has iniciado sesión correctamente.`,
         'Inicio de Sesión Exitoso'
       );
-
-      dialogRef.afterClosed().subscribe(() => {
-        const redirectDialog = this.dialogService.showLoadingDialog();
-
-        let target = '/login';
-        switch (role) {
-          case 'Administrador':
-            target = '/users/admin';
-            break;
-          case 'Conductor':
-            target = '/users/bus-driver';
-            break;
-          case 'Personal':
-            target = '/users/staff';
-            break;
-          case 'Visitante':
-            target = '/users/visitant';
-            break;
-        }
-
-        this.router.navigate([target]).then(() => {
-          redirectDialog.close();
-          this.form.reset();
-        });
-      });
     } catch (error: any) {
       console.error('Error inesperado:', error);
       this.dialogService.closeAll();

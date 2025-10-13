@@ -110,7 +110,6 @@ export class AvailableReturns implements OnInit {
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
-      // Obtener la asignación activa del usuario
       const { data: asignacionDestino, error: asignacionDestinoError } =
         await this.supabaseService.supabase
           .from('asignacion_destino')
@@ -124,7 +123,6 @@ export class AvailableReturns implements OnInit {
         return;
       }
 
-      // Obtener SOLO los viajes donde el usuario tiene reserva activa
       const { data: reservasActivas, error: reservasError } =
         await this.supabaseService.supabase
           .from('asignaciondestino_planificacionviaje')
@@ -139,19 +137,17 @@ export class AvailableReturns implements OnInit {
       }
 
       if (!reservasActivas || reservasActivas.length === 0) {
-        // No tiene reservas activas, no mostrar retornos
         this.retornos.set([]);
         return;
       }
 
-      // Obtener los IDs de planificación donde tiene reserva
       const idsViajesConReserva = reservasActivas.map((r) => r.idplanificacion);
 
-      // Obtener los retornos asociados a esos viajes
       const { data: retornosData, error: retornosError } =
         await this.supabaseService.supabase
           .from('retorno_viaje')
-          .select(`
+          .select(
+            `
             idplanificacion_retorno,
             planificacion_viaje!retorno_idplanificacion_retorno_fkey(
               idplanificacion,
@@ -164,7 +160,8 @@ export class AvailableReturns implements OnInit {
                 vehiculo(nroasientos)
               )
             )
-          `)
+          `
+          )
           .in('idplanificacion_ida', idsViajesConReserva)
           .eq('estado', 'activo');
 
@@ -174,7 +171,6 @@ export class AvailableReturns implements OnInit {
         return;
       }
 
-      // Mapear los retornos
       const retornosFiltrados = (retornosData || [])
         .filter((item: any) => item.planificacion_viaje)
         .map((item: any) => {

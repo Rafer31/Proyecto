@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { DialogService } from '../../../shared/services/dialog.service';
 import { UserDataService } from '../../services/userdata.service';
+import { UserStateService } from '../../../shared/services/user-state.service';
 
 @Component({
   selector: 'app-change-password',
@@ -29,6 +30,7 @@ export default class ChangePassword {
   private router = inject(Router);
   private dialogService = inject(DialogService);
   private userDataService = inject(UserDataService);
+  private userStateService = inject(UserStateService);
 
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
@@ -54,11 +56,14 @@ export default class ChangePassword {
     const { password } = this.form.value;
 
     this.isLoading.set(true);
-    const loadingRef = this.dialogService.showLoadingDialog();
+
 
     try {
       const { error } = await this.supabase.auth.updateUser({
         password: password!,
+        data: {
+          needs_password_change: false,
+        },
       });
       this.dialogService.closeLoadingDialog();
 
@@ -67,7 +72,6 @@ export default class ChangePassword {
         await this.dialogService.showErrorDialog(error.message, 'Error');
         return;
       }
-
 
       const {
         data: { user },
@@ -83,13 +87,28 @@ export default class ChangePassword {
         return;
       }
 
-
       const usuario = await this.userDataService.getUserByAuthId(user.id);
+
+      this.userStateService.clearUser();
+      if (usuario) {
+        this.userStateService.setUser(usuario);
+      }
+
+      await this.dialogService.showSuccessDialog(
+        'Contraseña actualizada correctamente',
+        'Éxito'
+      );
 
       if (!usuario) {
         this.router.navigate(['/register-user']);
       } else {
-        switch (usuario.rol) {
+        const userRoleObj = Array.isArray(usuario.roles)
+          ? usuario.roles[0]
+          : usuario.roles;
+
+        const userRole = userRoleObj?.nomrol;
+
+        switch (userRole) {
           case 'Administrador':
             this.router.navigate(['/users/admin']);
             break;
@@ -106,11 +125,6 @@ export default class ChangePassword {
             this.router.navigate(['/login']);
         }
       }
-
-      await this.dialogService.showSuccessDialog(
-        'Contraseña actualizada correctamente',
-        'Éxito'
-      );
     } finally {
       this.isLoading.set(false);
     }

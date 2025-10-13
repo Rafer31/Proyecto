@@ -186,14 +186,12 @@ export class AssignedTrips implements OnInit {
 
   formatearHora(hora: string): string {
     if (!hora) return '--:--';
-    
-    // Si viene en formato HH:MM:SS, extraer solo HH:MM
+
     if (hora.includes(':') && !hora.includes('T')) {
       const partes = hora.split(':');
       return `${partes[0]}:${partes[1]}`;
     }
-    
-    // Si viene en formato ISO (con fecha), convertir
+
     try {
       const date = new Date(hora);
       return date.toLocaleTimeString('es-ES', {

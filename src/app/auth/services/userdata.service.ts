@@ -36,7 +36,13 @@ export class UserDataService {
   async getUserByAuthId(authId: string) {
     const { data, error } = await this.supabaseClient
       .from('usuario')
-      .select('*')
+      .select(`
+        *,
+        roles!usuario_idrol_fkey(idrol, nomrol),
+        personal(nroficha, operacion, idusuario, asignacion_destino(idasignaciondestino, fechainicio, fechafin, observacion, nroficha, destino:iddestino(iddestino, nomdestino))),
+        visitante(idvisitante, idusuario, informacion),
+        conductor(idconductor, idusuario)
+      `)
       .eq('auth_id', authId)
       .maybeSingle();
 
@@ -139,7 +145,13 @@ export class UserDataService {
     try {
       const { data: usuario, error } = await this.supabaseClient
         .from('usuario')
-        .select('*')
+        .select(`
+          *,
+          roles!usuario_idrol_fkey(idrol, nomrol),
+          personal(nroficha, operacion, idusuario, asignacion_destino(idasignaciondestino, fechainicio, fechafin, observacion, nroficha, destino:iddestino(iddestino, nomdestino))),
+          visitante(idvisitante, idusuario, informacion),
+          conductor(idconductor, idusuario)
+        `)
         .eq('auth_id', authId)
         .maybeSingle();
 

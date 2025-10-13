@@ -3,6 +3,38 @@
   min-height: 400px;
 }
 
+.template-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+
+  button {
+    flex-shrink: 0;
+  }
+
+  .hint-text {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #555;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    align-items: flex-start;
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

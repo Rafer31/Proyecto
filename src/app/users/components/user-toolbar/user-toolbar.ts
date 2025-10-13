@@ -6,6 +6,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavStateService } from '../../../shared/services/nav-state.service';
 import { SupabaseService } from '../../../shared/services/supabase.service';
+import { UserStateService } from '../../../shared/services/user-state.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { Router } from '@angular/router';
@@ -27,6 +28,7 @@ export class UserToolbar {
   private dialog = inject(MatDialog);
   private readonly nav = inject(NavStateService);
   private supabaseService = inject(SupabaseService);
+  private userStateService = inject(UserStateService);
   private router = inject(Router);
   appTitle = input<string>('Mi App');
   userName = input<string>('Usuario');
@@ -55,6 +57,9 @@ export class UserToolbar {
 
       if (result) {
         await this.supabaseService.supabase.auth.signOut();
+
+        this.userStateService.clearUser();
+
         this.router.navigate(['/login']);
       }
     } finally {

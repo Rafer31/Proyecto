@@ -45,7 +45,14 @@ export default class AuthCallback {
     if (!usuario) {
       this.router.navigate(['/register-user']);
     } else {
-      switch (usuario.rol) {
+
+      const userRoleObj = Array.isArray(usuario.roles)
+        ? usuario.roles[0]
+        : usuario.roles;
+
+      const userRole = userRoleObj?.nomrol;
+
+      switch (userRole) {
         case 'Administrador':
           this.router.navigate(['/users/admin']);
           break;

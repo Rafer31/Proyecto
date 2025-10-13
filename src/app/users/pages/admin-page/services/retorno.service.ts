@@ -162,6 +162,7 @@ export class RetornoService {
         )
       `
       )
+      .is('horarealllegada', null) // Filtrar viajes completados
       .order('fechapartida', { ascending: true });
 
     if (errorViajes) throw errorViajes;

@@ -2,9 +2,11 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatTabsModule } from '@angular/material/tabs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Emptystate } from '../../../../components/emptystate/emptystate';
 import { TripPlanningService } from '../../services/trip-planning.service';
 import { RetornoService } from '../../services/retorno.service';
+import { ExcelReportService } from '../../../../../shared/services/excel-report.service';
 import { PlanningCardComponent } from './components/planning-card/planning-card';
 import { RegisterTripDialog } from './components/register-planning/register-planning';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,6 +14,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { EditTripDialog } from './components/edit-trip-dialog/edit-trip-dialog';
 import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dialog';
 import { SeatsDialog } from './components/seats-dialog/seats-dialog';
+import { SaveTemplateDialog } from './components/save-template-dialog/save-template-dialog';
+import { CreateFromTemplateDialog } from './components/create-from-template-dialog/create-from-template-dialog';
 
 interface ViajeCard {
   idviaje: string;
@@ -46,6 +50,8 @@ export class TripPlanningPage implements OnInit {
   private dialog = inject(MatDialog);
   private tripService = inject(TripPlanningService);
   private retornoService = inject(RetornoService);
+  private excelReportService = inject(ExcelReportService);
+  private snackBar = inject(MatSnackBar);
 
   async ngOnInit() {
     await this.cargarDatos();
@@ -105,6 +111,19 @@ export class TripPlanningPage implements OnInit {
 
   openRegisterDialog() {
     const dialogRef = this.dialog.open(RegisterTripDialog, { width: '700px' });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result?.viaje) {
+        await this.cargarDatos();
+      }
+    });
+  }
+
+  openCreateFromTemplateDialog() {
+    const dialogRef = this.dialog.open(CreateFromTemplateDialog, {
+      width: '800px',
+      maxHeight: '90vh',
+    });
 
     dialogRef.afterClosed().subscribe(async (result) => {
       if (result?.viaje) {
@@ -253,5 +272,71 @@ export class TripPlanningPage implements OnInit {
         this.actualizarAsientosDisponibles(idviaje);
       }
     });
+  }
+
+  async guardarComoPlantilla(idviaje: string) {
+    try {
+      const viaje = await this.tripService.getViaje(idviaje);
+
+      if (!viaje) {
+        this.snackBar.open(
+          'Error: No se pudo obtener los datos del viaje',
+          'Cerrar',
+          {
+            duration: 3000,
+          }
+        );
+        return;
+      }
+
+      const cve = Array.isArray(viaje.vehiculo)
+        ? viaje.vehiculo[0]
+        : viaje.vehiculo;
+
+      const destino = Array.isArray(viaje.destino)
+        ? viaje.destino[0]
+        : viaje.destino;
+
+      const dialogRef = this.dialog.open(SaveTemplateDialog, {
+        width: '600px',
+        data: {
+          idplanificacion: idviaje,
+          destino: destino?.iddestino,
+          conductor: cve?.conductor,
+          vehiculo: cve?.vehiculo,
+          empresa: cve?.empresa,
+          horapartida: viaje.horapartida,
+        },
+      });
+
+      dialogRef.afterClosed().subscribe((saved) => {
+        if (saved) {
+        }
+      });
+    } catch (error) {
+      console.error('Error al preparar datos para plantilla:', error);
+      this.snackBar.open('Error al obtener datos del viaje', 'Cerrar', {
+        duration: 3000,
+      });
+    }
+  }
+
+  async exportarReporteViaje(idviaje: string) {
+    try {
+      this.snackBar.open('Generando reporte...', 'Cerrar', {
+        duration: 2000,
+      });
+
+      await this.excelReportService.generateTripReport(idviaje);
+
+      this.snackBar.open('Reporte generado exitosamente', 'Cerrar', {
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error al generar reporte:', error);
+      this.snackBar.open('Error al generar el reporte', 'Cerrar', {
+        duration: 3000,
+      });
+    }
   }
 }

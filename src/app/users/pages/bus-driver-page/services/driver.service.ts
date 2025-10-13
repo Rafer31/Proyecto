@@ -1,5 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { SupabaseService } from '../../../../shared/services/supabase.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 export interface ViajeAsignado {
   idplanificacion: string;
@@ -33,12 +34,9 @@ export interface PasajeroViaje {
 @Injectable({ providedIn: 'root' })
 export class DriverService {
   private supabase = inject(SupabaseService).supabase;
+  private notificationService = inject(NotificationService);
 
-  /**
-   * Obtener los viajes asignados al conductor actual
-   */
   async getViajesAsignados(idusuario: string): Promise<ViajeAsignado[]> {
-    // 1. Obtener el conductor por idusuario
     const { data: conductorData, error: conductorError } = await this.supabase
       .from('conductor')
       .select('idconductor')
@@ -49,7 +47,6 @@ export class DriverService {
       throw new Error('No se encontró información del conductor');
     }
 
-    // 2. Obtener las asignaciones activas del conductor (CVE)
     const { data: cveData, error: cveError } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .select(
@@ -73,7 +70,6 @@ export class DriverService {
       return [];
     }
 
-    // 3. Obtener las planificaciones de viajes para estas asignaciones
     const idsCVE = cveData.map((cve) => cve.idconductorvehiculoempresa);
     const { data: viajesData, error: viajesError } = await this.supabase
       .from('planificacion_viaje')
@@ -98,7 +94,6 @@ export class DriverService {
       throw new Error('Error al obtener planificaciones de viajes');
     }
 
-    // 4. Construir el array de viajes asignados
     const viajes: ViajeAsignado[] = [];
 
     for (const viaje of viajesData || []) {
@@ -115,7 +110,6 @@ export class DriverService {
         ? viaje.destino[0]
         : viaje.destino;
 
-      // Contar asientos ocupados
       const asientosOcupados = await this.contarAsientosOcupados(
         viaje.idplanificacion
       );
@@ -143,12 +137,7 @@ export class DriverService {
     return viajes;
   }
 
-  /**
-   * Obtener lista de pasajeros de un viaje específico
-   */
-  async getPasajerosViaje(
-    idplanificacion: string
-  ): Promise<PasajeroViaje[]> {
+  async getPasajerosViaje(idplanificacion: string): Promise<PasajeroViaje[]> {
     const [personal, visitantes] = await Promise.all([
       this.getPasajerosPersonal(idplanificacion),
       this.getPasajerosVisitantes(idplanificacion),
@@ -255,23 +244,18 @@ export class DriverService {
     return pasajeros;
   }
 
-  /**
-   * Marcar hora real de partida y cambiar estado a "viaje"
-   */
   async marcarHoraPartida(
     idplanificacion: string,
     idconductorvehiculoempresa: string
   ): Promise<void> {
-    // Obtener solo la hora en formato HH:MM:SS
     const ahora = new Date();
-    const horaActual = ahora.toLocaleTimeString('en-GB', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
+    const horaActual = ahora.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
       second: '2-digit',
-      hour12: false 
+      hour12: false,
     });
 
-    // 1. Actualizar hora real de partida en planificacion_viaje
     const { error: errorViaje } = await this.supabase
       .from('planificacion_viaje')
       .update({ horarealpartida: horaActual })
@@ -281,7 +265,6 @@ export class DriverService {
       throw new Error('Error al actualizar hora de partida');
     }
 
-    // 2. Cambiar estado de CVE a "viaje"
     const { error: errorCVE } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .update({ estado: 'viaje' })
@@ -292,23 +275,31 @@ export class DriverService {
     }
   }
 
-  /**
-   * Marcar hora real de llegada y cambiar estado a "concluido"
-   */
   async marcarHoraLlegada(
     idplanificacion: string,
     idconductorvehiculoempresa: string
   ): Promise<void> {
-    // Obtener solo la hora en formato HH:MM:SS
+    const { data: viajeData } = await this.supabase
+      .from('planificacion_viaje')
+      .select('destino(nomdestino)')
+      .eq('idplanificacion', idplanificacion)
+      .single();
+
+    const destinoArray = viajeData?.destino
+      ? Array.isArray(viajeData.destino)
+        ? viajeData.destino[0]
+        : viajeData.destino
+      : null;
+    const nombreDestino = destinoArray?.nomdestino || 'su destino';
+
     const ahora = new Date();
-    const horaActual = ahora.toLocaleTimeString('en-GB', { 
-      hour: '2-digit', 
-      minute: '2-digit', 
+    const horaActual = ahora.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
       second: '2-digit',
-      hour12: false 
+      hour12: false,
     });
 
-    // 1. Actualizar hora real de llegada en planificacion_viaje
     const { error: errorViaje } = await this.supabase
       .from('planificacion_viaje')
       .update({ horarealllegada: horaActual })
@@ -318,7 +309,6 @@ export class DriverService {
       throw new Error('Error al actualizar hora de llegada');
     }
 
-    // 2. Cambiar estado de CVE a "concluido"
     const { error: errorCVE } = await this.supabase
       .from('conductor_vehiculo_empresa')
       .update({ estado: 'concluido' })
@@ -327,11 +317,17 @@ export class DriverService {
     if (errorCVE) {
       throw new Error('Error al finalizar el viaje');
     }
+
+    try {
+      await this.notificationService.schedulePostTripNotification(
+        idplanificacion,
+        nombreDestino
+      );
+    } catch (error) {
+      console.error('Error enviando notificación de finalización:', error);
+    }
   }
 
-  /**
-   * Marcar asistencia de un pasajero
-   */
   async marcarAsistencia(
     idplanificacion: string,
     idusuario: string,
@@ -341,7 +337,6 @@ export class DriverService {
     const nuevoEstado = asistio ? 'asistio' : 'inasistio';
 
     if (tipo === 'personal') {
-      // Obtener asignación del personal
       const { data: personalData } = await this.supabase
         .from('personal')
         .select('nroficha')
@@ -363,7 +358,6 @@ export class DriverService {
         throw new Error('No se encontró asignación activa');
       }
 
-      // Actualizar estado de reserva
       const { error } = await this.supabase
         .from('asignaciondestino_planificacionviaje')
         .update({ estado: nuevoEstado })
@@ -372,7 +366,6 @@ export class DriverService {
 
       if (error) throw error;
     } else {
-      // Para visitantes
       const { data: visitanteData } = await this.supabase
         .from('visitante')
         .select('idvisitante')
@@ -383,7 +376,6 @@ export class DriverService {
         throw new Error('No se encontró información del visitante');
       }
 
-      // Actualizar estado de reserva
       const { error } = await this.supabase
         .from('visitante_planificacionviaje')
         .update({ estado: nuevoEstado })
@@ -394,10 +386,9 @@ export class DriverService {
     }
   }
 
-  /**
-   * Obtener información del viaje por ID de planificación
-   */
-  async getViajeByPlanificacion(idplanificacion: string): Promise<ViajeAsignado | null> {
+  async getViajeByPlanificacion(
+    idplanificacion: string
+  ): Promise<ViajeAsignado | null> {
     const { data: viajeData, error: viajeError } = await this.supabase
       .from('planificacion_viaje')
       .select(
@@ -431,11 +422,13 @@ export class DriverService {
     const cveArray = Array.isArray(viajeData.conductor_vehiculo_empresa)
       ? viajeData.conductor_vehiculo_empresa[0]
       : viajeData.conductor_vehiculo_empresa;
-    
-    const vehiculoArray = cveArray?.vehiculo 
-      ? (Array.isArray(cveArray.vehiculo) ? cveArray.vehiculo[0] : cveArray.vehiculo)
+
+    const vehiculoArray = cveArray?.vehiculo
+      ? Array.isArray(cveArray.vehiculo)
+        ? cveArray.vehiculo[0]
+        : cveArray.vehiculo
       : null;
-    
+
     const destinoArray = Array.isArray(viajeData.destino)
       ? viajeData.destino[0]
       : viajeData.destino;
@@ -462,9 +455,6 @@ export class DriverService {
     };
   }
 
-  /**
-   * Contar asientos ocupados de un viaje
-   */
   private async contarAsientosOcupados(
     idplanificacion: string
   ): Promise<number> {

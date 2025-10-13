@@ -1,1 +1,8 @@
-<router-outlet/>
+@if (isRedirecting()) {
+  <div class="redirecting-container">
+    <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+    <p>Redirigiendo...</p>
+  </div>
+} @else {
+  <router-outlet/>
+}

@@ -12,10 +12,16 @@
 
     <div class="header mt-6">
       <h1 class="text-2xl font-bold">Planificación de los viajes</h1>
-      <button mat-flat-button color="primary" (click)="openRegisterDialog()">
-        <mat-icon>add</mat-icon>
-        Planificar viaje
-      </button>
+      <div class="header-actions">
+        <button mat-stroked-button color="accent" (click)="openCreateFromTemplateDialog()">
+          <mat-icon>bookmark</mat-icon>
+          Crear desde Plantilla
+        </button>
+        <button mat-flat-button color="primary" (click)="openRegisterDialog()">
+          <mat-icon>add</mat-icon>
+          Planificar viaje
+        </button>
+      </div>
     </div>
 
     @if (loading()) {
@@ -43,6 +49,8 @@
         (editar)="editarViaje(trip.idviaje)"
         (eliminar)="eliminarViaje(trip.idviaje)"
         (actualizarAsientos)="actualizarAsientosDisponibles($event)"
+        (guardarPlantilla)="guardarComoPlantilla($event)"
+        (exportarReporte)="exportarReporteViaje($event)"
       ></app-planning-card>
       }
     </div>
@@ -83,6 +91,8 @@
         (editar)="editarViaje(retorno.idviaje)"
         (eliminar)="eliminarViaje(retorno.idviaje)"
         (actualizarAsientos)="actualizarAsientosDisponibles($event)"
+        (guardarPlantilla)="guardarComoPlantilla($event)"
+        (exportarReporte)="exportarReporteViaje($event)"
       ></app-planning-card>
       }
     </div>

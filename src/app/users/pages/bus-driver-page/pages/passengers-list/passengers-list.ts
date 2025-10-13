@@ -1,4 +1,11 @@
-import { Component, inject, OnInit, signal, computed, HostListener } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  signal,
+  computed,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
@@ -11,8 +18,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatBottomSheet } from '@angular/material/bottom-sheet';
-import { DriverService, PasajeroViaje, ViajeAsignado } from '../../services/driver.service';
+import { MatDialog } from '@angular/material/dialog';
+import {
+  DriverService,
+  PasajeroViaje,
+  ViajeAsignado,
+} from '../../services/driver.service';
 import { PassengerDetailSheet } from './components/passenger-detail-sheet/passenger-detail-sheet';
+import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dialog';
 
 interface AsientoInfo {
   numero: number;
@@ -43,6 +56,7 @@ export class PassengersList implements OnInit {
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private bottomSheet = inject(MatBottomSheet);
+  private dialog = inject(MatDialog);
 
   idplanificacion = signal<string>('');
   pasajeros = signal<PasajeroViaje[]>([]);
@@ -56,14 +70,13 @@ export class PassengersList implements OnInit {
     this.checkIfMobile();
   }
 
-  // Computed para generar el mapa de asientos
   asientos = computed<AsientoInfo[]>(() => {
     const total = this.totalAsientos();
     const pasajerosList = this.pasajeros();
     const asientosMap: AsientoInfo[] = [];
 
     for (let i = 1; i <= total; i++) {
-      const pasajero = pasajerosList.find(p => p.asiento === i);
+      const pasajero = pasajerosList.find((p) => p.asiento === i);
       asientosMap.push({
         numero: i,
         ocupado: !!pasajero,
@@ -94,18 +107,16 @@ export class PassengersList implements OnInit {
   private async cargarDatos() {
     try {
       this.cargando.set(true);
-      
-      // Cargar pasajeros
+
       const pasajeros = await this.driverService.getPasajerosViaje(
         this.idplanificacion()
       );
       this.pasajeros.set(pasajeros);
 
-      // Obtener el viaje para saber el total de asientos
       const viaje = await this.driverService.getViajeByPlanificacion(
         this.idplanificacion()
       );
-      
+
       if (viaje) {
         this.totalAsientos.set(viaje.vehiculo.nroasientos);
       }
@@ -119,10 +130,9 @@ export class PassengersList implements OnInit {
     }
   }
 
-  seleccionarAsiento(asiento: AsientoInfo) {
+  verDetallesPasajero(asiento: AsientoInfo) {
     if (asiento.ocupado && asiento.pasajero) {
       if (this.isMobile()) {
-        // En móvil, abrir bottom sheet
         this.bottomSheet.open(PassengerDetailSheet, {
           data: {
             pasajero: asiento.pasajero,
@@ -132,10 +142,18 @@ export class PassengersList implements OnInit {
           },
         });
       } else {
-        // En desktop, mostrar en el sidebar
         this.pasajeroSeleccionado.set(asiento.pasajero);
       }
     }
+  }
+
+  getNombreCorto(pasajero: PasajeroViaje): string {
+    const partes = pasajero.nombre.split(' ');
+    if (partes.length <= 2) {
+      return pasajero.nombre;
+    }
+
+    return `${partes[0]} ${partes[partes.length - 2]}`;
   }
 
   cerrarDetalle() {
@@ -143,6 +161,23 @@ export class PassengersList implements OnInit {
   }
 
   async marcarAsistencia(pasajero: PasajeroViaje, asistio: boolean) {
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      data: {
+        title: asistio ? 'Confirmar Asistencia' : 'Confirmar Inasistencia',
+        message: asistio
+          ? `¿Está seguro que desea marcar a ${pasajero.nombre} como asistió?`
+          : `¿Está seguro que desea marcar a ${pasajero.nombre} como inasistió?`,
+        confirmText: 'Confirmar',
+        cancelText: 'Cancelar',
+      },
+    });
+
+    const confirmed = await dialogRef.afterClosed().toPromise();
+
+    if (!confirmed) {
+      return;
+    }
+
     try {
       await this.driverService.marcarAsistencia(
         this.idplanificacion(),
@@ -156,7 +191,11 @@ export class PassengersList implements OnInit {
         : `${pasajero.nombre} marcado como inasistió`;
 
       this.snackBar.open(mensaje, 'Cerrar', { duration: 2000 });
+
       this.pasajeroSeleccionado.set(null);
+
+      this.bottomSheet.dismiss();
+
       await this.cargarDatos();
     } catch (error) {
       console.error('Error marcando asistencia:', error);
@@ -192,6 +231,17 @@ export class PassengersList implements OnInit {
     }
   }
 
+  getTextoEstadoCorto(estado: string): string {
+    switch (estado) {
+      case 'asistio':
+        return 'Asistió';
+      case 'inasistio':
+        return 'No asistió';
+      default:
+        return 'Pendiente';
+    }
+  }
+
   getTipoBadge(tipo: string): string {
     return tipo === 'personal' ? 'Personal' : 'Visitante';
   }
@@ -199,7 +249,7 @@ export class PassengersList implements OnInit {
   getClaseAsiento(asiento: AsientoInfo): string {
     if (!asiento.ocupado) return 'libre';
     if (!asiento.pasajero) return 'libre';
-    
+
     switch (asiento.pasajero.estadoAsistencia) {
       case 'asistio':
         return 'asistio';
@@ -213,7 +263,7 @@ export class PassengersList implements OnInit {
   getIconoAsiento(asiento: AsientoInfo): string {
     if (!asiento.ocupado) return 'event_seat';
     if (!asiento.pasajero) return 'event_seat';
-    
+
     switch (asiento.pasajero.estadoAsistencia) {
       case 'asistio':
         return 'check_circle';
@@ -222,12 +272,5 @@ export class PassengersList implements OnInit {
       default:
         return 'person';
     }
-  }
-
-  getTooltip(asiento: AsientoInfo): string {
-    if (!asiento.ocupado) return `Asiento ${asiento.numero} - Libre`;
-    if (!asiento.pasajero) return `Asiento ${asiento.numero} - Libre`;
-    
-    return `Asiento ${asiento.numero} - ${asiento.pasajero.nombre}`;
   }
 }

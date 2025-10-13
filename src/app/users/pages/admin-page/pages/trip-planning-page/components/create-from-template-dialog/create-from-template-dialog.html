@@ -1,0 +1,327 @@
+<div class="dialog-container">
+  @if (!selectedTemplate()) {
+    <!-- Lista de Plantillas -->
+    <h2 mat-dialog-title>Seleccionar Plantilla</h2>
+
+    <mat-dialog-content>
+      <div class="search-container">
+        <mat-form-field appearance="outline" class="search-field mt-5">
+          <mat-label>Buscar plantilla</mat-label>
+          <input matInput [(ngModel)]="searchTerm" placeholder="Nombre de la plantilla..." />
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
+
+      @if (loading()) {
+        <div class="loading-container">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p>Cargando plantillas...</p>
+        </div>
+      } @else if (filteredTemplates().length === 0) {
+        <div class="empty-state">
+          <mat-icon>bookmark_border</mat-icon>
+          <p>No hay plantillas disponibles</p>
+          <span>Crea una plantilla desde un viaje existente</span>
+        </div>
+      } @else {
+        <div class="templates-list">
+          @for (template of filteredTemplates(); track trackByTemplate($index, template)) {
+            <div class="template-card" (click)="selectTemplate(template)">
+              <div class="template-header">
+                <h3>{{ template.nombreplantilla }}</h3>
+                <span class="usage-badge">{{ template.vecesusado }} usos</span>
+              </div>
+
+              @if (template.descripcion) {
+                <p class="template-description">{{ template.descripcion }}</p>
+              }
+
+              <div class="template-details">
+                <div class="detail-item">
+                  <mat-icon>person</mat-icon>
+                  <span>
+                    @if (template.conductor?.usuario) {
+                      {{ template.conductor?.usuario?.nomusuario }} {{ template.conductor?.usuario?.patusuario }}
+                    }
+                  </span>
+                </div>
+
+                <div class="detail-item">
+                  <mat-icon>directions_bus</mat-icon>
+                  <span>
+                    @if (template.vehiculo) {
+                      {{ template.vehiculo.nroplaca }} - {{ template.vehiculo.tipovehiculo }}
+                    }
+                  </span>
+                </div>
+
+                <div class="detail-item">
+                  <mat-icon>business</mat-icon>
+                  <span>
+                    @if (template.empresa) {
+                      {{ template.empresa.nomempresa }}
+                    }
+                  </span>
+                </div>
+
+                <div class="detail-item">
+                  <mat-icon>place</mat-icon>
+                  <span>
+                    @if (template.destino) {
+                      {{ template.destino.nomdestino }}
+                    }
+                  </span>
+                </div>
+
+                @if (template.horapartida_default) {
+                  <div class="detail-item">
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ template.horapartida_default }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="onCancel()">Cancelar</button>
+    </mat-dialog-actions>
+  } @else {
+    <!-- Confirmación con Fechas -->
+    <h2 mat-dialog-title>
+      <button mat-icon-button (click)="goBack()" [disabled]="creating()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      Crear Viaje desde Plantilla
+    </h2>
+
+    <mat-dialog-content>
+      <div class="confirmation-container">
+        <div class="info-section">
+          <h3>Información de la Plantilla</h3>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Conductor:</label>
+              <span>
+                @if (selectedTemplate()?.conductor?.usuario) {
+                  {{ selectedTemplate()!.conductor!.usuario.nomusuario }}
+                  {{ selectedTemplate()!.conductor!.usuario.patusuario }}
+                  {{ selectedTemplate()!.conductor!.usuario.matusuario }}
+                }
+              </span>
+            </div>
+
+            <div class="info-item">
+              <label>Vehículo:</label>
+              <span>
+                @if (selectedTemplate()?.vehiculo) {
+                  {{ selectedTemplate()!.vehiculo!.nroplaca }} -
+                  {{ selectedTemplate()!.vehiculo!.tipovehiculo }}
+                  ({{ selectedTemplate()!.vehiculo!.nroasientos }} asientos)
+                }
+              </span>
+            </div>
+
+            <div class="info-item">
+              <label>Empresa:</label>
+              <span>
+                @if (selectedTemplate()?.empresa) {
+                  {{ selectedTemplate()!.empresa!.nomempresa }}
+                }
+              </span>
+            </div>
+
+            <div class="info-item">
+              <label>Destino:</label>
+              <span>
+                @if (selectedTemplate()?.destino) {
+                  {{ selectedTemplate()!.destino!.nomdestino }}
+                }
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Configure las Fechas y Horario - Viaje de Ida</h3>
+
+          <form [formGroup]="tripForm">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Fecha Partida</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="picker1"
+                  formControlName="fechapartida"
+                  required
+                />
+                <mat-datepicker-toggle matSuffix [for]="picker1"></mat-datepicker-toggle>
+                <mat-datepicker #picker1></mat-datepicker>
+                @if (tripForm.get('fechapartida')?.hasError('required')) {
+                  <mat-error>Requerido</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="form-field">
+                <mat-label>Fecha Llegada</mat-label>
+                <input
+                  matInput
+                  [matDatepicker]="picker2"
+                  formControlName="fechallegada"
+                  required
+                />
+                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                <mat-datepicker #picker2></mat-datepicker>
+                @if (tripForm.get('fechallegada')?.hasError('fechaLlegadaMenor')) {
+                  <mat-error>Fecha inválida</mat-error>
+                }
+              </mat-form-field>
+            </div>
+
+            <div class="turno-section">
+              <label class="section-label">Turno</label>
+              <div class="checkbox-group">
+                @for (turno of turnos; track trackByTurno($index, turno)) {
+                  <mat-checkbox
+                    [checked]="isTurnoSeleccionado(turno.value)"
+                    (change)="toggleTurno(turno.value, $event.checked)"
+                  >
+                    {{ turno.label }}
+                  </mat-checkbox>
+                }
+              </div>
+            </div>
+
+            <mat-form-field appearance="outline" class="form-field-full">
+              <mat-label>Hora de Partida</mat-label>
+              <mat-select formControlName="horapartida" required>
+                @for (hora of horasFiltradas(); track trackByHora($index, hora)) {
+                  <mat-option [value]="hora">{{ hora }}</mat-option>
+                }
+              </mat-select>
+              @if (tripForm.get('horapartida')?.hasError('required')) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+          </form>
+        </div>
+
+        <div class="retorno-toggle">
+          <mat-checkbox
+            [checked]="crearRetorno()"
+            (change)="crearRetorno.set($event.checked)"
+          >
+            <strong>Programar viaje de retorno</strong>
+          </mat-checkbox>
+        </div>
+
+        @if (crearRetorno()) {
+          <div class="form-section retorno-section">
+            <div class="retorno-header-section">
+              <mat-icon>keyboard_return</mat-icon>
+              <h3>Configure las Fechas y Horario - Viaje de Retorno</h3>
+            </div>
+
+            <form [formGroup]="retornoForm">
+              <mat-form-field appearance="outline" class="form-field-full">
+                <mat-label>Destino de Retorno</mat-label>
+                <mat-select formControlName="iddestino" required>
+                  @for (destino of destinos(); track trackByDestino($index, destino)) {
+                    <mat-option [value]="destino.iddestino">{{ destino.nomdestino }}</mat-option>
+                  }
+                </mat-select>
+                @if (retornoForm.get('iddestino')?.hasError('required')) {
+                  <mat-error>Requerido</mat-error>
+                }
+              </mat-form-field>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Fecha Partida</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="pickerR1"
+                    formControlName="fechapartida"
+                    required
+                  />
+                  <mat-datepicker-toggle matSuffix [for]="pickerR1"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerR1></mat-datepicker>
+                  @if (retornoForm.get('fechapartida')?.hasError('required')) {
+                    <mat-error>Requerido</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="form-field">
+                  <mat-label>Fecha Llegada</mat-label>
+                  <input
+                    matInput
+                    [matDatepicker]="pickerR2"
+                    formControlName="fechallegada"
+                    required
+                  />
+                  <mat-datepicker-toggle matSuffix [for]="pickerR2"></mat-datepicker-toggle>
+                  <mat-datepicker #pickerR2></mat-datepicker>
+                  @if (retornoForm.get('fechallegada')?.hasError('fechaLlegadaMenor')) {
+                    <mat-error>Fecha inválida</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+
+              <div class="turno-section">
+                <label class="section-label">Turno</label>
+                <div class="checkbox-group">
+                  @for (turno of turnos; track trackByTurno($index, turno)) {
+                    <mat-checkbox
+                      [checked]="isTurnoSeleccionadoRetorno(turno.value)"
+                      (change)="toggleTurnoRetorno(turno.value, $event.checked)"
+                    >
+                      {{ turno.label }}
+                    </mat-checkbox>
+                  }
+                </div>
+              </div>
+
+              <mat-form-field appearance="outline" class="form-field-full">
+                <mat-label>Hora de Partida</mat-label>
+                <mat-select formControlName="horapartida" required>
+                  @for (hora of horasFiltradasRetorno(); track trackByHora($index, hora)) {
+                    <mat-option [value]="hora">{{ hora }}</mat-option>
+                  }
+                </mat-select>
+                @if (retornoForm.get('horapartida')?.hasError('required')) {
+                  <mat-error>Requerido</mat-error>
+                }
+              </mat-form-field>
+            </form>
+          </div>
+        }
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button (click)="goBack()" [disabled]="creating()">
+        Volver
+      </button>
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="onConfirm()"
+        [disabled]="tripForm.invalid || creating()"
+      >
+        @if (creating()) {
+          <mat-spinner diameter="20"></mat-spinner>
+          Creando...
+        } @else {
+          <ng-container>
+            <mat-icon>check</mat-icon>
+            Crear Viaje
+          </ng-container>
+        }
+      </button>
+    </mat-dialog-actions>
+  }
+</div>

@@ -9,12 +9,17 @@ export class RegisterUserService {
 
   async registerUserFromAdmin(userData: any) {
     try {
+      // Usar la URL correcta dependiendo del entorno
+      const redirectUrl = window.location.hostname === 'localhost'
+        ? `${window.location.origin}/auth/callback`
+        : 'https://transporte-illapa.web.app/auth/callback';
+
       const { data: authData, error: authError } =
         await this.supabaseClient.auth.signUp({
           email: userData.email,
           password: 'temporal1234',
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: redirectUrl,
             data: {
               needs_password_change: true,
               created_from_admin: true,

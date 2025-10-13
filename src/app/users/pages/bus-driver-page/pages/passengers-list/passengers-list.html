@@ -42,16 +42,66 @@
 
         <div class="seats-grid">
           @for (asiento of asientos(); track asiento.numero) {
-            <button
+            <div
               class="seat"
               [class]="getClaseAsiento(asiento)"
-              [disabled]="!asiento.ocupado"
-              [matTooltip]="getTooltip(asiento)"
-              (click)="seleccionarAsiento(asiento)"
             >
-              <mat-icon class="seat-icon">{{ getIconoAsiento(asiento) }}</mat-icon>
-              <span class="seat-number">{{ asiento.numero }}</span>
-            </button>
+              <!-- Asiento libre -->
+              @if (!asiento.ocupado) {
+                <mat-icon class="seat-icon">event_seat</mat-icon>
+                <span class="seat-number">{{ asiento.numero }}</span>
+              }
+
+              <!-- Asiento ocupado -->
+              @if (asiento.ocupado && asiento.pasajero) {
+                <div class="seat-header">
+                  <span class="seat-number">{{ asiento.numero }}</span>
+                  <button
+                    mat-icon-button
+                    class="info-button"
+                    (click)="verDetallesPasajero(asiento)"
+                    [matTooltip]="'Ver detalles completos'"
+                  >
+                    <mat-icon>info</mat-icon>
+                  </button>
+                </div>
+
+                <div class="passenger-info">
+                  <mat-icon class="status-icon">{{ getIconoAsiento(asiento) }}</mat-icon>
+                  <span class="passenger-name">{{ getNombreCorto(asiento.pasajero) }}</span>
+                </div>
+
+                <!-- Botones de asistencia solo para estado reservado -->
+                @if (asiento.pasajero.estadoAsistencia === 'reservado') {
+                  <div class="attendance-buttons">
+                    <button
+                      mat-mini-fab
+                      color="primary"
+                      class="attendance-btn check-btn"
+                      (click)="marcarAsistencia(asiento.pasajero, true)"
+                      [matTooltip]="'Asistió'"
+                    >
+                      <mat-icon>check</mat-icon>
+                    </button>
+                    <button
+                      mat-mini-fab
+                      color="warn"
+                      class="attendance-btn cancel-btn"
+                      (click)="marcarAsistencia(asiento.pasajero, false)"
+                      [matTooltip]="'Inasistió'"
+                    >
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                } @else {
+                  <div class="estado-final-badge">
+                    <mat-chip [color]="getColorEstado(asiento.pasajero.estadoAsistencia)" highlighted>
+                      {{ getTextoEstadoCorto(asiento.pasajero.estadoAsistencia) }}
+                    </mat-chip>
+                  </div>
+                }
+              }
+            </div>
           }
         </div>
       </div>
