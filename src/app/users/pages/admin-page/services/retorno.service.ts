@@ -147,68 +147,68 @@ export class RetornoService {
   }
 
   async getViajesConRetorno(): Promise<ViajeConRetorno[]> {
-    const { data: viajes, error: errorViajes } = await this.supabase
-      .from('planificacion_viaje')
-      .select(
-        `
-        idplanificacion,
-        fechapartida,
-        fechallegada,
-        horapartida,
-        destino:destino(iddestino, nomdestino),
-        conductor_vehiculo_empresa!inner(
-          idconductorvehiculoempresa,
-          cantdisponibleasientos
-        )
+  const { data: viajes, error: errorViajes } = await this.supabase
+    .from('planificacion_viaje')
+    .select(
       `
+      idplanificacion,
+      fechapartida,
+      fechallegada,
+      horapartida,
+      horarealllegada,
+      destino:destino(iddestino, nomdestino),
+      conductor_vehiculo_empresa!inner(
+        idconductorvehiculoempresa,
+        cantdisponibleasientos
       )
-      .is('horarealllegada', null) // Filtrar viajes completados
-      .order('fechapartida', { ascending: true });
+    `
+    )
+    .is('horarealllegada', null)
+    .order('fechapartida', { ascending: true });
 
-    if (errorViajes) throw errorViajes;
+  if (errorViajes) throw errorViajes;
 
-    const { data: retornos, error: errorRetornos } = await this.supabase
-      .from('retorno_viaje')
-      .select('idplanificacion_ida, idplanificacion_retorno')
-      .eq('estado', 'activo');
+  const { data: retornos, error: errorRetornos } = await this.supabase
+    .from('retorno_viaje')
+    .select('idplanificacion_ida, idplanificacion_retorno')
+    .eq('estado', 'activo');
 
-    if (errorRetornos) throw errorRetornos;
+  if (errorRetornos) throw errorRetornos;
 
-    const retornoMap = new Map(
-      (retornos || []).map((r: any) => [
-        r.idplanificacion_ida,
-        r.idplanificacion_retorno,
-      ])
-    );
+  const retornoMap = new Map(
+    (retornos || []).map((r: any) => [
+      r.idplanificacion_ida,
+      r.idplanificacion_retorno,
+    ])
+  );
 
-    const idsRetornos = new Set(
-      (retornos || []).map((r: any) => r.idplanificacion_retorno)
-    );
+  const idsRetornos = new Set(
+    (retornos || []).map((r: any) => r.idplanificacion_retorno)
+  );
 
-    const viajesConRetorno: ViajeConRetorno[] = [];
+  const viajesConRetorno: ViajeConRetorno[] = [];
 
-    for (const viaje of viajes || []) {
-      if (idsRetornos.has(viaje.idplanificacion)) {
-        continue;
-      }
-
-      const idRetorno = retornoMap.get(viaje.idplanificacion);
-      let retorno = null;
-
-      if (idRetorno) {
-        retorno = viajes.find((v: any) => v.idplanificacion === idRetorno);
-      }
-
-      viajesConRetorno.push({
-        viaje,
-        retorno,
-        tieneRetorno: !!retorno,
-      });
+  for (const viaje of viajes || []) {
+    if (idsRetornos.has(viaje.idplanificacion)) {
+      continue;
     }
 
-    return viajesConRetorno;
+    const idRetorno = retornoMap.get(viaje.idplanificacion);
+    let retorno = null;
+
+    if (idRetorno) {
+      retorno = viajes.find((v: any) => v.idplanificacion === idRetorno);
+    }
+
+    viajesConRetorno.push({
+      viaje,
+      retorno,
+      tieneRetorno: !!retorno,
+    });
   }
 
+  return viajesConRetorno;
+}
   async getViajesDisponiblesPorDestinoConRetorno(
     iddestino: string
   ): Promise<ViajeConRetorno[]> {

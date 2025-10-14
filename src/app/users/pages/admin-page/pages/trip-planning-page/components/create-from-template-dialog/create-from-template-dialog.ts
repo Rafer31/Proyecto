@@ -19,7 +19,10 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { provideNativeDateAdapter } from '@angular/material/core';
-import { TripTemplateService, TripTemplate } from '../../../../../../../shared/services/trip-template.service';
+import {
+  TripTemplateService,
+  TripTemplate,
+} from '../../../../../../../shared/services/trip-template.service';
 import { TripPlanningService } from '../../../../services/trip-planning.service';
 import { UserStateService } from '../../../../../../../shared/services/user-state.service';
 import { MatIconModule } from '@angular/material/icon';
@@ -78,10 +81,7 @@ export class CreateFromTemplateDialog implements OnInit {
   horasFiltradasRetorno = signal<string[]>([]);
 
   async ngOnInit() {
-    await Promise.all([
-      this.loadTemplates(),
-      this.loadDestinos()
-    ]);
+    await Promise.all([this.loadTemplates(), this.loadDestinos()]);
     this.initializeForm();
   }
 
@@ -91,30 +91,42 @@ export class CreateFromTemplateDialog implements OnInit {
       this.destinos.set(destinos);
     } catch (error) {
       console.error('Error cargando destinos:', error);
-      this.snackBar.open('Error al cargar destinos', 'Cerrar', { duration: 3000 });
+      this.snackBar.open('Error al cargar destinos', 'Cerrar', {
+        duration: 3000,
+      });
     }
   }
 
   private initializeForm() {
     this.tripForm = this.fb.group({
       fechapartida: ['', Validators.required],
-      fechallegada: ['', [Validators.required, this.validarFechaLlegada.bind(this)]],
+      fechallegada: [
+        '',
+        [Validators.required, this.validarFechaLlegada.bind(this)],
+      ],
       horapartida: [{ value: '', disabled: true }, Validators.required],
     });
 
     this.retornoForm = this.fb.group({
       fechapartida: ['', Validators.required],
-      fechallegada: ['', [Validators.required, this.validarFechaLlegadaRetorno.bind(this)]],
+      fechallegada: [
+        '',
+        [Validators.required, this.validarFechaLlegadaRetorno.bind(this)],
+      ],
       horapartida: [{ value: '', disabled: true }, Validators.required],
       iddestino: ['', Validators.required],
     });
 
     this.tripForm.get('fechapartida')?.valueChanges.subscribe(() => {
-      this.tripForm.get('fechallegada')?.updateValueAndValidity({ emitEvent: false });
+      this.tripForm
+        .get('fechallegada')
+        ?.updateValueAndValidity({ emitEvent: false });
     });
 
     this.retornoForm.get('fechapartida')?.valueChanges.subscribe(() => {
-      this.retornoForm.get('fechallegada')?.updateValueAndValidity({ emitEvent: false });
+      this.retornoForm
+        .get('fechallegada')
+        ?.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -123,12 +135,16 @@ export class CreateFromTemplateDialog implements OnInit {
       this.loading.set(true);
       const currentUser = this.userState.currentUser();
       if (currentUser) {
-        const templates = await this.templateService.getMyTemplates(currentUser.idusuario);
+        const templates = await this.templateService.getMyTemplates(
+          currentUser.idusuario
+        );
         this.templates.set(templates);
       }
     } catch (error) {
       console.error('Error cargando plantillas:', error);
-      this.snackBar.open('Error al cargar plantillas', 'Cerrar', { duration: 3000 });
+      this.snackBar.open('Error al cargar plantillas', 'Cerrar', {
+        duration: 3000,
+      });
     } finally {
       this.loading.set(false);
     }
@@ -145,7 +161,6 @@ export class CreateFromTemplateDialog implements OnInit {
 
   selectTemplate(template: TripTemplate) {
     this.selectedTemplate.set(template);
-
 
     if (template.horapartida_default) {
       const hora = template.horapartida_default.substring(0, 5);
@@ -247,34 +262,50 @@ export class CreateFromTemplateDialog implements OnInit {
     const template = this.selectedTemplate();
     if (!template || this.tripForm.invalid) {
       this.tripForm.markAllAsTouched();
-      this.snackBar.open('Complete todos los campos requeridos del viaje de ida', 'Cerrar', {
-        duration: 3000,
-      });
+      this.snackBar.open(
+        'Complete todos los campos requeridos del viaje de ida',
+        'Cerrar',
+        {
+          duration: 3000,
+        }
+      );
       return;
     }
 
     if (this.crearRetorno() && this.retornoForm.invalid) {
       this.retornoForm.markAllAsTouched();
-      this.snackBar.open('Complete todos los campos requeridos del retorno', 'Cerrar', {
-        duration: 3000,
-      });
+      this.snackBar.open(
+        'Complete todos los campos requeridos del retorno',
+        'Cerrar',
+        {
+          duration: 3000,
+        }
+      );
       return;
     }
 
     const horaPartida = this.tripForm.get('horapartida');
     if (horaPartida?.disabled) {
-      this.snackBar.open('Debe seleccionar un turno para las horas de ida', 'Cerrar', {
-        duration: 3000,
-      });
+      this.snackBar.open(
+        'Debe seleccionar un turno para las horas de ida',
+        'Cerrar',
+        {
+          duration: 3000,
+        }
+      );
       return;
     }
 
     if (this.crearRetorno()) {
       const horaPartidaRetorno = this.retornoForm.get('horapartida');
       if (horaPartidaRetorno?.disabled) {
-        this.snackBar.open('Debe seleccionar un turno para las horas de retorno', 'Cerrar', {
-          duration: 3000,
-        });
+        this.snackBar.open(
+          'Debe seleccionar un turno para las horas de retorno',
+          'Cerrar',
+          {
+            duration: 3000,
+          }
+        );
         return;
       }
     }
@@ -284,14 +315,14 @@ export class CreateFromTemplateDialog implements OnInit {
     try {
       const formData = this.tripForm.value;
 
-
       const vehiculos = await this.tripService.getVehiculosDisponibles();
-      const vehiculo = vehiculos.find((v: any) => v.nroplaca === template.nroplaca);
+      const vehiculo = vehiculos.find(
+        (v: any) => v.nroplaca === template.nroplaca
+      );
 
       if (!vehiculo) {
         throw new Error('Vehículo no disponible');
       }
-
 
       const step1 = {
         idconductor: template.idconductor,
@@ -319,7 +350,6 @@ export class CreateFromTemplateDialog implements OnInit {
           iddestino: formDataRetorno.iddestino,
         };
 
-
         const resultado = await this.tripService.registrarViajeConRetorno(
           step1,
           step2,
@@ -343,17 +373,14 @@ export class CreateFromTemplateDialog implements OnInit {
         });
       }
 
-
       await this.templateService.incrementUsage(template.idplantilla);
 
       this.dialogRef.close({ viaje, viajeRetorno });
     } catch (error: any) {
       console.error('Error creando viaje:', error);
-      this.snackBar.open(
-        error.message || 'Error al crear el viaje',
-        'Cerrar',
-        { duration: 4000 }
-      );
+      this.snackBar.open(error.message || 'Error al crear el viaje', 'Cerrar', {
+        duration: 4000,
+      });
     } finally {
       this.creating.set(false);
     }
@@ -372,7 +399,9 @@ export class CreateFromTemplateDialog implements OnInit {
     this.crearRetorno.set(false);
   }
 
-  private validarFechaLlegada(control: AbstractControl): ValidationErrors | null {
+  private validarFechaLlegada(
+    control: AbstractControl
+  ): ValidationErrors | null {
     const fechaLlegada = control.value;
     const fechaPartida = control.parent?.get('fechapartida')?.value;
 
@@ -393,7 +422,9 @@ export class CreateFromTemplateDialog implements OnInit {
     return null;
   }
 
-  private validarFechaLlegadaRetorno(control: AbstractControl): ValidationErrors | null {
+  private validarFechaLlegadaRetorno(
+    control: AbstractControl
+  ): ValidationErrors | null {
     const fechaLlegada = control.value;
     const fechaPartida = control.parent?.get('fechapartida')?.value;
 

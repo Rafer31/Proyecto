@@ -1,17 +1,12 @@
 import { Routes } from '@angular/router';
 import { noAuthGuard, authGuard } from './auth/guards/auth.guard';
-import { changePasswordGuard } from './auth/guards/first-login.guard';
+import { changePasswordGuard, registrationStatusGuard } from './auth/guards/first-login.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('./auth/pages/login/login'),
     canActivate: [noAuthGuard],
-  },
-  {
-    path: 'users',
-    loadChildren: () => import('./users/users.routes'),
-    canActivate: [authGuard],
   },
   {
     path: 'auth/callback',
@@ -25,7 +20,12 @@ export const routes: Routes = [
   {
     path: 'register-user',
     loadComponent: () => import('./auth/pages/register-user/register-user'),
-    canActivate: [noAuthGuard],
+    canActivate: [authGuard, registrationStatusGuard],
+  },
+  {
+    path: 'users',
+    loadChildren: () => import('./users/users.routes'),
+    canActivate: [authGuard],
   },
   {
     path: '',
@@ -38,3 +38,5 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
 ];
+
+export default routes;

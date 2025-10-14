@@ -1,4 +1,11 @@
-import { Component, signal, inject, OnInit, computed } from '@angular/core';
+import {
+  Component,
+  signal,
+  inject,
+  OnInit,
+  computed,
+  OnDestroy,
+} from '@angular/core';
 import { UserToolbar } from '../../components/user-toolbar/user-toolbar';
 import { NavItem } from '../../../shared/interfaces/nav-item';
 import { UserSidenav } from '../../components/user-sidenav/user-sidenav';
@@ -8,6 +15,7 @@ import { RouterOutlet } from '@angular/router';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { UserDataService } from '../../../auth/services/userdata.service';
 import { UserStateService } from '../../../shared/services/user-state.service';
+import { PendingRatingsCheckerService } from '../../../shared/services/pending-ratings-checker.service';
 
 @Component({
   selector: 'app-admin-page',
@@ -21,14 +29,17 @@ import { UserStateService } from '../../../shared/services/user-state.service';
   templateUrl: './admin-page.html',
   styleUrl: './admin-page.scss',
 })
-export class AdminPage implements OnInit {
+export class AdminPage implements OnInit, OnDestroy {
   private supabaseService = inject(SupabaseService);
   private userDataService = inject(UserDataService);
   private userStateService = inject(UserStateService);
+  private pendingRatingsChecker = inject(PendingRatingsCheckerService);
 
   userName = this.userStateService.userName;
   isLoading = this.userStateService.isLoading;
   error = this.userStateService.error;
+
+  private unsubscribeRatings?: () => void;
 
   menu: NavItem[] = [
     { icon: 'bar_chart', label: 'Estadísticas', route: '/users/admin/charts' },
@@ -53,9 +64,18 @@ export class AdminPage implements OnInit {
     await this.cargarUsuario();
   }
 
+  ngOnDestroy() {
+    if (this.unsubscribeRatings) {
+      this.unsubscribeRatings();
+    }
+  }
+
   private async cargarUsuario() {
     try {
-      const { data: { user }, error: authError } = await this.supabaseService.supabase.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await this.supabaseService.supabase.auth.getUser();
 
       if (authError || !user) {
         console.error('Error obteniendo usuario autenticado:', authError);
@@ -64,6 +84,21 @@ export class AdminPage implements OnInit {
       }
 
       await this.userDataService.loadUserAndUpdateState(user.id);
+
+      const currentUser = this.userStateService.currentUser();
+
+      if (currentUser?.idusuario) {
+        setTimeout(() => {
+          this.pendingRatingsChecker.checkAndShowPendingRatings(
+            currentUser.idusuario
+          );
+        }, 1000);
+
+        this.unsubscribeRatings =
+          this.pendingRatingsChecker.subscribeToCompletedTrips(
+            currentUser.idusuario
+          );
+      }
     } catch (error) {
       console.error('Error cargando datos del usuario:', error);
       this.userStateService.setError('Error al cargar datos del usuario');

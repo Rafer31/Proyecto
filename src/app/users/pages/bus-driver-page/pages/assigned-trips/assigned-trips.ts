@@ -7,6 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { DriverService, ViajeAsignado } from '../../services/driver.service';
 import { SupabaseService } from '../../../../../shared/services/supabase.service';
@@ -23,6 +24,7 @@ import { UserDataService } from '../../../../../auth/services/userdata.service';
     MatProgressSpinnerModule,
     MatChipsModule,
     MatDividerModule,
+    MatTooltipModule,
   ],
   templateUrl: './assigned-trips.html',
   styleUrl: './assigned-trips.scss',
@@ -37,6 +39,15 @@ export class AssignedTrips implements OnInit {
   viajes = signal<ViajeAsignado[]>([]);
   cargando = signal<boolean>(true);
   usuarioActual = signal<any | null>(null);
+  verificandoAsistencia = signal<{ [key: string]: boolean }>({});
+  estadoAsistencia = signal<{
+    [key: string]: {
+      todosVerificados: boolean;
+      totalPasajeros: number;
+      pasajerosVerificados: number;
+      pendientes: number;
+    };
+  }>({});
 
   async ngOnInit() {
     await this.cargarUsuario();
@@ -77,6 +88,12 @@ export class AssignedTrips implements OnInit {
         usuario.idusuario
       );
       this.viajes.set(viajes);
+
+      for (const viaje of viajes) {
+        if (!viaje.horarealpartida) {
+          await this.verificarEstadoAsistencia(viaje.idplanificacion);
+        }
+      }
     } catch (error) {
       console.error('Error cargando viajes:', error);
       this.snackBar.open('Error al cargar los viajes asignados', 'Cerrar', {
@@ -84,6 +101,19 @@ export class AssignedTrips implements OnInit {
       });
     } finally {
       this.cargando.set(false);
+    }
+  }
+
+  private async verificarEstadoAsistencia(idplanificacion: string) {
+    try {
+      const estado = await this.driverService.verificarTodosPasajerosAsistencia(
+        idplanificacion
+      );
+      const estadoActual = this.estadoAsistencia();
+      estadoActual[idplanificacion] = estado;
+      this.estadoAsistencia.set(estadoActual);
+    } catch (error) {
+      console.error('Error verificando asistencia:', error);
     }
   }
 
@@ -100,6 +130,19 @@ export class AssignedTrips implements OnInit {
       this.snackBar.open('El viaje ya ha iniciado', 'Cerrar', {
         duration: 2000,
       });
+      return;
+    }
+
+    const estado = this.estadoAsistencia()[viaje.idplanificacion];
+    if (!estado?.todosVerificados) {
+      this.snackBar.open(
+        `⚠️ Debes marcar la asistencia de todos los pasajeros (${estado?.pendientes} pendientes)`,
+        'Cerrar',
+        {
+          duration: 4000,
+          panelClass: ['snackbar-warning'],
+        }
+      );
       return;
     }
 
@@ -172,6 +215,25 @@ export class AssignedTrips implements OnInit {
       return 'primary';
     }
     return 'warn';
+  }
+
+  puedeiniciarViaje(viaje: ViajeAsignado): boolean {
+    if (viaje.horarealpartida) {
+      return false;
+    }
+    const estado = this.estadoAsistencia()[viaje.idplanificacion];
+    return estado?.todosVerificados || false;
+  }
+
+  obtenerMensajeAsistencia(viaje: ViajeAsignado): string {
+    const estado = this.estadoAsistencia()[viaje.idplanificacion];
+    if (!estado) {
+      return 'Verificando...';
+    }
+    if (estado.todosVerificados) {
+      return `Listo: ${estado.totalPasajeros} pasajeros verificados`;
+    }
+    return `${estado.pendientes} pasajero(s) pendiente(s)`;
   }
 
   formatearFecha(fecha: string): string {

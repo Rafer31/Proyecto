@@ -79,7 +79,7 @@ export class UsersLayout implements OnInit {
 
       if (!currentUser) {
         console.log('Usuario no encontrado, redirigiendo a login');
-        this.router.navigate(['/login'], { replaceUrl: true });
+        this.router.navigate(['/register-user'], { replaceUrl: true });
         return;
       }
 

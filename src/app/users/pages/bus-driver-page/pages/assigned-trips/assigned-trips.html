@@ -1,6 +1,5 @@
 <div class="assigned-trips-container">
   <h1 class="page-title">Mis Viajes Asignados</h1>
-
   @if (cargando()) {
     <div class="loading-container">
       <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
@@ -23,34 +22,28 @@
             <mat-card-title>{{ viaje.destino.nomdestino }}</mat-card-title>
             <mat-card-subtitle>{{ formatearFecha(viaje.fechaplanificacion) }}</mat-card-subtitle>
           </mat-card-header>
-
           <mat-card-content>
             <div class="trip-info">
               <div class="info-item">
                 <mat-icon>directions_car</mat-icon>
                 <span>Placa: {{ viaje.vehiculo.placa }}</span>
               </div>
-
               <div class="info-item">
                 <mat-icon>event_seat</mat-icon>
                 <span>{{ viaje.asientosOcupados }} / {{ viaje.vehiculo.nroasientos }} ocupados</span>
               </div>
-
               <mat-divider></mat-divider>
-
               <div class="horarios">
                 <div class="horario-item">
                   <span class="label">Salida programada:</span>
                   <span class="time">{{ formatearHora(viaje.horapartida) }}</span>
                 </div>
-
                 @if (viaje.horarealpartida) {
                   <div class="horario-item">
                     <span class="label">Salida real:</span>
                     <span class="time real">{{ formatearHora(viaje.horarealpartida) }}</span>
                   </div>
                 }
-
                 @if (viaje.horarealllegada) {
                   <div class="horario-item">
                     <span class="label">Llegada real:</span>
@@ -58,15 +51,27 @@
                   </div>
                 }
               </div>
-
               <div class="estado-chip">
                 <mat-chip [color]="getColorEstado(viaje)" highlighted>
                   {{ getEstadoViaje(viaje) }}
                 </mat-chip>
               </div>
+              @if (!viaje.horarealpartida) {
+                <div class="asistencia-status">
+                  <div class="asistencia-info">
+                    <mat-icon
+                      [color]="estadoAsistencia()[viaje.idplanificacion].todosVerificados ? 'primary' : 'warn'"
+                      class="asistencia-icon">
+                      {{ estadoAsistencia()[viaje.idplanificacion].todosVerificados ? 'check_circle' : 'schedule' }}
+                    </mat-icon>
+                    <span class="asistencia-text">
+                      {{ obtenerMensajeAsistencia(viaje) }}
+                    </span>
+                  </div>
+                </div>
+              }
             </div>
           </mat-card-content>
-
           <mat-card-actions align="end">
             <button
               mat-button
@@ -76,18 +81,18 @@
               <mat-icon>people</mat-icon>
               Ver Pasajeros
             </button>
-
             @if (!viaje.horarealpartida) {
               <button
                 mat-raised-button
                 color="primary"
                 (click)="iniciarViaje(viaje)"
+                [disabled]="!puedeiniciarViaje(viaje)"
+                [matTooltip]="!puedeiniciarViaje(viaje) ? obtenerMensajeAsistencia(viaje) : 'Todos verificados, listo para iniciar'"
               >
                 <mat-icon>play_arrow</mat-icon>
                 Iniciar Viaje
               </button>
             }
-
             @if (viaje.horarealpartida && !viaje.horarealllegada) {
               <button
                 mat-raised-button

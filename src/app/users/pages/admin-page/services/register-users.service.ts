@@ -9,7 +9,7 @@ export class RegisterUserService {
 
   async registerUserFromAdmin(userData: any) {
     try {
-      // Usar la URL correcta dependiendo del entorno
+
       const redirectUrl = window.location.hostname === 'localhost'
         ? `${window.location.origin}/auth/callback`
         : 'https://transporte-illapa.web.app/auth/callback';

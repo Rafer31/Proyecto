@@ -5,7 +5,6 @@ import { SupabaseService } from '../../shared/services/supabase.service';
 export class AuthService {
   private supabase = inject(SupabaseService).supabase;
   async signUp(email: string) {
-    // Usar la URL correcta dependiendo del entorno
     const redirectUrl = window.location.hostname === 'localhost'
       ? `${window.location.origin}/auth/callback`
       : 'https://transporte-illapa.web.app/auth/callback';

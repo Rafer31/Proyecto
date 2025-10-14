@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { UserDataService } from '../../services/userdata.service';
+import { UserStateService } from '../../../shared/services/user-state.service';
 import { LoadingDialog } from '../../../shared/components/loading-dialog/loading-dialog';
 import { SuccessDialog } from '../../../shared/components/success-dialog/success-dialog';
 import { ErrorDialog } from '../../../shared/components/error-dialog/error-dialog';
@@ -37,6 +38,7 @@ export default class RegisterUser {
   private fb = inject(FormBuilder);
   private supabase = inject(SupabaseService).supabase;
   private userDataService = inject(UserDataService);
+  private userStateService = inject(UserStateService);
   private destinyService = inject(DestinyService);
   private router = inject(Router);
   private dialog = inject(MatDialog);
@@ -50,6 +52,7 @@ export default class RegisterUser {
     this.setupValidationListeners();
     this.loadDestinos();
   }
+
   private async loadDestinos() {
     try {
       const data = await this.destinyService.getDestinosParaViajes();
@@ -58,6 +61,7 @@ export default class RegisterUser {
       console.error('No se pudieron cargar los destinos', error);
     }
   }
+
   private initializeForm() {
     this.formUser = this.fb.group({
       step1: this.fb.group({
@@ -86,6 +90,7 @@ export default class RegisterUser {
       this.updateValidators(rol);
     });
   }
+
   private updateValidators(rol: string) {
     const step2 = this.formUser.get('step2') as FormGroup;
 
@@ -142,6 +147,12 @@ export default class RegisterUser {
         authId,
       });
 
+      try {
+        await this.userDataService.loadUserAndUpdateState(authId);
+      } catch (loadError) {
+        console.warn('Advertencia al cargar usuario:', loadError);
+      }
+
       loadingDialog.close();
       const successDialog = this.dialog.open(SuccessDialog, {
         data: { message: 'Registro exitoso!' },
@@ -160,12 +171,20 @@ export default class RegisterUser {
           case 'Personal':
             target = '/users/staff';
             break;
+          case 'Administrador':
+            target = '/users/admin';
+            break;
+          case 'Conductor':
+            target = '/users/bus-driver';
+            break;
         }
 
-        this.router.navigate([target]).then(() => {
-          redirectDialog.close();
-          this.formUser.reset();
-        });
+        setTimeout(() => {
+          this.router.navigate([target]).then(() => {
+            redirectDialog.close();
+            this.formUser.reset();
+          });
+        }, 500);
       });
     } catch (error) {
       console.error('Error al registrar usuario:', error);

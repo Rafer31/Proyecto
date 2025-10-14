@@ -472,4 +472,43 @@ export class DriverService {
 
     return (personalCount || 0) + (visitanteCount || 0);
   }
+
+  async verificarTodosPasajerosAsistencia(idplanificacion: string): Promise<{
+    todosVerificados: boolean;
+    totalPasajeros: number;
+    pasajerosVerificados: number;
+    pendientes: number;
+  }> {
+    try {
+      const pasajeros = await this.getPasajerosViaje(idplanificacion);
+
+      if (pasajeros.length === 0) {
+        return {
+          todosVerificados: true,
+          totalPasajeros: 0,
+          pasajerosVerificados: 0,
+          pendientes: 0,
+        };
+      }
+
+      const pasajerosVerificados = pasajeros.filter(
+        (p) =>
+          p.estadoAsistencia === 'asistio' || p.estadoAsistencia === 'inasistio'
+      ).length;
+
+      const pendientes = pasajeros.filter(
+        (p) => p.estadoAsistencia === 'reservado'
+      ).length;
+
+      return {
+        todosVerificados: pendientes === 0,
+        totalPasajeros: pasajeros.length,
+        pasajerosVerificados,
+        pendientes,
+      };
+    } catch (error) {
+      console.error('Error verificando asistencia de pasajeros:', error);
+      throw error;
+    }
+  }
 }
