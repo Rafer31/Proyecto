@@ -82,7 +82,7 @@ export class RegisterCard {
         email: this.form.value.email!,
         password: this.form.value.password!,
         options:{
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `https://transporte-illapa.web.app/auth/callback`
         }
       });
 

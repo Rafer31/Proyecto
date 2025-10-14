@@ -57,21 +57,10 @@ export class SaveTemplateDialog {
   isSaving = signal(false);
 
   constructor() {
-    const nombreSugerido = this.generarNombreSugerido();
-
     this.templateForm = this.fb.group({
-      nombreplantilla: [
-        nombreSugerido,
-        [Validators.required, Validators.maxLength(255)],
-      ],
-      descripcion: ['', [Validators.maxLength(500)]],
+      nombreplantilla: ['', Validators.compose([Validators.required, Validators.maxLength(255)])],
+      descripcion: ['', Validators.maxLength(500)],
     });
-  }
-
-  private generarNombreSugerido(): string {
-    const { destino, vehiculo } = this.data;
-    const placa = vehiculo?.nroplaca || '';
-    return `${destino} - ${placa}`.trim();
   }
 
   onCancel() {

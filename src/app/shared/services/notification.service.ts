@@ -17,6 +17,7 @@ export class NotificationService {
   private swPush = inject(SwPush);
   private supabase = inject(SupabaseService).supabase;
   private scheduledTimeouts = new Map<string, any>();
+  private readonly LOAD_TIMEOUT = 10000; // 10 segundos máximo
 
   async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
@@ -176,10 +177,18 @@ export class NotificationService {
 
   async loadPendingNotifications(): Promise<void> {
     try {
-      const { data, error } = await this.supabase
+      // Agregar timeout a la carga inicial
+      const loadPromise = this.supabase
         .from('notificacion_programada')
         .select('*')
         .eq('estado', 'pendiente');
+
+      const { data, error } = await Promise.race([
+        loadPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timeout loading notifications')), this.LOAD_TIMEOUT)
+        ),
+      ]) as any;
 
       if (error) {
         console.error('Error cargando notificaciones pendientes:', error);
@@ -187,32 +196,49 @@ export class NotificationService {
       }
 
       const now = new Date();
+      const notificationsToUpdate: string[] = [];
+      const notificationsToSchedule: any[] = [];
 
+      // Primera pasada: procesar todas las notificaciones
       for (const notif of data || []) {
         const scheduledTime = new Date(notif.fechahora_programada);
         const delay = scheduledTime.getTime() - now.getTime();
 
         if (delay <= 0) {
-          await this.supabase
-            .from('notificacion_programada')
-            .update({ estado: 'expirada' })
-            .eq('id', notif.id);
+          notificationsToUpdate.push(notif.id);
           continue;
         }
 
         if (delay <= 24 * 60 * 60 * 1000) {
-          const timeoutId = setTimeout(() => {
-            this.showNotification(notif.titulo, {
-              body: notif.mensaje,
-              tag: notif.id,
-              requireInteraction: true,
-              data: notif.datos,
-            });
-            this.removeScheduledNotification(notif.id);
-          }, delay);
-
-          this.scheduledTimeouts.set(notif.id, timeoutId);
+          notificationsToSchedule.push({ notif, delay });
         }
+      }
+
+      // Actualizar todas las expiradas de una sola vez
+      if (notificationsToUpdate.length > 0) {
+        try {
+          await this.supabase
+            .from('notificacion_programada')
+            .update({ estado: 'expirada' })
+            .in('id', notificationsToUpdate);
+        } catch (error) {
+          console.error('Error marcando notificaciones como expiradas:', error);
+        }
+      }
+
+      // Programar timeouts para las próximas
+      for (const { notif, delay } of notificationsToSchedule) {
+        const timeoutId = setTimeout(() => {
+          this.showNotification(notif.titulo, {
+            body: notif.mensaje,
+            tag: notif.id,
+            requireInteraction: true,
+            data: notif.datos,
+          });
+          this.removeScheduledNotification(notif.id);
+        }, delay);
+
+        this.scheduledTimeouts.set(notif.id, timeoutId);
       }
     } catch (error) {
       console.error('Error cargando notificaciones pendientes:', error);

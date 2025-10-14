@@ -47,6 +47,11 @@ export class TripRatingDialog {
 
   stars = [1, 2, 3, 4, 5];
 
+  constructor() {
+    // Desabilitar el cierre con ESC
+    this.dialogRef.disableClose = true;
+  }
+
   onStarClick(rating: number) {
     this.selectedRating = rating;
   }
@@ -70,10 +75,6 @@ export class TripRatingDialog {
       return 'warn';
     }
     return '';
-  }
-
-  onCancel() {
-    this.dialogRef.close(null);
   }
 
   onSubmit() {

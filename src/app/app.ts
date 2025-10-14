@@ -11,7 +11,9 @@ import { NotificationService } from './shared/services/notification.service';
 export class App implements OnInit {
   private notificationService = inject(NotificationService);
 
-  async ngOnInit() {
-    await this.notificationService.initializeNotifications();
+  ngOnInit() {
+    this.notificationService.initializeNotifications().catch((error) => {
+      console.error('Error inicializando notificaciones:', error);
+    });
   }
 }
