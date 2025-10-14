@@ -17,7 +17,7 @@ export class NotificationService {
   private swPush = inject(SwPush);
   private supabase = inject(SupabaseService).supabase;
   private scheduledTimeouts = new Map<string, any>();
-  private readonly LOAD_TIMEOUT = 10000; // 10 segundos máximo
+  private readonly LOAD_TIMEOUT = 10000;
 
   async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
@@ -177,18 +177,20 @@ export class NotificationService {
 
   async loadPendingNotifications(): Promise<void> {
     try {
-      // Agregar timeout a la carga inicial
       const loadPromise = this.supabase
         .from('notificacion_programada')
         .select('*')
         .eq('estado', 'pendiente');
 
-      const { data, error } = await Promise.race([
+      const { data, error } = (await Promise.race([
         loadPromise,
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Timeout loading notifications')), this.LOAD_TIMEOUT)
+          setTimeout(
+            () => reject(new Error('Timeout loading notifications')),
+            this.LOAD_TIMEOUT
+          )
         ),
-      ]) as any;
+      ])) as any;
 
       if (error) {
         console.error('Error cargando notificaciones pendientes:', error);
@@ -199,7 +201,6 @@ export class NotificationService {
       const notificationsToUpdate: string[] = [];
       const notificationsToSchedule: any[] = [];
 
-      // Primera pasada: procesar todas las notificaciones
       for (const notif of data || []) {
         const scheduledTime = new Date(notif.fechahora_programada);
         const delay = scheduledTime.getTime() - now.getTime();
@@ -214,7 +215,6 @@ export class NotificationService {
         }
       }
 
-      // Actualizar todas las expiradas de una sola vez
       if (notificationsToUpdate.length > 0) {
         try {
           await this.supabase
@@ -226,7 +226,6 @@ export class NotificationService {
         }
       }
 
-      // Programar timeouts para las próximas
       for (const { notif, delay } of notificationsToSchedule) {
         const timeoutId = setTimeout(() => {
           this.showNotification(notif.titulo, {
