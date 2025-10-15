@@ -26,6 +26,11 @@ export class BusDriverPage implements OnInit {
 
   menu: NavItem[] = [
     { icon: 'bus_alert', label: 'Viajes asignados', route: '/users/bus-driver/assigned-trips' },
+    {
+      icon: 'keyboard_return',
+      label: 'Retornos Asignados',
+      route: '/users/bus-driver/assigned-returns',
+    },
   ];
 
   async ngOnInit() {
