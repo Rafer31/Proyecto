@@ -34,7 +34,22 @@
       <div class="template-card" (click)="selectTemplate(template)">
         <div class="template-header">
           <h3>{{ template.nombreplantilla }}</h3>
-          <span class="usage-badge">{{ template.vecesusado }} usos</span>
+          <div class="header-actions">
+            <span class="usage-badge">{{ template.vecesusado }} usos</span>
+            <button
+              mat-icon-button
+              class="delete-btn"
+              (click)="deleteTemplate($event, template)"
+              [disabled]="deleting() === template.idplantilla"
+              matTooltip="Eliminar plantilla"
+            >
+              @if (deleting() === template.idplantilla) {
+                <mat-spinner diameter="20"></mat-spinner>
+              } @else {
+                <mat-icon>delete</mat-icon>
+              }
+            </button>
+          </div>
         </div>
 
         @if (template.descripcion) {

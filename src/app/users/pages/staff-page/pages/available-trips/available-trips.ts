@@ -115,8 +115,14 @@ export class AvailableTrips implements OnInit {
           asignacion.iddestino
         );
 
+      // Filtrar viajes que no hayan partido ni llegado
+      const viajesSinPartir = viajesConRetorno.filter((viajeData: any) => {
+        const viaje = viajeData.viaje;
+        return !viaje.horarealpartida && !viaje.horareallegada;
+      });
+
       this.viajes.set(
-        viajesConRetorno.map((viajeData: any) => {
+        viajesSinPartir.map((viajeData: any) => {
           const viaje = viajeData.viaje;
           const destinoViaje: any = viaje.destino;
           const nombreDestinoViaje = Array.isArray(destinoViaje)

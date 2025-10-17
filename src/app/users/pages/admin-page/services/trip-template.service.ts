@@ -10,7 +10,7 @@ export interface TripTemplate {
   idempresa: string;
   iddestino: string;
   horapartida_default?: string;
-  duracion_dias_default: number;
+
   creadopor: string;
   fechacreacion: string;
   fechamodificacion: string;
@@ -108,7 +108,7 @@ export class TripTemplateService {
     idempresa: string;
     iddestino: string;
     horapartida_default?: string;
-    duracion_dias_default?: number;
+
     creadopor: string;
   }): Promise<TripTemplate> {
     const { data, error } = await this.supabase
@@ -121,7 +121,7 @@ export class TripTemplateService {
         idempresa: template.idempresa,
         iddestino: template.iddestino,
         horapartida_default: template.horapartida_default,
-        duracion_dias_default: template.duracion_dias_default || 1,
+
         creadopor: template.creadopor,
         activo: true,
         vecesusado: 0,
@@ -162,7 +162,7 @@ export class TripTemplateService {
       idempresa?: string;
       iddestino?: string;
       horapartida_default?: string;
-      duracion_dias_default?: number;
+
     }
   ): Promise<TripTemplate> {
     const { data, error } = await this.supabase

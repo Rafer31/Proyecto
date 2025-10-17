@@ -26,6 +26,9 @@ import {
 import { TripPlanningService } from '../../../../services/trip-planning.service';
 import { UserStateService } from '../../../../../../../shared/services/user-state.service';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
+import { ConfirmDialog } from '../../../../../../components/confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-create-from-template-dialog',
@@ -44,6 +47,7 @@ import { MatIconModule } from '@angular/material/icon';
     MatCheckboxModule,
     MatProgressSpinnerModule,
     MatIconModule,
+    MatTooltipModule,
   ],
   templateUrl: './create-from-template-dialog.html',
   styleUrl: './create-from-template-dialog.scss',
@@ -55,11 +59,12 @@ export class CreateFromTemplateDialog implements OnInit {
   private tripService = inject(TripPlanningService);
   private userState = inject(UserStateService);
   private snackBar = inject(MatSnackBar);
-
+  private dialog = inject(MatDialog);
   templates = signal<TripTemplate[]>([]);
   selectedTemplate = signal<TripTemplate | null>(null);
   loading = signal(true);
   creating = signal(false);
+  deleting = signal<string | null>(null);
   destinos = signal<any[]>([]);
 
   searchTerm = '';
@@ -173,6 +178,49 @@ export class CreateFromTemplateDialog implements OnInit {
         this.tripForm.get('horapartida')?.enable();
         this.tripForm.patchValue({ horapartida: hora });
       }
+    }
+  }
+
+  async deleteTemplate(event: Event, template: TripTemplate) {
+    event.stopPropagation();
+
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      data: {
+        title: 'Eliminar plantilla',
+        message: `¿Estás seguro de eliminar la plantilla "${template.nombreplantilla}"? Esta acción no se puede deshacer.`,
+        confirmText: 'Eliminar',
+        cancelText: 'Cancelar',
+        color: 'warn',
+      },
+      width: '400px',
+    });
+
+    const confirmed = await dialogRef.afterClosed().toPromise();
+
+    if (!confirmed) return;
+
+    this.deleting.set(template.idplantilla);
+
+    try {
+      await this.templateService.deleteTemplate(template.idplantilla);
+
+      const currentTemplates = this.templates();
+      this.templates.set(
+        currentTemplates.filter((t) => t.idplantilla !== template.idplantilla)
+      );
+
+      this.snackBar.open('Plantilla eliminada exitosamente', 'Cerrar', {
+        duration: 3000,
+      });
+    } catch (error: any) {
+      console.error('Error eliminando plantilla:', error);
+      this.snackBar.open(
+        error.message || 'Error al eliminar la plantilla',
+        'Cerrar',
+        { duration: 4000 }
+      );
+    } finally {
+      this.deleting.set(null);
     }
   }
 
