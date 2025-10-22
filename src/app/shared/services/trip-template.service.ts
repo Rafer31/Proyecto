@@ -10,11 +10,10 @@ export interface TripTemplate {
   idempresa: string;
   iddestino: string;
   horapartida_default?: string;
-  duracion_dias_default: number;
+
   creadopor: string;
   fechacreacion: string;
   fechamodificacion: string;
-  activo: boolean;
   vecesusado: number;
   conductor?: {
     idconductor: string;
@@ -59,7 +58,6 @@ export class TripTemplateService {
       `
       )
       .eq('creadopor', idusuario)
-      .eq('activo', true)
       .order('vecesusado', { ascending: false });
 
     if (error) {
@@ -103,7 +101,7 @@ export class TripTemplateService {
     idempresa: string;
     iddestino: string;
     horapartida_default?: string;
-    duracion_dias_default?: number;
+
     creadopor: string;
   }): Promise<TripTemplate> {
     const { data, error } = await this.supabase
@@ -116,9 +114,8 @@ export class TripTemplateService {
         idempresa: template.idempresa,
         iddestino: template.iddestino,
         horapartida_default: template.horapartida_default,
-        duracion_dias_default: template.duracion_dias_default || 1,
+
         creadopor: template.creadopor,
-        activo: true,
         vecesusado: 0,
       })
       .select(
@@ -156,7 +153,7 @@ export class TripTemplateService {
       idempresa?: string;
       iddestino?: string;
       horapartida_default?: string;
-      duracion_dias_default?: number;
+
     }
   ): Promise<TripTemplate> {
     const { data, error } = await this.supabase
@@ -183,18 +180,6 @@ export class TripTemplateService {
     }
 
     return data;
-  }
-
-  async deactivateTemplate(idplantilla: string): Promise<void> {
-    const { error } = await this.supabase
-      .from('plantilla_viaje')
-      .update({ activo: false })
-      .eq('idplantilla', idplantilla);
-
-    if (error) {
-      console.error('Error desactivando plantilla:', error);
-      throw error;
-    }
   }
 
   async deleteTemplate(idplantilla: string): Promise<void> {
@@ -235,7 +220,6 @@ export class TripTemplateService {
         destino:destino(iddestino, nomdestino)
       `
       )
-      .eq('activo', true)
       .order('vecesusado', { ascending: false })
       .limit(limit);
 
@@ -266,7 +250,6 @@ export class TripTemplateService {
       `
       )
       .eq('creadopor', idusuario)
-      .eq('activo', true)
       .ilike('nombreplantilla', `%${searchTerm}%`)
       .order('vecesusado', { ascending: false });
 

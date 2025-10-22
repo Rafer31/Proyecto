@@ -1,0 +1,119 @@
+<div class="assigned-returns-container">
+    <div class="header">
+      <h1 class="page-title">Retornos Asignados</h1>
+      <p class="subtitle">Viajes de regreso desde tu destino</p>
+    </div>
+  
+    @if (cargando()) {
+      <div class="loading-container">
+        <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
+        <p>Cargando retornos...</p>
+      </div>
+    } 
+    
+    @else if (retornos().length === 0) {
+      <app-emptystate
+        [imageSrc]="'no-trips.svg'"
+        [title]="'No tienes retornos asignados'"
+        [description]="'Cuando se te asigne un viaje de retorno, aparecerá aquí.'"
+      />
+    } 
+    
+    @else {
+      <div class="trips-grid">
+        @for (retorno of retornos(); track retorno.idplanificacion) {
+          <mat-card class="trip-card">
+            <mat-card-header>
+              <div mat-card-avatar class="trip-avatar return">
+                <mat-icon>keyboard_return</mat-icon>
+              </div>
+              <mat-card-title>{{ retorno.destino.nomdestino }}</mat-card-title>
+              <mat-card-subtitle>{{ formatearFecha(retorno.fechaplanificacion) }}</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="trip-info">
+                <div class="info-item">
+                  <mat-icon>directions_car</mat-icon>
+                  <span>Placa: {{ retorno.vehiculo.placa }}</span>
+                </div>
+                <div class="info-item">
+                  <mat-icon>event_seat</mat-icon>
+                  <span>{{ retorno.asientosOcupados }} / {{ retorno.vehiculo.nroasientos }} ocupados</span>
+                </div>
+                <mat-divider></mat-divider>
+                <div class="horarios">
+                  <div class="horario-item">
+                    <span class="label">Salida programada:</span>
+                    <span class="time">{{ formatearHora(retorno.horapartida) }}</span>
+                  </div>
+                  @if (retorno.horarealpartida) {
+                    <div class="horario-item">
+                      <span class="label">Salida real:</span>
+                      <span class="time real">{{ formatearHora(retorno.horarealpartida) }}</span>
+                    </div>
+                  }
+                  @if (retorno.horarealllegada) {
+                    <div class="horario-item">
+                      <span class="label">Llegada real:</span>
+                      <span class="time real">{{ formatearHora(retorno.horarealllegada) }}</span>
+                    </div>
+                  }
+                </div>
+                <div class="estado-chip">
+                  <mat-chip [color]="getColorEstado(retorno)" highlighted>
+                    {{ getEstadoViaje(retorno) }}
+                  </mat-chip>
+                </div>
+                @if (!retorno.horarealpartida) {
+                  <div class="asistencia-status">
+                    <div class="asistencia-info">
+                      <mat-icon
+                        [color]="estadoAsistencia()[retorno.idplanificacion] && estadoAsistencia()[retorno.idplanificacion].todosVerificados ? 'primary' : 'warn'"
+                        class="asistencia-icon">
+                        {{ estadoAsistencia()[retorno.idplanificacion] && estadoAsistencia()[retorno.idplanificacion].todosVerificados ? 'check_circle' : 'schedule' }}
+                      </mat-icon>
+                      <span class="asistencia-text">
+                        {{ obtenerMensajeAsistencia(retorno) }}
+                      </span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+            <mat-card-actions align="end">
+              <button
+                mat-button
+                color="primary"
+                (click)="verPasajeros(retorno)"
+              >
+                <mat-icon>people</mat-icon>
+                Ver Pasajeros
+              </button>
+              @if (!retorno.horarealpartida) {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  (click)="iniciarRetorno(retorno)"
+                  [disabled]="!puedeiniciarRetorno(retorno)"
+                  [matTooltip]="!puedeiniciarRetorno(retorno) ? obtenerMensajeAsistencia(retorno) : 'Todos verificados, listo para iniciar'"
+                >
+                  <mat-icon>play_arrow</mat-icon>
+                  Iniciar Retorno
+                </button>
+              }
+              @if (retorno.horarealpartida && !retorno.horarealllegada) {
+                <button
+                  mat-raised-button
+                  color="accent"
+                  (click)="finalizarRetorno(retorno)"
+                >
+                  <mat-icon>flag</mat-icon>
+                  Finalizar Retorno
+                </button>
+              }
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
+  </div>

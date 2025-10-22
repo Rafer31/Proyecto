@@ -15,7 +15,7 @@ import { UserDataService } from '../../../../../auth/services/userdata.service';
 import { Emptystate } from '../../../../components/emptystate/emptystate';
 
 @Component({
-  selector: 'app-assigned-trips',
+  selector: 'app-assigned-returns',
   standalone: true,
   imports: [
     CommonModule,
@@ -28,17 +28,17 @@ import { Emptystate } from '../../../../components/emptystate/emptystate';
     MatTooltipModule,
     Emptystate,
   ],
-  templateUrl: './assigned-trips.html',
-  styleUrl: './assigned-trips.scss',
+  templateUrl: './assigned-returns.html',
+  styleUrl: './assigned-returns.scss',
 })
-export class AssignedTrips implements OnInit {
+export class AssignedReturns implements OnInit {
   private driverService = inject(DriverService);
   private supabaseService = inject(SupabaseService);
   private userDataService = inject(UserDataService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
 
-  viajes = signal<ViajeAsignado[]>([]);
+  retornos = signal<ViajeAsignado[]>([]);
   cargando = signal<boolean>(true);
   usuarioActual = signal<any | null>(null);
   verificandoAsistencia = signal<{ [key: string]: boolean }>({});
@@ -53,7 +53,7 @@ export class AssignedTrips implements OnInit {
 
   async ngOnInit() {
     await this.cargarUsuario();
-    await this.cargarViajes();
+    await this.cargarRetornos();
   }
 
   private async cargarUsuario() {
@@ -77,7 +77,7 @@ export class AssignedTrips implements OnInit {
     }
   }
 
-  private async cargarViajes() {
+  private async cargarRetornos() {
     const usuario = this.usuarioActual();
     if (!usuario) {
       this.cargando.set(false);
@@ -90,18 +90,18 @@ export class AssignedTrips implements OnInit {
         usuario.idusuario
       );
       
-      // Filtrar solo viajes de IDA (los que NO son retornos)
-      const viajesIda = await this.filtrarViajesIda(viajes);
-      this.viajes.set(viajesIda);
+      // Filtrar solo RETORNOS
+      const viajesRetorno = await this.filtrarRetornos(viajes);
+      this.retornos.set(viajesRetorno);
 
-      for (const viaje of viajesIda) {
-        if (!viaje.horarealpartida) {
-          await this.verificarEstadoAsistencia(viaje.idplanificacion);
+      for (const retorno of viajesRetorno) {
+        if (!retorno.horarealpartida) {
+          await this.verificarEstadoAsistencia(retorno.idplanificacion);
         }
       }
     } catch (error) {
-      console.error('Error cargando viajes:', error);
-      this.snackBar.open('Error al cargar los viajes asignados', 'Cerrar', {
+      console.error('Error cargando retornos:', error);
+      this.snackBar.open('Error al cargar los retornos asignados', 'Cerrar', {
         duration: 3000,
       });
     } finally {
@@ -109,13 +109,13 @@ export class AssignedTrips implements OnInit {
     }
   }
 
-  private async filtrarViajesIda(viajes: ViajeAsignado[]): Promise<ViajeAsignado[]> {
+  private async filtrarRetornos(viajes: ViajeAsignado[]): Promise<ViajeAsignado[]> {
     try {
       const idsViajes = viajes.map(v => v.idplanificacion);
       
       if (idsViajes.length === 0) return [];
 
-      // Obtener todos los retornos para identificar cuáles NO son retornos
+      // Obtener solo los retornos
       const { data: retornos } = await this.supabaseService.supabase
         .from('retorno_viaje')
         .select('idplanificacion_retorno')
@@ -123,11 +123,11 @@ export class AssignedTrips implements OnInit {
 
       const idsRetornos = new Set(retornos?.map(r => r.idplanificacion_retorno) || []);
 
-      // Retornar solo los viajes que NO están en la tabla de retornos
-      return viajes.filter(v => !idsRetornos.has(v.idplanificacion));
+      // Retornar solo los viajes que SÍ están en la tabla de retornos
+      return viajes.filter(v => idsRetornos.has(v.idplanificacion));
     } catch (error) {
-      console.error('Error filtrando viajes de ida:', error);
-      return viajes;
+      console.error('Error filtrando retornos:', error);
+      return [];
     }
   }
 
@@ -144,23 +144,23 @@ export class AssignedTrips implements OnInit {
     }
   }
 
-  verPasajeros(viaje: ViajeAsignado) {
+  verPasajeros(retorno: ViajeAsignado) {
     this.router.navigate([
-      '/users/bus-driver/assigned-trips',
-      viaje.idplanificacion,
+      '/users/bus-driver/assigned-returns',
+      retorno.idplanificacion,
       'passengers',
     ]);
   }
 
-  async iniciarViaje(viaje: ViajeAsignado) {
-    if (viaje.horarealpartida) {
-      this.snackBar.open('El viaje ya ha iniciado', 'Cerrar', {
+  async iniciarRetorno(retorno: ViajeAsignado) {
+    if (retorno.horarealpartida) {
+      this.snackBar.open('El retorno ya ha iniciado', 'Cerrar', {
         duration: 2000,
       });
       return;
     }
 
-    const estado = this.estadoAsistencia()[viaje.idplanificacion];
+    const estado = this.estadoAsistencia()[retorno.idplanificacion];
     if (!estado?.todosVerificados) {
       this.snackBar.open(
         `⚠️ Debes marcar la asistencia de todos los pasajeros (${estado?.pendientes} pendientes)`,
@@ -175,33 +175,33 @@ export class AssignedTrips implements OnInit {
 
     try {
       await this.driverService.marcarHoraPartida(
-        viaje.idplanificacion,
-        viaje.idconductorvehiculoempresa
+        retorno.idplanificacion,
+        retorno.idconductorvehiculoempresa
       );
-      this.snackBar.open('Viaje iniciado correctamente', 'Cerrar', {
+      this.snackBar.open('Retorno iniciado correctamente', 'Cerrar', {
         duration: 2000,
       });
-      await this.cargarViajes();
+      await this.cargarRetornos();
     } catch (error) {
-      console.error('Error iniciando viaje:', error);
-      this.snackBar.open('Error al iniciar el viaje', 'Cerrar', {
+      console.error('Error iniciando retorno:', error);
+      this.snackBar.open('Error al iniciar el retorno', 'Cerrar', {
         duration: 3000,
       });
     }
   }
 
-  async finalizarViaje(viaje: ViajeAsignado) {
-    if (!viaje.horarealpartida) {
+  async finalizarRetorno(retorno: ViajeAsignado) {
+    if (!retorno.horarealpartida) {
       this.snackBar.open(
-        'Debes iniciar el viaje antes de finalizarlo',
+        'Debes iniciar el retorno antes de finalizarlo',
         'Cerrar',
         { duration: 2000 }
       );
       return;
     }
 
-    if (viaje.horarealllegada) {
-      this.snackBar.open('El viaje ya ha sido finalizado', 'Cerrar', {
+    if (retorno.horarealllegada) {
+      this.snackBar.open('El retorno ya ha sido finalizado', 'Cerrar', {
         duration: 2000,
       });
       return;
@@ -209,51 +209,51 @@ export class AssignedTrips implements OnInit {
 
     try {
       await this.driverService.marcarHoraLlegada(
-        viaje.idplanificacion,
-        viaje.idconductorvehiculoempresa
+        retorno.idplanificacion,
+        retorno.idconductorvehiculoempresa
       );
-      this.snackBar.open('Viaje finalizado correctamente', 'Cerrar', {
+      this.snackBar.open('Retorno finalizado correctamente', 'Cerrar', {
         duration: 2000,
       });
-      await this.cargarViajes();
+      await this.cargarRetornos();
     } catch (error) {
-      console.error('Error finalizando viaje:', error);
-      this.snackBar.open('Error al finalizar el viaje', 'Cerrar', {
+      console.error('Error finalizando retorno:', error);
+      this.snackBar.open('Error al finalizar el retorno', 'Cerrar', {
         duration: 3000,
       });
     }
   }
 
-  getEstadoViaje(viaje: ViajeAsignado): string {
-    if (viaje.horarealllegada) {
+  getEstadoViaje(retorno: ViajeAsignado): string {
+    if (retorno.horarealllegada) {
       return 'Finalizado';
     }
-    if (viaje.horarealpartida) {
+    if (retorno.horarealpartida) {
       return 'En curso';
     }
     return 'Pendiente';
   }
 
-  getColorEstado(viaje: ViajeAsignado): string {
-    if (viaje.horarealllegada) {
+  getColorEstado(retorno: ViajeAsignado): string {
+    if (retorno.horarealllegada) {
       return 'accent';
     }
-    if (viaje.horarealpartida) {
+    if (retorno.horarealpartida) {
       return 'primary';
     }
     return 'warn';
   }
 
-  puedeiniciarViaje(viaje: ViajeAsignado): boolean {
-    if (viaje.horarealpartida) {
+  puedeiniciarRetorno(retorno: ViajeAsignado): boolean {
+    if (retorno.horarealpartida) {
       return false;
     }
-    const estado = this.estadoAsistencia()[viaje.idplanificacion];
+    const estado = this.estadoAsistencia()[retorno.idplanificacion];
     return estado?.todosVerificados || false;
   }
 
-  obtenerMensajeAsistencia(viaje: ViajeAsignado): string {
-    const estado = this.estadoAsistencia()[viaje.idplanificacion];
+  obtenerMensajeAsistencia(retorno: ViajeAsignado): string {
+    const estado = this.estadoAsistencia()[retorno.idplanificacion];
     if (!estado) {
       return 'Verificando...';
     }

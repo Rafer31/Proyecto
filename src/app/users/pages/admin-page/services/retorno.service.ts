@@ -220,6 +220,8 @@ export class RetornoService {
         fechapartida,
         fechallegada,
         horapartida,
+        horarealpartida,
+        horarealllegada,
         destino:destino(iddestino, nomdestino),
         conductor_vehiculo_empresa!inner(
           idconductorvehiculoempresa,

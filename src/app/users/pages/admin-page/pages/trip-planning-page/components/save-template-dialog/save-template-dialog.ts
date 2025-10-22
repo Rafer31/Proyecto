@@ -93,7 +93,7 @@ export class SaveTemplateDialog {
         idempresa: this.data.empresa.idempresa,
         iddestino: this.data.destino,
         horapartida_default: this.data.horapartida,
-        duracion_dias_default: 1,
+ 
         creadopor: currentUser.idusuario,
       });
 

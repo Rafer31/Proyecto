@@ -1,17 +1,25 @@
 <div class="assigned-trips-container">
-  <h1 class="page-title">Mis Viajes Asignados</h1>
+  <div class="header">
+    <h1 class="page-title">Viajes Asignados (Ida)</h1>
+    <p class="subtitle">Viajes de salida hacia tu destino</p>
+  </div>
+
   @if (cargando()) {
     <div class="loading-container">
       <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
       <p>Cargando viajes...</p>
     </div>
-  } @else if (viajes().length === 0) {
-    <div class="empty-state">
-      <mat-icon class="empty-icon">directions_bus_filled</mat-icon>
-      <h2>No tienes viajes asignados</h2>
-      <p>Cuando se te asigne un viaje, aparecerá aquí.</p>
-    </div>
-  } @else {
+  } 
+  
+  @else if (viajes().length === 0) {
+    <app-emptystate
+      [imageSrc]="'no-trips.svg'"
+      [title]="'No tienes viajes de ida asignados'"
+      [description]="'Cuando se te asigne un viaje de salida, aparecerá aquí.'"
+    />
+  } 
+  
+  @else {
     <div class="trips-grid">
       @for (viaje of viajes(); track viaje.idplanificacion) {
         <mat-card class="trip-card">
@@ -60,9 +68,9 @@
                 <div class="asistencia-status">
                   <div class="asistencia-info">
                     <mat-icon
-                      [color]="estadoAsistencia()[viaje.idplanificacion].todosVerificados ? 'primary' : 'warn'"
+                      [color]="estadoAsistencia()[viaje.idplanificacion] && estadoAsistencia()[viaje.idplanificacion].todosVerificados ? 'primary' : 'warn'"
                       class="asistencia-icon">
-                      {{ estadoAsistencia()[viaje.idplanificacion].todosVerificados ? 'check_circle' : 'schedule' }}
+                      {{ estadoAsistencia()[viaje.idplanificacion] && estadoAsistencia()[viaje.idplanificacion].todosVerificados ? 'check_circle' : 'schedule' }}
                     </mat-icon>
                     <span class="asistencia-text">
                       {{ obtenerMensajeAsistencia(viaje) }}
