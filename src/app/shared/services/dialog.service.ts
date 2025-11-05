@@ -6,6 +6,7 @@ import {
 } from '../components/success-dialog/success-dialog';
 import { LoadingDialog } from '../components/loading-dialog/loading-dialog';
 import { ErrorDialog, ErrorDialogData } from '../components/error-dialog/error-dialog';
+import { RetryDialog, RetryDialogData } from '../components/retry-dialog/retry-dialog';
 
 @Injectable({ providedIn: 'root' })
 export class DialogService {
@@ -59,5 +60,20 @@ export class DialogService {
       this.loadingDialogRef.close();
       this.loadingDialogRef = null;
     }
+  }
+
+  showRetryDialog(data: RetryDialogData) {
+    const dialogRef = this.dialog.open(RetryDialog, {
+      width: '380px',
+      panelClass: 'rounded-xl',
+      disableClose: true,
+    });
+
+    // Inject data manually
+    if (dialogRef.componentInstance) {
+      (dialogRef.componentInstance as any)['data'] = data;
+    }
+
+    return dialogRef;
   }
 }

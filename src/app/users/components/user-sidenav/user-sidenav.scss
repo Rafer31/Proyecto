@@ -14,10 +14,30 @@
   height: 100%;
   background: #fafafa;
   transition: margin-left 0.3s ease;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+  }
 }
 
 .content-inner {
   padding: 1.5rem;
+  padding-bottom: 3rem;
+  min-height: calc(100% - 4.5rem);
 }
 
 .brand {

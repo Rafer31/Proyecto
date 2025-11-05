@@ -37,16 +37,34 @@
     </div>
   </mat-card-content>
 
+  @if (tieneReserva()) {
+    <div class="reserva-activa-banner">
+      <mat-icon class="banner-icon">check_circle</mat-icon>
+      <span class="banner-text">Tiene una reserva activa en este viaje - Asiento {{ asientoReservado() }}</span>
+    </div>
+  }
+
   <mat-card-actions class="card-actions">
-    <button
-      mat-raised-button
-      color="primary"
-      (click)="onReservar()"
-      [disabled]="asientosDisponibles() === 0"
-      class="reserve-button"
-    >
-      <mat-icon>event_seat</mat-icon>
-      {{ asientosDisponibles()! > 0 ? 'Reservar Asiento' : 'Sin Asientos' }}
-    </button>
+    @if (tieneReserva()) {
+      <button
+        mat-raised-button
+        class="view-reservation-button"
+        (click)="onVerReserva()"
+      >
+        <mat-icon>visibility</mat-icon>
+        Ver Mi Reserva
+      </button>
+    } @else {
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="onReservar()"
+        [disabled]="asientosDisponibles() === 0"
+        class="reserve-button"
+      >
+        <mat-icon>event_seat</mat-icon>
+        {{ asientosDisponibles()! > 0 ? 'Reservar Asiento' : 'Sin Asientos' }}
+      </button>
+    }
   </mat-card-actions>
 </mat-card>

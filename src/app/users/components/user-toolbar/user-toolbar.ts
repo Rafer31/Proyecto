@@ -2,11 +2,11 @@ import { Component, inject, input, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavStateService } from '../../../shared/services/nav-state.service';
 import { SupabaseService } from '../../../shared/services/supabase.service';
 import { UserStateService } from '../../../shared/services/user-state.service';
+import { DialogService } from '../../../shared/services/dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { Router } from '@angular/router';
@@ -18,7 +18,6 @@ import { firstValueFrom } from 'rxjs';
     MatToolbarModule,
     MatIconModule,
     MatButtonModule,
-    MatMenuModule,
     MatTooltipModule,
   ],
   templateUrl: './user-toolbar.html',
@@ -26,6 +25,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class UserToolbar {
   private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService);
   private readonly nav = inject(NavStateService);
   private supabaseService = inject(SupabaseService);
   private userStateService = inject(UserStateService);
@@ -56,11 +56,16 @@ export class UserToolbar {
       const result = await firstValueFrom(dialogRef.afterClosed());
 
       if (result) {
+        // Mostrar loading mientras se cierra sesión
+        this.dialogService.showLoadingDialog();
+
         await this.supabaseService.supabase.auth.signOut();
 
         this.userStateService.clearUser();
 
-        this.router.navigate(['/login']);
+        await this.router.navigate(['/login']);
+
+        this.dialogService.closeLoadingDialog();
       }
     } finally {
       this.isSigningOut.set(false);

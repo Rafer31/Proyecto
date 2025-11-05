@@ -1,24 +1,24 @@
 <div class="assigned-returns-container">
     <div class="header">
       <h1 class="page-title">Retornos Asignados</h1>
-      <p class="subtitle">Viajes de regreso desde tu destino</p>
+      <p class="subtitle mb-4">Viajes de regreso desde tu destino</p>
     </div>
-  
+
     @if (cargando()) {
       <div class="loading-container">
         <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
         <p>Cargando retornos...</p>
       </div>
-    } 
-    
+    }
+
     @else if (retornos().length === 0) {
       <app-emptystate
         [imageSrc]="'no-trips.svg'"
         [title]="'No tienes retornos asignados'"
         [description]="'Cuando se te asigne un viaje de retorno, aparecerá aquí.'"
       />
-    } 
-    
+    }
+
     @else {
       <div class="trips-grid">
         @for (retorno of retornos(); track retorno.idplanificacion) {

@@ -15,6 +15,8 @@ import { SupabaseService } from '../../../shared/services/supabase.service';
 import { Router } from '@angular/router';
 import { UserDataService } from '../../services/userdata.service';
 import { UserStateService } from '../../../shared/services/user-state.service';
+import { withTimeout, isTimeoutError, isNetworkError } from '../../../shared/utils/timeout.util';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'login-card',
@@ -70,11 +72,13 @@ export class LoginCard {
 
       this.dialogService.showLoadingDialog();
 
-      const { data, error } = await this.supabaseClient.auth.signInWithPassword(
-        {
+      const { data, error } = await withTimeout(
+        this.supabaseClient.auth.signInWithPassword({
           email: this.form.value.email!,
           password: this.form.value.password!,
-        }
+        }),
+        15000,
+        'La conexión está tardando más de lo esperado'
       );
 
       this.dialogService.closeAll();
@@ -101,9 +105,39 @@ export class LoginCard {
       }
 
       const authId = data.user.id;
-      const role = await this.userDataService.getUserRole(authId);
 
-      const usuario = await this.userDataService.getActiveUserByAuthId(authId);
+      // Primero verificar si el usuario existe en la BD (sin filtro de estado)
+      const usuarioExists = await withTimeout(
+        this.userDataService.getUserByAuthId(authId),
+        15000,
+        'No se pudo verificar la información del usuario'
+      );
+
+      // Si el usuario no existe en la BD, redirigir a completar registro
+      if (!usuarioExists) {
+        this.dialogService.closeAll();
+
+        const dialogRef = this.dialogService.showSuccessDialog(
+          'Por favor completa tu información para acceder al sistema.',
+          'Completa tu Registro'
+        );
+
+        await firstValueFrom(dialogRef.afterClosed());
+
+        // Mostrar loading mientras se redirige
+        this.dialogService.showLoadingDialog();
+        await this.router.navigate(['/register-user']);
+        this.dialogService.closeLoadingDialog();
+        return;
+      }
+
+      // Verificar si el usuario está activo
+      const usuario = await withTimeout(
+        this.userDataService.getActiveUserByAuthId(authId),
+        15000,
+        'No se pudo cargar la información del usuario'
+      );
+
       if (!usuario) {
         this.dialogService.showErrorDialog(
           'Tu usuario ha sido deshabilitado. Contacta al administrador.',
@@ -114,6 +148,14 @@ export class LoginCard {
         this.userStateService.clearUser();
         return;
       }
+
+      // Obtener rol
+      const role = await withTimeout(
+        this.userDataService.getUserRole(authId),
+        15000,
+        'No se pudo cargar el rol del usuario'
+      );
+
       if (!role) {
         this.dialogService.showErrorDialog(
           'No se pudo determinar el rol del usuario.',
@@ -155,10 +197,28 @@ export class LoginCard {
     } catch (error: any) {
       console.error('Error inesperado:', error);
       this.dialogService.closeAll();
-      this.dialogService.showErrorDialog(
-        'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
-        'Error'
-      );
+
+      // Manejar errores de timeout y red
+      if (isTimeoutError(error) || isNetworkError(error)) {
+        const dialogRef = this.dialogService.showRetryDialog({
+          title: 'Conexión lenta',
+          message: isTimeoutError(error)
+            ? 'El inicio de sesión está tardando más de lo esperado. Esto puede deberse a una conexión lenta.'
+            : 'No se pudo conectar con el servidor. Por favor verifica tu conexión a internet.',
+          showRetry: true,
+        });
+
+        const shouldRetry = await firstValueFrom(dialogRef.afterClosed());
+        if (shouldRetry) {
+          // Reintentar login
+          await this.logIn();
+        }
+      } else {
+        this.dialogService.showErrorDialog(
+          'Ocurrió un error inesperado. Por favor, inténtalo de nuevo.',
+          'Error'
+        );
+      }
     } finally {
       this.isLoading.set(false);
     }

@@ -76,6 +76,33 @@
     }
   }
 
+  .reserva-activa-banner {
+    background: linear-gradient(100deg, #f8bf02 0%, #febd31 100%);
+    padding: 14px 16px;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #5a4a1f;
+    border-top: 1px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    .banner-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      color: #5a4a1f;
+    }
+
+    .banner-text {
+      font-weight: 600;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      color: #3d3417;
+    }
+  }
+
   .card-content {
     padding: 24px 20px;
     flex: 1;
@@ -135,6 +162,27 @@
 
       mat-icon {
         margin-right: 8px;
+      }
+    }
+
+    .view-reservation-button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      background: linear-gradient(100deg, #f8bf02 0%, #febd31 100%);
+      color: #3d3417;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 6px rgba(212, 175, 55, 0.25);
+
+      mat-icon {
+        margin-right: 8px;
+      }
+
+      &:hover {
+        background: linear-gradient(135deg, #c9a557 0%, #b8963e 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
       }
     }
   }

@@ -34,6 +34,7 @@ export class AvailableTrips implements OnInit {
   private userStateService = inject(UserStateService);
 
   currentUser = this.userStateService.currentUser;
+  reservasActivas = signal<Map<string, number>>(new Map());
 
   constructor() {
     effect(() => {
@@ -110,6 +111,35 @@ export class AvailableTrips implements OnInit {
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
+      // Cargar reservas activas del usuario (personal)
+      // Primero obtener las asignaciones de destino del personal
+      const { data: asignaciones, error: asignacionesError } =
+        await this.supabaseService.supabase
+          .from('asignacion_destino')
+          .select('idasignaciondestino')
+          .eq('nroficha', personal.nroficha);
+
+      if (!asignacionesError && asignaciones) {
+        const idsAsignaciones = asignaciones.map((a: any) => a.idasignaciondestino);
+
+        if (idsAsignaciones.length > 0) {
+          const { data: reservas, error: reservasError } =
+            await this.supabaseService.supabase
+              .from('asignaciondestino_planificacionviaje')
+              .select('idplanificacion, nroasiento')
+              .in('idasignaciondestino', idsAsignaciones)
+              .eq('estado', 'reservado');
+
+          if (!reservasError && reservas) {
+            const reservasMap = new Map<string, number>();
+            reservas.forEach((r: any) => {
+              reservasMap.set(r.idplanificacion, r.nroasiento);
+            });
+            this.reservasActivas.set(reservasMap);
+          }
+        }
+      }
+
       const viajesConRetorno =
         await this.tripService.getViajesDisponiblesPorDestino(
           asignacion.iddestino
@@ -166,5 +196,13 @@ export class AvailableTrips implements OnInit {
         this.cargarDatos();
       }
     });
+  }
+
+  tieneReservaEnViaje(idviaje: string): boolean {
+    return this.reservasActivas().has(idviaje);
+  }
+
+  getAsientoReservado(idviaje: string): number | null {
+    return this.reservasActivas().get(idviaje) || null;
   }
 }

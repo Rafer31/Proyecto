@@ -1,5 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import { SwPush } from '@angular/service-worker';
 import { SupabaseService } from './supabase.service';
 
 export interface ScheduledNotification {
@@ -14,10 +13,10 @@ export interface ScheduledNotification {
 
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
-  private swPush = inject(SwPush);
   private supabase = inject(SupabaseService).supabase;
   private scheduledTimeouts = new Map<string, any>();
-  private readonly LOAD_TIMEOUT = 10000;
+  private readonly LOAD_TIMEOUT = 5000;
+  private isInitialized = false;
 
   async requestPermission(): Promise<boolean> {
     if (!('Notification' in window)) {
@@ -30,13 +29,17 @@ export class NotificationService {
     }
 
     if (Notification.permission !== 'denied') {
-      const permission = await Notification.requestPermission();
-      return permission === 'granted';
+      try {
+        const permission = await Notification.requestPermission();
+        return permission === 'granted';
+      } catch (error) {
+        console.error('Error solicitando permisos:', error);
+        return false;
+      }
     }
 
     return false;
   }
-
   hasPermission(): boolean {
     return 'Notification' in window && Notification.permission === 'granted';
   }
@@ -51,18 +54,19 @@ export class NotificationService {
     }
 
     try {
-      if (this.swPush.isEnabled) {
-        new Notification(title, {
-          icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-72x72.png',
-          ...options,
-        });
-      } else {
-        new Notification(title, {
-          icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-72x72.png',
-          ...options,
-        });
+      const notificationOptions = {
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-72x72.png',
+        ...options,
+      };
+
+      const notification = new Notification(title, notificationOptions);
+
+      if (options?.data) {
+        notification.onclick = () => {
+          window.focus();
+          notification.close();
+        };
       }
     } catch (error) {
       console.error('Error mostrando notificación:', error);
@@ -75,54 +79,67 @@ export class NotificationService {
     horapartida: string,
     destino: string
   ): Promise<void> {
-    const [hora, minuto] = horapartida.split(':').map(Number);
-    const departureDate = new Date(fechapartida);
-    departureDate.setHours(hora, minuto, 0, 0);
+    try {
+      const [hora, minuto] = horapartida.split(':').map(Number);
+      const departureDate = new Date(fechapartida);
+      departureDate.setHours(hora, minuto, 0, 0);
 
-    const notificationTime = new Date(departureDate.getTime() - 15 * 60 * 1000);
-    const now = new Date();
+      const notificationTime = new Date(departureDate.getTime() - 15 * 60 * 1000);
+      const now = new Date();
 
-    if (notificationTime <= now) {
-      return;
+      if (notificationTime <= now) {
+        console.log('La hora de notificación ya pasó, no se programa');
+        return;
+      }
+
+      const delay = notificationTime.getTime() - now.getTime();
+      const notificationId = `pre-trip-${idplanificacion}`;
+
+      this.cancelScheduledNotification(notificationId);
+
+      if (delay <= 24 * 60 * 60 * 1000) {
+        const timeoutId = setTimeout(() => {
+          this.showNotification('¡Tu viaje está próximo!', {
+            body: `Tu viaje a ${destino} parte en 15 minutos`,
+            tag: notificationId,
+            requireInteraction: true,
+            data: { idplanificacion, type: 'pre-trip' },
+          });
+          this.markNotificationAsSent(notificationId);
+        }, delay);
+
+        this.scheduledTimeouts.set(notificationId, timeoutId);
+        console.log(`Notificación programada para ${notificationTime.toLocaleString()}`);
+      }
+
+      await this.saveScheduledNotification({
+        id: notificationId,
+        type: 'pre-trip',
+        idplanificacion,
+        scheduledTime: notificationTime.toISOString(),
+        title: '¡Tu viaje está próximo!',
+        body: `Tu viaje a ${destino} parte en 15 minutos`,
+        data: { idplanificacion, type: 'pre-trip', destino },
+      });
+    } catch (error) {
+      console.error('Error programando notificación pre-viaje:', error);
     }
-
-    const delay = notificationTime.getTime() - now.getTime();
-
-    if (delay <= 24 * 60 * 60 * 1000) {
-      const timeoutId = setTimeout(() => {
-        this.showNotification('¡Tu viaje está próximo!', {
-          body: `Tu viaje a ${destino} parte en 15 minutos`,
-          tag: `pre-trip-${idplanificacion}`,
-          requireInteraction: true,
-          data: { idplanificacion, type: 'pre-trip' },
-        });
-        this.removeScheduledNotification(`pre-trip-${idplanificacion}`);
-      }, delay);
-
-      this.scheduledTimeouts.set(`pre-trip-${idplanificacion}`, timeoutId);
-    }
-
-    await this.saveScheduledNotification({
-      id: `pre-trip-${idplanificacion}`,
-      type: 'pre-trip',
-      idplanificacion,
-      scheduledTime: notificationTime.toISOString(),
-      title: '¡Tu viaje está próximo!',
-      body: `Tu viaje a ${destino} parte en 15 minutos`,
-      data: { idplanificacion, type: 'pre-trip' },
-    });
   }
 
   async schedulePostTripNotification(
     idplanificacion: string,
     destino: string
   ): Promise<void> {
-    this.showNotification('¡Viaje completado!', {
-      body: `¿Cómo fue tu experiencia viajando a ${destino}? Califica el servicio`,
-      tag: `post-trip-${idplanificacion}`,
-      requireInteraction: true,
-      data: { idplanificacion, type: 'post-trip' },
-    });
+    try {
+      await this.showNotification('¡Viaje completado!', {
+        body: `¿Cómo fue tu experiencia viajando a ${destino}? Califica el servicio`,
+        tag: `post-trip-${idplanificacion}`,
+        requireInteraction: true,
+        data: { idplanificacion, type: 'post-trip', destino },
+      });
+    } catch (error) {
+      console.error('Error mostrando notificación post-viaje:', error);
+    }
   }
 
   cancelScheduledNotification(notificationId: string): void {
@@ -130,8 +147,8 @@ export class NotificationService {
     if (timeoutId) {
       clearTimeout(timeoutId);
       this.scheduledTimeouts.delete(notificationId);
+      console.log(`Notificación ${notificationId} cancelada`);
     }
-    this.removeScheduledNotification(notificationId);
   }
 
   private async saveScheduledNotification(
@@ -150,6 +167,7 @@ export class NotificationService {
             mensaje: notification.body,
             datos: notification.data,
             estado: 'pendiente',
+            createdat: new Date().toISOString(),
           },
           { onConflict: 'id' }
         );
@@ -158,75 +176,88 @@ export class NotificationService {
         console.error('Error guardando notificación programada:', error);
       }
     } catch (error) {
-      console.error('Error guardando notificación:', error);
+      console.error('Error en saveScheduledNotification:', error);
     }
   }
 
-  private async removeScheduledNotification(
-    notificationId: string
-  ): Promise<void> {
+  /**
+   * Marca notificación como enviada
+   */
+  private async markNotificationAsSent(notificationId: string): Promise<void> {
     try {
       await this.supabase
         .from('notificacion_programada')
-        .update({ estado: 'enviada' })
+        .update({ estado: 'enviada', updatedat: new Date().toISOString() })
         .eq('id', notificationId);
+
+      this.scheduledTimeouts.delete(notificationId);
     } catch (error) {
       console.error('Error actualizando notificación:', error);
     }
   }
 
+  /**
+   * Carga notificaciones pendientes desde la base de datos
+   * NO BLOQUEA - se ejecuta en background
+   */
   async loadPendingNotifications(): Promise<void> {
     try {
+      // Timeout para evitar bloqueos
       const loadPromise = this.supabase
         .from('notificacion_programada')
         .select('*')
-        .eq('estado', 'pendiente');
+        .eq('estado', 'pendiente')
+        .gte('fechahora_programada', new Date().toISOString());
 
-      const { data, error } = (await Promise.race([
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout')), this.LOAD_TIMEOUT)
+      );
+
+      const { data, error } = await Promise.race([
         loadPromise,
-        new Promise((_, reject) =>
-          setTimeout(
-            () => reject(new Error('Timeout loading notifications')),
-            this.LOAD_TIMEOUT
-          )
-        ),
-      ])) as any;
+        timeoutPromise,
+      ]) as any;
 
       if (error) {
         console.error('Error cargando notificaciones pendientes:', error);
         return;
       }
 
-      const now = new Date();
-      const notificationsToUpdate: string[] = [];
-      const notificationsToSchedule: any[] = [];
+      if (!data || data.length === 0) {
+        console.log('No hay notificaciones pendientes');
+        return;
+      }
 
-      for (const notif of data || []) {
+      const now = new Date();
+      const expiredIds: string[] = [];
+      const toSchedule: any[] = [];
+
+      for (const notif of data) {
         const scheduledTime = new Date(notif.fechahora_programada);
         const delay = scheduledTime.getTime() - now.getTime();
 
+        // Si ya pasó, marcar como expirada
         if (delay <= 0) {
-          notificationsToUpdate.push(notif.id);
+          expiredIds.push(notif.id);
           continue;
         }
 
+        // Solo programa si es dentro de 24 horas
         if (delay <= 24 * 60 * 60 * 1000) {
-          notificationsToSchedule.push({ notif, delay });
+          toSchedule.push({ notif, delay });
         }
       }
 
-      if (notificationsToUpdate.length > 0) {
-        try {
-          await this.supabase
-            .from('notificacion_programada')
-            .update({ estado: 'expirada' })
-            .in('id', notificationsToUpdate);
-        } catch (error) {
-          console.error('Error marcando notificaciones como expiradas:', error);
-        }
+      // Marca expiradas en batch
+      if (expiredIds.length > 0) {
+        await this.supabase
+          .from('notificacion_programada')
+          .update({ estado: 'expirada' })
+          .in('id', expiredIds);
       }
 
-      for (const { notif, delay } of notificationsToSchedule) {
+      // Programa las notificaciones válidas
+      for (const { notif, delay } of toSchedule) {
         const timeoutId = setTimeout(() => {
           this.showNotification(notif.titulo, {
             body: notif.mensaje,
@@ -234,20 +265,46 @@ export class NotificationService {
             requireInteraction: true,
             data: notif.datos,
           });
-          this.removeScheduledNotification(notif.id);
+          this.markNotificationAsSent(notif.id);
         }, delay);
 
         this.scheduledTimeouts.set(notif.id, timeoutId);
       }
+
+      console.log(`${toSchedule.length} notificaciones programadas, ${expiredIds.length} expiradas`);
     } catch (error) {
-      console.error('Error cargando notificaciones pendientes:', error);
+      if (error instanceof Error && error.message === 'Timeout') {
+        console.warn('Timeout cargando notificaciones - continuando sin bloquear');
+      } else {
+        console.error('Error en loadPendingNotifications:', error);
+      }
     }
   }
 
   async initializeNotifications(): Promise<void> {
-    const hasPermission = await this.requestPermission();
-    if (hasPermission) {
-      await this.loadPendingNotifications();
+    if (this.isInitialized) {
+      console.log('Notificaciones ya inicializadas');
+      return;
     }
+
+    try {
+      if (this.hasPermission()) {
+        console.log('Permisos de notificación concedidos, cargando pendientes...');
+        this.loadPendingNotifications().catch(err =>
+          console.error('Error cargando notificaciones en background:', err)
+        );
+      } else {
+        console.log('No hay permisos de notificación. Solicítalos desde la UI.');
+      }
+
+      this.isInitialized = true;
+    } catch (error) {
+      console.error('Error inicializando notificaciones:', error);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.scheduledTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.scheduledTimeouts.clear();
   }
 }

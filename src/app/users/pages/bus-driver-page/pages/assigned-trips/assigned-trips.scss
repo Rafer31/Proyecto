@@ -138,7 +138,7 @@
               .time {
                 font-weight: 600;
                 color: #333;
-                font-family: 'Roboto Mono', monospace;
+                font-family: "Roboto Mono", monospace;
 
                 &.real {
                   color: #1976d2;
@@ -185,8 +185,13 @@
   .assigned-trips-container {
     padding: 1rem;
 
+    .page-title {
+      font-size: 1.5rem;
+    }
+
     .trips-grid {
       grid-template-columns: 1fr;
     }
   }
+
 }

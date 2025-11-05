@@ -31,8 +31,10 @@ export class AvailableVisitantTrips implements OnInit {
   private userStateService = inject(UserStateService);
   private userDataService = inject(UserDataService);
   private supabaseService = inject(SupabaseService);
+
   currentUser = this.userStateService.currentUser;
   userName = this.userStateService.userName;
+  reservasActivas = signal<Map<string, number>>(new Map());
 
   async ngOnInit() {
     await this.cargarUsuario();
@@ -68,6 +70,33 @@ export class AvailableVisitantTrips implements OnInit {
         this.error.set('Usuario no encontrado');
         return;
       }
+
+      // Cargar reservas activas del usuario (visitante)
+      // Primero obtener el idvisitante
+      const { data: visitante, error: visitanteError } =
+        await this.supabaseService.supabase
+          .from('visitante')
+          .select('idvisitante')
+          .eq('idusuario', usuario.idusuario)
+          .maybeSingle();
+
+      if (!visitanteError && visitante) {
+        const { data: reservas, error: reservasError } =
+          await this.supabaseService.supabase
+            .from('visitante_planificacionviaje')
+            .select('idplanificacion, nroasiento')
+            .eq('idvisitante', visitante.idvisitante)
+            .eq('estado', 'reservado');
+
+        if (!reservasError && reservas) {
+          const reservasMap = new Map<string, number>();
+          reservas.forEach((r: any) => {
+            reservasMap.set(r.idplanificacion, r.nroasiento);
+          });
+          this.reservasActivas.set(reservasMap);
+        }
+      }
+
       const viajes = await this.tripService.getViajes();
 
       const viajesFiltrados = viajes.filter((v: any) => {
@@ -116,9 +145,17 @@ export class AvailableVisitantTrips implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe((result) => {
-      if (result) {
+      if (result?.cambiosRealizados) {
         this.cargarDatos();
       }
     });
+  }
+
+  tieneReservaEnViaje(idviaje: string): boolean {
+    return this.reservasActivas().has(idviaje);
+  }
+
+  getAsientoReservado(idviaje: string): number | null {
+    return this.reservasActivas().get(idviaje) || null;
   }
 }

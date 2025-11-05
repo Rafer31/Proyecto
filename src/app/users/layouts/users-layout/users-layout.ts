@@ -5,6 +5,7 @@ import { SupabaseService } from '../../../shared/services/supabase.service';
 import { UserDataService } from '../../../auth/services/userdata.service';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { filter } from 'rxjs';
+import { withTimeout } from '../../../shared/utils/timeout.util';
 
 @Component({
   selector: 'app-users-layout',
@@ -47,7 +48,11 @@ export class UsersLayout implements OnInit {
         const {
           data: { session },
           error: sessionError,
-        } = await this.supabase.auth.getSession();
+        } = await withTimeout(
+          this.supabase.auth.getSession(),
+          10000,
+          'No se pudo verificar tu sesión'
+        );
 
         if (sessionError) {
           console.error('Error obteniendo sesión:', sessionError);
@@ -62,8 +67,10 @@ export class UsersLayout implements OnInit {
         }
 
         try {
-          currentUser = await this.userDataService.getUserByAuthId(
-            session.user.id
+          currentUser = await withTimeout(
+            this.userDataService.getUserByAuthId(session.user.id),
+            10000,
+            'No se pudo cargar la información del usuario'
           );
           if (currentUser) {
             this.userState.setUser(currentUser);

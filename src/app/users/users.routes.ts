@@ -17,6 +17,10 @@ import { AvailableReturns } from './pages/staff-page/pages/available-returns/ava
 import { AvailableVisitantTrips } from './pages/visitant-page/pages/available-trips/available-visitant-trips';
 import { roleGuard } from '../auth/guards/role.guard';
 import { firstLoginGuard } from '../auth/guards/first-login.guard';
+import AdminHome from './pages/admin-page/pages/admin-home/admin-home';
+import StaffHome from './pages/staff-page/pages/staff-home/staff-home';
+import VisitantHome from './pages/visitant-page/pages/visitant-home/visitant-home';
+import DriverHome from './pages/bus-driver-page/pages/driver-home/driver-home';
 
 export const userRoutes: Routes = [
   {
@@ -30,6 +34,10 @@ export const userRoutes: Routes = [
         canActivate: [roleGuard],
         data: { roles: ['administrador'] },
         children: [
+          {
+            path: 'home',
+            component: AdminHome,
+          },
           {
             path: 'charts',
             component: ChartsPage,
@@ -48,7 +56,7 @@ export const userRoutes: Routes = [
           },
           {
             path: '',
-            redirectTo: 'charts',
+            redirectTo: 'home',
             pathMatch: 'full',
           },
         ],
@@ -60,6 +68,10 @@ export const userRoutes: Routes = [
         data: { roles: ['personal'] },
         children: [
           {
+            path: 'home',
+            component: StaffHome,
+          },
+          {
             path: 'available-trips',
             component: AvailableTrips,
           },
@@ -69,7 +81,7 @@ export const userRoutes: Routes = [
           },
           {
             path: '',
-            redirectTo: 'available-trips',
+            redirectTo: 'home',
             pathMatch: 'full',
           },
         ],
@@ -81,12 +93,16 @@ export const userRoutes: Routes = [
         data: { roles: ['visitante'] },
         children: [
           {
+            path: 'home',
+            component: VisitantHome,
+          },
+          {
             path: 'available-visitant-trips',
             component: AvailableVisitantTrips,
           },
           {
             path: '',
-            redirectTo: 'available-visitant-trips',
+            redirectTo: 'home',
             pathMatch: 'full',
           },
         ],
@@ -97,6 +113,10 @@ export const userRoutes: Routes = [
         canActivate: [roleGuard],
         data: { roles: ['conductor'] },
         children: [
+          {
+            path: 'home',
+            component: DriverHome,
+          },
           {
             path: 'assigned-trips',
             component: AssignedTrips,
@@ -115,7 +135,7 @@ export const userRoutes: Routes = [
           },
           {
             path: '',
-            redirectTo: 'assigned-trips',
+            redirectTo: 'home',
             pathMatch: 'full',
           },
         ],

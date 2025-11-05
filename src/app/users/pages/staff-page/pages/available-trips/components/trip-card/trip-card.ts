@@ -20,8 +20,11 @@ export class TripCardComponent {
   destino = input<string>();
   asientosDisponibles = input<number>();
   esRetorno = input<boolean>(false);
+  tieneReserva = input<boolean>(false);
+  asientoReservado = input<number | null>(null);
 
   reservar = output<string>();
+  verReserva = output<string>();
 
   cardColor = '#607d8b';
 
@@ -46,6 +49,10 @@ export class TripCardComponent {
     if (id) this.reservar.emit(id);
   }
 
+  onVerReserva() {
+    const id = this.idviaje();
+    if (id) this.verReserva.emit(id);
+  }
 
   formatHora(hora?: string): string {
     if (!hora) return '';

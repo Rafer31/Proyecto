@@ -39,10 +39,12 @@
           [fechaPartida]="viaje.fechaPartida"
           [fechaLlegada]="viaje.fechaLlegada"
           [horaPartida]="viaje.horaPartida"
-
           [destino]="viaje.destino"
           [asientosDisponibles]="viaje.asientosDisponibles"
+          [tieneReserva]="tieneReservaEnViaje(viaje.idviaje)"
+          [asientoReservado]="getAsientoReservado(viaje.idviaje)"
           (reservar)="abrirDialogoReserva($event)"
+          (verReserva)="abrirDialogoReserva($event)"
         ></app-trip-card>
       }
     </div>

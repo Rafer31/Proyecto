@@ -69,7 +69,7 @@ export class PlanningCardComponent {
       return 'Retorno programado a:';
     }
     return this.tieneRetorno()
-      ? 'Viaje programado a: (con retorno)'
+      ? 'Viaje (con retorno) programado a: '
       : 'Viaje programado a:';
   });
 

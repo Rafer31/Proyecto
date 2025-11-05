@@ -34,6 +34,7 @@ export class AvailableReturns implements OnInit {
   private userStateService = inject(UserStateService);
 
   currentUser = this.userStateService.currentUser;
+  reservasActivas = signal<Map<string, number>>(new Map());
 
   constructor() {
     effect(() => {
@@ -126,7 +127,7 @@ export class AvailableReturns implements OnInit {
       const { data: reservasActivas, error: reservasError } =
         await this.supabaseService.supabase
           .from('asignaciondestino_planificacionviaje')
-          .select('idplanificacion')
+          .select('idplanificacion, nroasiento')
           .eq('idasignaciondestino', asignacionDestino.idasignaciondestino)
           .eq('estado', 'reservado');
 
@@ -142,6 +143,37 @@ export class AvailableReturns implements OnInit {
       }
 
       const idsViajesConReserva = reservasActivas.map((r) => r.idplanificacion);
+
+      // Obtener IDs de los retornos con sus asientos reservados
+      const { data: retornosConReserva, error: retornosReservaError } =
+        await this.supabaseService.supabase
+          .from('retorno_viaje')
+          .select('idplanificacion_retorno, idplanificacion_ida')
+          .in('idplanificacion_ida', idsViajesConReserva)
+          .eq('estado', 'activo');
+
+      if (!retornosReservaError && retornosConReserva) {
+        // Buscar reservas en los retornos
+        const idsRetornos = retornosConReserva.map((r: any) => r.idplanificacion_retorno);
+
+        if (idsRetornos.length > 0) {
+          const { data: reservasRetorno, error: reservasRetornoError } =
+            await this.supabaseService.supabase
+              .from('asignaciondestino_planificacionviaje')
+              .select('idplanificacion, nroasiento')
+              .eq('idasignaciondestino', asignacionDestino.idasignaciondestino)
+              .in('idplanificacion', idsRetornos)
+              .eq('estado', 'reservado');
+
+          if (!reservasRetornoError && reservasRetorno) {
+            const reservasMap = new Map<string, number>();
+            reservasRetorno.forEach((r: any) => {
+              reservasMap.set(r.idplanificacion, r.nroasiento);
+            });
+            this.reservasActivas.set(reservasMap);
+          }
+        }
+      }
 
       const { data: retornosData, error: retornosError } =
         await this.supabaseService.supabase
@@ -219,5 +251,13 @@ export class AvailableReturns implements OnInit {
         this.cargarDatos();
       }
     });
+  }
+
+  tieneReservaEnViaje(idviaje: string): boolean {
+    return this.reservasActivas().has(idviaje);
+  }
+
+  getAsientoReservado(idviaje: string): number | null {
+    return this.reservasActivas().get(idviaje) || null;
   }
 }

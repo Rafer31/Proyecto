@@ -89,7 +89,7 @@ export class AssignedTrips implements OnInit {
       const viajes = await this.driverService.getViajesAsignados(
         usuario.idusuario
       );
-      
+
       // Filtrar solo viajes de IDA (los que NO son retornos)
       const viajesIda = await this.filtrarViajesIda(viajes);
       this.viajes.set(viajesIda);
@@ -112,7 +112,7 @@ export class AssignedTrips implements OnInit {
   private async filtrarViajesIda(viajes: ViajeAsignado[]): Promise<ViajeAsignado[]> {
     try {
       const idsViajes = viajes.map(v => v.idplanificacion);
-      
+
       if (idsViajes.length === 0) return [];
 
       // Obtener todos los retornos para identificar cuáles NO son retornos
@@ -126,7 +126,7 @@ export class AssignedTrips implements OnInit {
       // Retornar solo los viajes que NO están en la tabla de retornos
       return viajes.filter(v => !idsRetornos.has(v.idplanificacion));
     } catch (error) {
-      console.error('Error filtrando viajes de ida:', error);
+      console.error('Error filtrando viajes de salida:', error);
       return viajes;
     }
   }

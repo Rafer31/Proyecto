@@ -1,6 +1,7 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ApplicationRef } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NotificationService } from './shared/services/notification.service';
+import { first } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -10,10 +11,17 @@ import { NotificationService } from './shared/services/notification.service';
 })
 export class App implements OnInit {
   private notificationService = inject(NotificationService);
+  private appRef = inject(ApplicationRef);
 
   ngOnInit() {
-    this.notificationService.initializeNotifications().catch((error) => {
-      console.error('Error inicializando notificaciones:', error);
-    });
+    this.appRef.isStable
+      .pipe(first(stable => stable === true))
+      .subscribe(() => {
+        setTimeout(() => {
+          this.notificationService.initializeNotifications().catch((error) => {
+            console.error('Error inicializando notificaciones:', error);
+          });
+        }, 2000);
+      });
   }
 }

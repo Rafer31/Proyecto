@@ -311,7 +311,7 @@ export class CreateFromTemplateDialog implements OnInit {
     if (!template || this.tripForm.invalid) {
       this.tripForm.markAllAsTouched();
       this.snackBar.open(
-        'Complete todos los campos requeridos del viaje de ida',
+        'Complete todos los campos requeridos del viaje de salida',
         'Cerrar',
         {
           duration: 3000,

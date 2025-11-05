@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { Router, CanActivateFn } from '@angular/router';
 import { SupabaseService } from '../../shared/services/supabase.service';
 import { UserDataService } from '../../auth/services/userdata.service';
+import { withTimeout } from '../../shared/utils/timeout.util';
 
 export const firstLoginGuard: CanActivateFn = async (route, state) => {
   const supabase = inject(SupabaseService).supabase;
@@ -9,7 +10,11 @@ export const firstLoginGuard: CanActivateFn = async (route, state) => {
   try {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await withTimeout(
+      supabase.auth.getSession(),
+      10000,
+      'Verificación de sesión excedió el tiempo límite'
+    );
     if (!session) {
       return true;
     }
@@ -33,7 +38,11 @@ export const changePasswordGuard: CanActivateFn = async (route, state) => {
   try {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await withTimeout(
+      supabase.auth.getSession(),
+      10000,
+      'Verificación de sesión excedió el tiempo límite'
+    );
     if (!session) {
       router.navigate(['/login']);
       return false;
@@ -60,7 +69,11 @@ export const registrationStatusGuard: CanActivateFn = async (route, state) => {
   try {
     const {
       data: { session },
-    } = await supabase.auth.getSession();
+    } = await withTimeout(
+      supabase.auth.getSession(),
+      10000,
+      'Verificación de sesión excedió el tiempo límite'
+    );
 
     if (!session) {
       router.navigate(['/login']);
@@ -70,7 +83,11 @@ export const registrationStatusGuard: CanActivateFn = async (route, state) => {
     const authId = session.user.id;
 
     try {
-      const usuario = await userDataService.getUserByAuthId(authId);
+      const usuario = await withTimeout(
+        userDataService.getUserByAuthId(authId),
+        10000,
+        'No se pudo cargar la información del usuario'
+      );
 
       if (usuario) {
         const userRoleObj = Array.isArray(usuario.roles)

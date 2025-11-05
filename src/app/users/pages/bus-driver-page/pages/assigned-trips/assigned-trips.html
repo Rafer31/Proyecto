@@ -1,7 +1,7 @@
 <div class="assigned-trips-container">
   <div class="header">
-    <h1 class="page-title">Viajes Asignados (Ida)</h1>
-    <p class="subtitle">Viajes de salida hacia tu destino</p>
+    <h1 class="page-title">Viajes Asignados (Salida)</h1>
+    <p class="subtitle mb-4">Viajes de salida hacia tu destino</p>
   </div>
 
   @if (cargando()) {
@@ -9,16 +9,16 @@
       <mat-progress-spinner mode="indeterminate" diameter="50"></mat-progress-spinner>
       <p>Cargando viajes...</p>
     </div>
-  } 
-  
+  }
+
   @else if (viajes().length === 0) {
     <app-emptystate
       [imageSrc]="'no-trips.svg'"
-      [title]="'No tienes viajes de ida asignados'"
+      [title]="'No tienes viajes de salida asignados'"
       [description]="'Cuando se te asigne un viaje de salida, aparecerá aquí.'"
     />
-  } 
-  
+  }
+
   @else {
     <div class="trips-grid">
       @for (viaje of viajes(); track viaje.idplanificacion) {

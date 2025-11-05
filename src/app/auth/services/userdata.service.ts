@@ -186,4 +186,36 @@ export class UserDataService {
       this.userStateService.setLoading(false);
     }
   }
+
+  /**
+   * Método helper para cargar el usuario actual desde la sesión de Supabase
+   * Consolida la lógica repetida en los componentes de páginas de usuario
+   */
+  async loadCurrentUserFromSession() {
+    this.userStateService.setLoading(true);
+    this.userStateService.setError(null);
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await this.supabaseClient.auth.getUser();
+
+      if (authError || !user) {
+        console.error('Error obteniendo usuario autenticado:', authError);
+        this.userStateService.setError('Error de autenticación');
+        return null;
+      }
+
+      const usuario = await this.getActiveUserByAuthId(user.id);
+      this.userStateService.setUser(usuario);
+      return usuario;
+    } catch (error) {
+      console.error('Error cargando datos del usuario:', error);
+      this.userStateService.setError('Error al cargar datos del usuario');
+      return null;
+    } finally {
+      this.userStateService.setLoading(false);
+    }
+  }
 }

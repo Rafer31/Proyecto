@@ -42,7 +42,10 @@
           [destino]="retorno.destino"
           [asientosDisponibles]="retorno.asientosDisponibles"
           [esRetorno]="true"
+          [tieneReserva]="tieneReservaEnViaje(retorno.idviaje)"
+          [asientoReservado]="getAsientoReservado(retorno.idviaje)"
           (reservar)="abrirDialogoReserva($event)"
+          (verReserva)="abrirDialogoReserva($event)"
         ></app-trip-card>
       }
     </div>
