@@ -120,4 +120,5 @@ export class DialogCompany {
   onCancel() {
     this.dialogRef.close();
   }
+  
 }

@@ -13,25 +13,21 @@ import { BusCompanyService } from '../../../../services/bus-company.service';
 })
 export class CompaniesCard {
   busCompanyService = inject(BusCompanyService);
-
   companies = input<BusCompany[]>([]);
   onEdit = output<BusCompany>();
   onCompanyUpdated = output<BusCompany>();
+  onDelete = output<number>();
 
   async onFileSelected(event: Event, company: BusCompany) {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-
     const file = input.files[0];
-
     try {
       const newImageUrl = await this.busCompanyService.updateCompanyImage(
         company.idempresa,
         file
       );
-
       company.imageUrl = newImageUrl;
-
       this.onCompanyUpdated.emit(company);
     } catch (err) {
       console.error('Error subiendo imagen:', err);
@@ -41,14 +37,8 @@ export class CompaniesCard {
   onEditCompany(company: BusCompany) {
     this.onEdit.emit(company);
   }
-  onDelete = output<number>();
 
-  async onDeleteCompany(company: BusCompany) {
-    try {
-      await this.busCompanyService.deleteBusCompany(company.idempresa);
-      this.onDelete.emit(company.idempresa); 
-    } catch (err) {
-      console.error('Error eliminando empresa:', err);
-    }
+  onDeleteCompany(company: BusCompany) {
+    this.onDelete.emit(company.idempresa);
   }
 }
