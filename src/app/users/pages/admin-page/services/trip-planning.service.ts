@@ -173,19 +173,6 @@ export class TripPlanningService {
 
     if (errPlan) throw errPlan;
 
-    try {
-      const destino = Array.isArray(viaje.destino)
-        ? viaje.destino[0]
-        : viaje.destino;
-      await this.notificationService.schedulePreTripNotification(
-        viaje.idplanificacion,
-        viaje.fechapartida,
-        viaje.horapartida,
-        destino?.nomdestino || 'su destino'
-      );
-    } catch (error) {
-      console.error('Error programando notificación:', error);
-    }
 
     return viaje;
   }

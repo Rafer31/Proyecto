@@ -510,6 +510,7 @@ export class SeatsDialog {
     }
   }
 
+
   async cancelarReserva(pasajero: ReservaPasajero) {
     if (!pasajero) return;
     if (this.loadingDialogRef) return;
@@ -531,10 +532,12 @@ export class SeatsDialog {
       this.mostrarLoading('Cancelando reserva...', 'Procesando');
 
       try {
+        // ✅ PASAR idusuario para cancelar notificación
         await this.reservaService.cancelarReserva(
           this.data.idplanificacion,
           pasajero.asiento,
-          'visitante'
+          'visitante',
+          usuario.idusuario // 🔔 AGREGADO
         );
 
         this.cerrarLoading();
@@ -555,6 +558,7 @@ export class SeatsDialog {
       return;
     }
 
+    // ... resto del código para staff permanece igual
     const { existe, idplanificacionRetorno } =
       await this.retornoService.tieneRetorno(this.data.idplanificacion);
 

@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { SupabaseService } from '../../../../shared/services/supabase.service';
 import { RetornoService } from './retorno.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 
 export interface ReservaPasajero {
   asiento: number;
@@ -15,6 +16,9 @@ export interface ReservaPasajero {
 export class ReservaService {
   private supabase = inject(SupabaseService).supabase;
   private retornoService = inject(RetornoService);
+  private notificationService = inject(NotificationService);
+
+  // ... [mantener todos los métodos anteriores sin cambios hasta reservarAsientoPersonal]
 
   async getPasajerosPorPlanificacion(
     idplanificacion: string
@@ -414,6 +418,9 @@ export class ReservaService {
       }
     }
 
+    // 🔔 PROGRAMAR NOTIFICACIÓN PARA LA SALIDA
+    await this.programarNotificacionReserva(idusuario, idplanificacion);
+
     if (reservarRetorno) {
       const { data: retornoData } = await this.supabase
         .from('retorno_viaje')
@@ -481,11 +488,66 @@ export class ReservaService {
             .from('asignaciondestino_planificacionviaje')
             .insert(datosRetorno);
         }
+
+        // 🔔 PROGRAMAR NOTIFICACIÓN PARA EL RETORNO
+        await this.programarNotificacionReserva(idusuario, idPlanificacionRetorno);
       }
     }
 
     await this.actualizarAsientosDisponibles(idplanificacion);
     return true;
+  }
+
+  /**
+   * 🔔 NUEVO: Programa notificación al hacer una reserva
+   */
+  private async programarNotificacionReserva(
+    idusuario: string,
+    idplanificacion: string
+  ): Promise<void> {
+    try {
+      // Obtener información del viaje
+      const { data: viaje, error } = await this.supabase
+        .from('planificacion_viaje')
+        .select(`
+          idplanificacion,
+          fechapartida,
+          horapartida,
+          destino:destino(nomdestino)
+        `)
+        .eq('idplanificacion', idplanificacion)
+        .single();
+
+      if (error || !viaje) {
+        console.error('❌ Error obteniendo viaje para notificación:', error);
+        return;
+      }
+
+      // Extraer nombre del destino de forma segura
+      let nombreDestino = 'su destino';
+      if (viaje.destino) {
+        if (Array.isArray(viaje.destino) && viaje.destino.length > 0) {
+          nombreDestino = (viaje.destino[0] as any)?.nomdestino || 'su destino';
+        } else {
+          nombreDestino = (viaje.destino as any)?.nomdestino || 'su destino';
+        }
+      }
+
+      // Programar la notificación
+      await this.notificationService.schedulePreTripNotificationForUser(
+        idusuario,
+        idplanificacion,
+        viaje.fechapartida,
+        viaje.horapartida,
+        nombreDestino,
+        `reserva-${idplanificacion}-${idusuario}`
+      );
+
+      console.log('✅ Notificación programada para usuario:', idusuario);
+    } catch (error) {
+      console.error('❌ Error programando notificación:', error);
+      // No lanzamos el error para que no falle la reserva
+    }
   }
 
   async getPlanificacionRetorno(
@@ -505,6 +567,7 @@ export class ReservaService {
 
     return data?.idplanificacion_retorno || null;
   }
+
   async reservarAsientoVisitante(
     idplanificacion: string,
     asiento: number,
@@ -557,13 +620,17 @@ export class ReservaService {
       if (error) throw error;
     }
 
+    // 🔔 PROGRAMAR NOTIFICACIÓN PARA VISITANTE
+    await this.programarNotificacionReserva(idusuario, idplanificacion);
+
     await this.actualizarAsientosDisponibles(idplanificacion);
   }
 
   async cancelarReserva(
     idplanificacion: string,
     asiento: number,
-    tipo: 'personal' | 'visitante'
+    tipo: 'personal' | 'visitante',
+    idusuario?: string
   ): Promise<void> {
     const table =
       tipo === 'personal'
@@ -577,6 +644,14 @@ export class ReservaService {
       .eq('nroasiento', asiento);
 
     if (error) throw error;
+
+    // 🔔 CANCELAR NOTIFICACIÓN
+    if (idusuario) {
+      await this.notificationService.cancelUserTripNotifications(
+        idusuario,
+        idplanificacion
+      );
+    }
 
     await this.actualizarAsientosDisponibles(idplanificacion);
   }
@@ -599,6 +674,12 @@ export class ReservaService {
 
     if (error) throw error;
 
+    // 🔔 CANCELAR NOTIFICACIÓN DE SALIDA
+    await this.notificationService.cancelUserTripNotifications(
+      idusuario,
+      idplanificacion
+    );
+
     await this.actualizarAsientosDisponibles(idplanificacion);
 
     if (cancelarRetorno) {
@@ -615,10 +696,18 @@ export class ReservaService {
 
         if (errorRetorno) throw errorRetorno;
 
+        // 🔔 CANCELAR NOTIFICACIÓN DE RETORNO
+        await this.notificationService.cancelUserTripNotifications(
+          idusuario,
+          idplanificacionRetorno
+        );
+
         await this.actualizarAsientosDisponibles(idplanificacionRetorno);
       }
     }
   }
+
+  // ... [mantener todos los demás métodos sin cambios]
 
   async cambiarReserva(
     idusuario: string,
@@ -761,6 +850,7 @@ export class ReservaService {
       .update({ cantdisponibleasientos: disponibles })
       .eq('idconductorvehiculoempresa', viaje.idconductorvehiculoempresa);
   }
+
   async cambiarReservaVisitante(
     idusuario: string,
     idplanificacion: string,
@@ -779,6 +869,7 @@ export class ReservaService {
 
     await this.actualizarAsientosDisponibles(idplanificacion);
   }
+
   async verificarReservasActivas(idusuario: string): Promise<{
     tieneMaximo: boolean;
     total: number;

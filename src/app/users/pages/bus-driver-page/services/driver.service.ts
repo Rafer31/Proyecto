@@ -318,14 +318,6 @@ export class DriverService {
       throw new Error('Error al finalizar el viaje');
     }
 
-    try {
-      await this.notificationService.schedulePostTripNotification(
-        idplanificacion,
-        nombreDestino
-      );
-    } catch (error) {
-      console.error('Error enviando notificación de finalización:', error);
-    }
   }
 
   async marcarAsistencia(
