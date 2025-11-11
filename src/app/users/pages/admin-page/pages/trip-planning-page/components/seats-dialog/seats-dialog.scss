@@ -59,7 +59,6 @@
     border-bottom: 2px dashed #cbd5e0;
   }
 }
-
 .seat {
   display: flex;
   flex-direction: column;
@@ -90,8 +89,11 @@
   .seat-number {
     margin-top: 8px;
   }
+  &.wide {
+    min-width: 95px;
+    margin-left: 15px;
+  }
 }
-
 .seat.libre {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border-color: #86efac;
@@ -447,6 +449,10 @@ mat-dialog-actions {
     .seat-number {
       margin-top: 6px;
     }
+    &.wide {
+      min-width: 65px;
+      margin-left: 15px;
+    }
   }
   .seat.conductor {
     height: 60px;
@@ -561,6 +567,10 @@ mat-dialog-actions {
     .seat-number {
       margin-top: 4px;
     }
+    &.wide {
+    min-width: 65px;
+    margin-left: 15px;
+  }
   }
   .seat.conductor {
     height: 52px;

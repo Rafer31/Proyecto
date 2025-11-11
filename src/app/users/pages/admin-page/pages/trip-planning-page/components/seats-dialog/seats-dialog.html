@@ -20,6 +20,7 @@
                   [class.pasillo]="seat.tipo === 'pasillo'"
                   [class.vacio]="seat.tipo === 'vacio'"
                   [class.clickable]="seat.tipo === 'asiento'"
+                  [class.wide]="seat.wide"
                   (click)="seat.tipo === 'asiento' && !seat.ocupado ? reservarAsiento(seat) : verDetallePasajero(seat)"
                 >
                   @if (seat.tipo === 'asiento') {
@@ -77,6 +78,7 @@
                   [class.pasillo]="seat.tipo === 'pasillo'"
                   [class.vacio]="seat.tipo === 'vacio'"
                   [class.clickable]="seat.tipo === 'asiento' && !seat.ocupado"
+                  [class.wide]="seat.wide"
                   (click)="seat.tipo === 'asiento' && !seat.ocupado ? reservarAsientoRetorno(seat) : null"
                 >
                   @if (seat.tipo === 'asiento') {

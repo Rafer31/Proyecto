@@ -27,6 +27,7 @@ interface Asiento {
   tipo: 'asiento' | 'pasillo' | 'conductor' | 'vacio';
   pasajero?: ReservaPasajero;
   label?: string;
+  wide?: boolean;
 }
 
 interface Fila {
@@ -162,24 +163,56 @@ export class SeatsDialog {
     });
 
     // 🔹 Caso especial para 15 asientos
+    // 🔹 Caso especial para 15 asientos
     if (totalAsientos === 15) {
-      let numero = 1; // Empieza desde el asiento 1
+      const filasEspeciales = [
+        { hasPasillo: false, right: ['asiento', 'vacio'] },
+        { hasPasillo: true, right: ['vacio', 'asiento'] },
+        { hasPasillo: true, right: ['vacio', 'asiento'] },
+        { hasPasillo: false, right: ['asiento', 'asiento'] },
+      ];
 
-      // 5 filas normales: 2 izquierda + pasillo + 1 derecha
-      for (let fila = 0; fila < 5; fila++) {
+      const filasTemp: Fila[] = [];
+      const ocupados = pasajeros.map((p) => p.asiento);
+
+      filasTemp.push({
+        tipo: 'conductor',
+        asientos: [
+          { num: null, label: 'CONDUCTOR', tipo: 'conductor', ocupado: false },
+          this.crearAsiento(1, pasajeros, ocupados),
+          this.crearAsiento(2, pasajeros, ocupados),
+        ],
+      });
+
+      let numero = 3;
+
+      for (let index = 0; index < filasEspeciales.length; index++) {
+        const config = filasEspeciales[index];
         const asientosFila: Asiento[] = [];
 
-        // Lado izquierdo (2)
-        for (let i = 0; i < 2 && numero <= totalAsientos; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        // IZQUIERDA
+        for (let i = 0; i < 2; i++) {
+          const extra = numero >= 12 ? { wide: true } : undefined;
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
 
-        // Pasillo central
-        asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
+        // PASILLO
+        if (config.hasPasillo) {
+          asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
+        }
 
-        // Lado derecho (1)
-        if (numero <= totalAsientos) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        // DERECHA
+        for (let lado of config.right) {
+          if (lado === 'asiento') {
+            const extra = numero >= 12 ? { wide: true } : undefined;
+            asientosFila.push(
+              this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+            );
+          } else {
+            asientosFila.push({ num: null, tipo: 'vacio', ocupado: false });
+          }
         }
 
         filasTemp.push({ tipo: 'normal', asientos: asientosFila });
@@ -197,11 +230,15 @@ export class SeatsDialog {
 
       if (restantes === 5) {
         for (let i = 0; i < 2; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
         asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
         for (let i = 0; i < 2; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
       } else {
         const asientosEnFila = Math.min(restantes, 4);
@@ -209,13 +246,17 @@ export class SeatsDialog {
         const rightSide = asientosEnFila - leftSide;
 
         for (let i = 0; i < leftSide; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
 
         asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
 
         for (let i = 0; i < rightSide; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
       }
 
@@ -228,15 +269,22 @@ export class SeatsDialog {
   private crearAsiento(
     num: number,
     pasajeros: ReservaPasajero[],
-    ocupados: number[]
+    ocupados: number[],
+    totalAsientos?: number
   ): Asiento {
     const pasajero = pasajeros.find((p) => p.asiento === num);
-    return {
+    const asiento: Asiento = {
       num,
       ocupado: ocupados.includes(num),
       tipo: 'asiento',
       pasajero,
     };
+
+    if (totalAsientos === 15 && num >= 12 && num <= 15) {
+      asiento.wide = true;
+    }
+
+    return asiento;
   }
 
   verDetallePasajero(seat: Asiento) {
@@ -831,11 +879,17 @@ export class SeatsDialog {
 
       if (restantes === 5) {
         for (let i = 0; i < 2; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
-        asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        asientosFila.push(
+          this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+        );
         for (let i = 0; i < 2; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
       } else {
         const asientosEnFila = Math.min(restantes, 4);
@@ -843,11 +897,15 @@ export class SeatsDialog {
         const rightSide = asientosEnFila - leftSide;
 
         for (let i = 0; i < leftSide; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
         asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
         for (let i = 0; i < rightSide; i++) {
-          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
         }
       }
 
