@@ -15,7 +15,7 @@ html {
 }
 
 body {
-  color-scheme:  light ;
+  color-scheme: light;
 
   background-color: var(--mat-sys-surface);
   color: var(--mat-sys-on-surface);
@@ -29,7 +29,7 @@ body {
 html,
 body {
   height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
 }
 body {
   margin: 0;

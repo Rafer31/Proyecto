@@ -150,9 +150,9 @@ export class SeatsDialog {
     pasajeros: ReservaPasajero[]
   ) {
     const ocupados = pasajeros.map((p) => p.asiento);
-    let numero = 1;
     const filasTemp: Fila[] = [];
 
+    // 🔹 Fila del conductor (sin asiento numerado)
     filasTemp.push({
       tipo: 'conductor',
       asientos: [
@@ -161,6 +161,36 @@ export class SeatsDialog {
       ],
     });
 
+    // 🔹 Caso especial para 15 asientos
+    if (totalAsientos === 15) {
+      let numero = 1; // Empieza desde el asiento 1
+
+      // 5 filas normales: 2 izquierda + pasillo + 1 derecha
+      for (let fila = 0; fila < 5; fila++) {
+        const asientosFila: Asiento[] = [];
+
+        // Lado izquierdo (2)
+        for (let i = 0; i < 2 && numero <= totalAsientos; i++) {
+          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        }
+
+        // Pasillo central
+        asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
+
+        // Lado derecho (1)
+        if (numero <= totalAsientos) {
+          asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
+        }
+
+        filasTemp.push({ tipo: 'normal', asientos: asientosFila });
+      }
+
+      this.filas.set(filasTemp);
+      return;
+    }
+
+    // 🔹 Lógica general para otros casos
+    let numero = 1;
     while (numero <= totalAsientos) {
       const restantes = totalAsientos - numero + 1;
       const asientosFila: Asiento[] = [];
@@ -169,9 +199,7 @@ export class SeatsDialog {
         for (let i = 0; i < 2; i++) {
           asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
         }
-
-        asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
-
+        asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
         for (let i = 0; i < 2; i++) {
           asientosFila.push(this.crearAsiento(numero++, pasajeros, ocupados));
         }
@@ -509,7 +537,6 @@ export class SeatsDialog {
       this.pasajeroCambiando.set(null);
     }
   }
-
 
   async cancelarReserva(pasajero: ReservaPasajero) {
     if (!pasajero) return;
