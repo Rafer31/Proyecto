@@ -71,8 +71,6 @@ export class AvailableVisitantTrips implements OnInit {
         return;
       }
 
-      // Cargar reservas activas del usuario (visitante)
-      // Primero obtener el idvisitante
       const { data: visitante, error: visitanteError } =
         await this.supabaseService.supabase
           .from('visitante')

@@ -190,7 +190,6 @@ export class PendingRatingsCheckerService {
           filter: 'horarealllegada=not.null',
         },
         async (payload) => {
-          console.log('Viaje completado detectado:', payload);
 
           setTimeout(() => {
             this.checkAndShowPendingRatings(idusuario);

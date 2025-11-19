@@ -106,14 +106,14 @@ export class LoginCard {
 
       const authId = data.user.id;
 
-      // Primero verificar si el usuario existe en la BD (sin filtro de estado)
+      
       const usuarioExists = await withTimeout(
         this.userDataService.getUserByAuthId(authId),
         15000,
         'No se pudo verificar la información del usuario'
       );
 
-      // Si el usuario no existe en la BD, redirigir a completar registro
+      
       if (!usuarioExists) {
         this.dialogService.closeAll();
 
@@ -124,14 +124,14 @@ export class LoginCard {
 
         await firstValueFrom(dialogRef.afterClosed());
 
-        // Mostrar loading mientras se redirige
+        
         this.dialogService.showLoadingDialog();
         await this.router.navigate(['/register-user']);
         this.dialogService.closeLoadingDialog();
         return;
       }
 
-      // Verificar si el usuario está activo
+      
       const usuario = await withTimeout(
         this.userDataService.getActiveUserByAuthId(authId),
         15000,
@@ -149,7 +149,7 @@ export class LoginCard {
         return;
       }
 
-      // Obtener rol
+      
       const role = await withTimeout(
         this.userDataService.getUserRole(authId),
         15000,
@@ -198,7 +198,7 @@ export class LoginCard {
       console.error('Error inesperado:', error);
       this.dialogService.closeAll();
 
-      // Manejar errores de timeout y red
+      
       if (isTimeoutError(error) || isNetworkError(error)) {
         const dialogRef = this.dialogService.showRetryDialog({
           title: 'Conexión lenta',
@@ -210,7 +210,7 @@ export class LoginCard {
 
         const shouldRetry = await firstValueFrom(dialogRef.afterClosed());
         if (shouldRetry) {
-          // Reintentar login
+          
           await this.logIn();
         }
       } else {

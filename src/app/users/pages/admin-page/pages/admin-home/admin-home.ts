@@ -12,7 +12,6 @@ import { NotificationService } from '../../../../../shared/services/notification
   template: `
     <div class="bg-gradient-to-br from-purple-50 to-pink-100 p-4 md:p-8">
       <div class="mx-auto max-w-7xl">
-        <!-- Header de bienvenida -->
         <div class="mb-8 text-center">
           <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
             ¡Bienvenido, {{ userName() }}!
@@ -53,9 +52,7 @@ import { NotificationService } from '../../../../../shared/services/notification
         </mat-card>
         }
 
-        <!-- Grid de cards de acceso rápido -->
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <!-- Card 1: Estadísticas -->
           <mat-card
             class="!rounded-2xl !shadow-lg hover:!shadow-xl transition-all cursor-pointer"
             (click)="navigateTo('/users/admin/charts')"
@@ -79,7 +76,6 @@ import { NotificationService } from '../../../../../shared/services/notification
             </mat-card-content>
           </mat-card>
 
-          <!-- Card 2: Empresas & Vehículos -->
           <mat-card
             class="!rounded-2xl !shadow-lg hover:!shadow-xl transition-all cursor-pointer"
             (click)="navigateTo('/users/admin/bus-company')"
@@ -103,7 +99,6 @@ import { NotificationService } from '../../../../../shared/services/notification
             </mat-card-content>
           </mat-card>
 
-          <!-- Card 3: Usuarios -->
           <mat-card
             class="!rounded-2xl !shadow-lg hover:!shadow-xl transition-all cursor-pointer"
             (click)="navigateTo('/users/admin/manage-users')"
@@ -127,7 +122,6 @@ import { NotificationService } from '../../../../../shared/services/notification
             </mat-card-content>
           </mat-card>
 
-          <!-- Card 4: Planificación -->
           <mat-card
             class="!rounded-2xl !shadow-lg hover:!shadow-xl transition-all cursor-pointer"
             (click)="navigateTo('/users/admin/trip-planning')"
@@ -150,7 +144,6 @@ import { NotificationService } from '../../../../../shared/services/notification
           </mat-card>
         </div>
 
-        <!-- Información de funcionalidades -->
         <mat-card class="!rounded-2xl !shadow-lg mb-8">
           <mat-card-content class="p-6">
             <h2 class="text-xl md:text-2xl font-bold text-gray-800 mb-4">
@@ -248,7 +241,6 @@ import { NotificationService } from '../../../../../shared/services/notification
           </mat-card-content>
         </mat-card>
 
-        <!-- Acceso rápido a acciones comunes -->
         <div class="grid gap-6 md:grid-cols-3 mb-8">
           <mat-card
             class="!rounded-2xl !shadow-lg !bg-gradient-to-br !from-blue-500 !to-blue-600 !text-white"
@@ -311,7 +303,6 @@ import { NotificationService } from '../../../../../shared/services/notification
           </mat-card>
         </div>
 
-        <!-- Tips de administración -->
         <mat-card
           class="!rounded-2xl !shadow-lg !bg-purple-50 !border !border-purple-200"
         >

@@ -90,7 +90,7 @@ export class AssignedTrips implements OnInit {
         usuario.idusuario
       );
 
-      // Filtrar solo viajes de IDA (los que NO son retornos)
+      
       const viajesIda = await this.filtrarViajesIda(viajes);
       this.viajes.set(viajesIda);
 
@@ -115,7 +115,7 @@ export class AssignedTrips implements OnInit {
 
       if (idsViajes.length === 0) return [];
 
-      // Obtener todos los retornos para identificar cuáles NO son retornos
+      
       const { data: retornos } = await this.supabaseService.supabase
         .from('retorno_viaje')
         .select('idplanificacion_retorno')
@@ -123,7 +123,7 @@ export class AssignedTrips implements OnInit {
 
       const idsRetornos = new Set(retornos?.map(r => r.idplanificacion_retorno) || []);
 
-      // Retornar solo los viajes que NO están en la tabla de retornos
+      
       return viajes.filter(v => !idsRetornos.has(v.idplanificacion));
     } catch (error) {
       console.error('Error filtrando viajes de salida:', error);

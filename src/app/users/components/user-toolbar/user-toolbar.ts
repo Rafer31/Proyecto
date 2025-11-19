@@ -56,7 +56,6 @@ export class UserToolbar {
       const result = await firstValueFrom(dialogRef.afterClosed());
 
       if (result) {
-        // Mostrar loading mientras se cierra sesión
         this.dialogService.showLoadingDialog();
 
         await this.supabaseService.supabase.auth.signOut();

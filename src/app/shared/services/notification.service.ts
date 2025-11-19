@@ -86,10 +86,6 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Programa notificación pre-viaje para un usuario que reservó
-   * Se llama cuando un usuario hace una reserva de asiento
-   */
   async schedulePreTripNotificationForUser(
     idusuario: string,
     idplanificacion: string,
@@ -99,36 +95,31 @@ export class NotificationService {
     idreserva: string
   ): Promise<void> {
     try {
-      // Parsear fecha y hora en zona horaria local
+      
       const [year, month, day] = fechapartida.split('-').map(Number);
       const [hora, minuto] = horapartida.split(':').map(Number);
 
-      // Crear fecha de partida usando Date local (sin conversión UTC)
+      
       const departureDate = new Date(year, month - 1, day, hora, minuto, 0, 0);
 
-      console.log('📅 Fecha partida (local):', departureDate.toString());
-
-      // Calcular tiempo de notificación (20 minutos antes)
+      
       const notificationTime = new Date(departureDate.getTime() - 20 * 60 * 1000);
       const now = new Date();
 
-      console.log('🔔 Tiempo notificación:', notificationTime.toString());
-      console.log('⏰ Hora actual:', now.toString());
-
+  
       const diffMinutes = (notificationTime.getTime() - now.getTime()) / 60000;
-      console.log('⏱️ Diferencia en minutos:', diffMinutes.toFixed(2));
 
       const notificationId = `pre-trip-${idplanificacion}-${idusuario}`;
 
-      // Si ya pasó la hora de notificación
+      
       if (notificationTime <= now) {
-        // Verificar si el viaje aún no ha partido
+        
         if (departureDate > now) {
           const minutosRestantes = Math.round((departureDate.getTime() - now.getTime()) / 60000);
 
-          console.log(`⚠️ Viaje parte en ${minutosRestantes} minutos. Enviando notificación inmediata.`);
+      
 
-          // Enviar notificación inmediatamente
+          
           await this.showNotification('¡Tu viaje está próximo!', {
             body: `Tu viaje a ${destino} parte en ${minutosRestantes} minutos`,
             tag: notificationId,
@@ -142,7 +133,7 @@ export class NotificationService {
             },
           });
 
-          // Guardar en BD como enviada
+          
           await this.saveScheduledNotification({
             id: notificationId,
             type: 'pre-trip',
@@ -158,21 +149,20 @@ export class NotificationService {
               type: 'pre-trip',
               destino
             },
-          }, 'enviada'); // Estado enviada
+          }, 'enviada'); 
 
           return;
         } else {
-          console.log('❌ El viaje ya partió, no se envía notificación');
           return;
         }
       }
 
       const delay = notificationTime.getTime() - now.getTime();
 
-      // Cancelar notificación anterior si existe
+      
       this.cancelScheduledNotification(notificationId);
 
-      // Solo programa en memoria si es dentro de 24 horas
+      
       if (delay <= 24 * 60 * 60 * 1000) {
         const timeoutId = setTimeout(() => {
           this.showNotification('¡Tu viaje está próximo!', {
@@ -191,10 +181,9 @@ export class NotificationService {
         }, delay);
 
         this.scheduledTimeouts.set(notificationId, timeoutId);
-        console.log(`✅ Notificación en memoria programada para ${notificationTime.toLocaleString()}`);
       }
 
-      // Guardar en base de datos SIEMPRE como pendiente
+      
       await this.saveScheduledNotification({
         id: notificationId,
         type: 'pre-trip',
@@ -211,17 +200,12 @@ export class NotificationService {
           destino
         },
       }, 'pendiente');
-
-      console.log(`✅ Notificación guardada en BD para ${notificationTime.toLocaleString()}`);
     } catch (error) {
       console.error('❌ Error programando notificación pre-viaje:', error);
     }
   }
 
-  /**
-   * Programa notificación post-viaje para un usuario
-   * Se muestra inmediatamente después de completar el viaje
-   */
+
   async schedulePostTripNotification(
     idusuario: string,
     idplanificacion: string,
@@ -250,34 +234,24 @@ export class NotificationService {
     if (timeoutId) {
       clearTimeout(timeoutId);
       this.scheduledTimeouts.delete(notificationId);
-      console.log(`✅ Notificación ${notificationId} cancelada de memoria`);
     }
   }
 
-  /**
-   * Cancela todas las notificaciones de un usuario para un viaje
-   */
   async cancelUserTripNotifications(
     idusuario: string,
     idplanificacion: string
   ): Promise<void> {
     const notificationId = `pre-trip-${idplanificacion}-${idusuario}`;
 
-    // Cancelar de memoria
+    
     this.cancelScheduledNotification(notificationId);
 
     try {
-      // ELIMINAR de la base de datos en lugar de actualizar
+      
       const { error } = await this.supabase
         .from('notificacion_programada')
         .delete()
         .eq('id', notificationId);
-
-      if (error) {
-        console.error('❌ Error eliminando notificación en BD:', error);
-      } else {
-        console.log(`✅ Notificación ${notificationId} eliminada de BD`);
-      }
     } catch (error) {
       console.error('❌ Error cancelando notificación en BD:', error);
     }
@@ -326,10 +300,7 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Carga notificaciones pendientes para el usuario actual
-   * Filtra solo las notificaciones del usuario
-   */
+
   async loadPendingNotifications(idusuario?: string): Promise<void> {
     try {
       const loadPromise = this.supabase
@@ -338,7 +309,7 @@ export class NotificationService {
         .eq('estado', 'pendiente')
         .gte('fechahora_programada', new Date().toISOString())
         .then(result => {
-          // Si hay idusuario, filtrar por usuario
+          
           if (idusuario && result.data) {
             result.data = result.data.filter(n => n.idusuario === idusuario);
           }
@@ -360,7 +331,6 @@ export class NotificationService {
       }
 
       if (!data || data.length === 0) {
-        console.log('ℹ️ No hay notificaciones pendientes');
         return;
       }
 
@@ -377,13 +347,13 @@ export class NotificationService {
           continue;
         }
 
-        // Solo programa si es dentro de 24 horas
+        
         if (delay <= 24 * 60 * 60 * 1000) {
           toSchedule.push({ notif, delay });
         }
       }
 
-      // Marca expiradas en batch
+      
       if (expiredIds.length > 0) {
         await this.supabase
           .from('notificacion_programada')
@@ -391,7 +361,7 @@ export class NotificationService {
           .in('id', expiredIds);
       }
 
-      // Programa las notificaciones válidas
+      
       for (const { notif, delay } of toSchedule) {
         const timeoutId = setTimeout(() => {
           this.showNotification(notif.titulo, {
@@ -406,7 +376,6 @@ export class NotificationService {
         this.scheduledTimeouts.set(notif.id, timeoutId);
       }
 
-      console.log(`✅ ${toSchedule.length} notificaciones programadas, ${expiredIds.length} expiradas`);
     } catch (error) {
       if (error instanceof Error && error.message === 'Timeout') {
         console.warn('⚠️ Timeout cargando notificaciones - continuando sin bloquear');
@@ -416,25 +385,12 @@ export class NotificationService {
     }
   }
 
-  /**
-   * Inicializa notificaciones para un usuario específico
-   */
   async initializeNotifications(idusuario?: string): Promise<void> {
     if (this.isInitialized) {
-      console.log('ℹ️ Notificaciones ya inicializadas');
       return;
     }
 
     try {
-      if (this.hasPermission()) {
-        console.log('✅ Permisos de notificación concedidos, cargando pendientes...');
-        this.loadPendingNotifications(idusuario).catch(err =>
-          console.error('❌ Error cargando notificaciones en background:', err)
-        );
-      } else {
-        console.log('ℹ️ No hay permisos de notificación.');
-      }
-
       this.isInitialized = true;
     } catch (error) {
       console.error('❌ Error inicializando notificaciones:', error);

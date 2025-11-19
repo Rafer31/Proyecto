@@ -89,8 +89,7 @@ export class AssignedReturns implements OnInit {
       const viajes = await this.driverService.getViajesAsignados(
         usuario.idusuario
       );
-      
-      // Filtrar solo RETORNOS
+
       const viajesRetorno = await this.filtrarRetornos(viajes);
       this.retornos.set(viajesRetorno);
 
@@ -109,22 +108,24 @@ export class AssignedReturns implements OnInit {
     }
   }
 
-  private async filtrarRetornos(viajes: ViajeAsignado[]): Promise<ViajeAsignado[]> {
+  private async filtrarRetornos(
+    viajes: ViajeAsignado[]
+  ): Promise<ViajeAsignado[]> {
     try {
-      const idsViajes = viajes.map(v => v.idplanificacion);
-      
+      const idsViajes = viajes.map((v) => v.idplanificacion);
+
       if (idsViajes.length === 0) return [];
 
-      // Obtener solo los retornos
       const { data: retornos } = await this.supabaseService.supabase
         .from('retorno_viaje')
         .select('idplanificacion_retorno')
         .in('idplanificacion_retorno', idsViajes);
 
-      const idsRetornos = new Set(retornos?.map(r => r.idplanificacion_retorno) || []);
+      const idsRetornos = new Set(
+        retornos?.map((r) => r.idplanificacion_retorno) || []
+      );
 
-      // Retornar solo los viajes que SÍ están en la tabla de retornos
-      return viajes.filter(v => idsRetornos.has(v.idplanificacion));
+      return viajes.filter((v) => idsRetornos.has(v.idplanificacion));
     } catch (error) {
       console.error('Error filtrando retornos:', error);
       return [];

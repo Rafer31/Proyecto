@@ -76,7 +76,6 @@ export class RegisterCard {
 
     try {
       this.isLoading.set(true);
-      const loadingDialog = this.dialogService.showLoadingDialog();
 
       const { data, error } = await this.supabaseClient.auth.signUp({
         email: this.form.value.email!,
@@ -104,7 +103,6 @@ export class RegisterCard {
         return;
       }
 
-      console.log('Registro exitoso:', data);
 
       this.dialogService.showSuccessDialog(
         'Tu cuenta ha sido creada exitosamente. Por favor, verifica tu correo electrónico.',

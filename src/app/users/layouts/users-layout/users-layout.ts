@@ -61,7 +61,7 @@ export class UsersLayout implements OnInit {
         }
 
         if (!session) {
-          console.log('No hay sesión activa, redirigiendo a login');
+
           this.router.navigate(['/login'], { replaceUrl: true });
           return;
         }
@@ -85,7 +85,7 @@ export class UsersLayout implements OnInit {
       }
 
       if (!currentUser) {
-        console.log('Usuario no encontrado, redirigiendo a login');
+ 
         this.router.navigate(['/register-user'], { replaceUrl: true });
         return;
       }
@@ -103,7 +103,7 @@ export class UsersLayout implements OnInit {
         return;
       }
 
-      console.log('Redirigiendo usuario con rol:', userRole);
+
 
       switch (userRole) {
         case 'Administrador':

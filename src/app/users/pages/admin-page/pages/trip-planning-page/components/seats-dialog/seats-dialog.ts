@@ -153,7 +153,6 @@ export class SeatsDialog {
     const ocupados = pasajeros.map((p) => p.asiento);
     const filasTemp: Fila[] = [];
 
-    // 🔹 Fila del conductor (sin asiento numerado)
     filasTemp.push({
       tipo: 'conductor',
       asientos: [
@@ -162,8 +161,6 @@ export class SeatsDialog {
       ],
     });
 
-    // 🔹 Caso especial para 15 asientos
-    // 🔹 Caso especial para 15 asientos
     if (totalAsientos === 15) {
       const filasEspeciales = [
         { hasPasillo: false, right: ['asiento', 'vacio'] },
@@ -190,7 +187,6 @@ export class SeatsDialog {
         const config = filasEspeciales[index];
         const asientosFila: Asiento[] = [];
 
-        // IZQUIERDA
         for (let i = 0; i < 2; i++) {
           const extra = numero >= 12 ? { wide: true } : undefined;
           asientosFila.push(
@@ -198,12 +194,10 @@ export class SeatsDialog {
           );
         }
 
-        // PASILLO
         if (config.hasPasillo) {
           asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
         }
 
-        // DERECHA
         for (let lado of config.right) {
           if (lado === 'asiento') {
             const extra = numero >= 12 ? { wide: true } : undefined;
@@ -222,7 +216,6 @@ export class SeatsDialog {
       return;
     }
 
-    // 🔹 Lógica general para otros casos
     let numero = 1;
     while (numero <= totalAsientos) {
       const restantes = totalAsientos - numero + 1;
@@ -478,9 +471,10 @@ export class SeatsDialog {
   async cambiarAsiento(pasajero: ReservaPasajero) {
     if (!pasajero) return;
 
-    const mensaje = this.tieneRetorno()
-      ? `¿Desea cambiar el asiento ${pasajero.asiento} por otro? El cambio se aplicará tanto en la salida como en el retorno. Seleccione un asiento disponible después de confirmar.`
-      : `¿Desea cambiar el asiento ${pasajero.asiento} por otro? Seleccione un asiento disponible después de confirmar.`;
+    const mensaje =
+      this.data.isStaff && this.tieneRetorno()
+        ? `¿Desea cambiar el asiento ${pasajero.asiento} por otro? El cambio se aplicará tanto en la salida como en el retorno. Seleccione un asiento disponible después de confirmar.`
+        : `¿Desea cambiar el asiento ${pasajero.asiento} por otro? Seleccione un asiento disponible después de confirmar.`;
 
     const dialogRef = this.dialog.open(ConfirmDialog, {
       data: {
@@ -497,9 +491,10 @@ export class SeatsDialog {
     this.modoCambioAsiento.set(true);
     this.pasajeroCambiando.set(pasajero);
 
-    const mensajeSnack = this.tieneRetorno()
-      ? 'Seleccione el nuevo asiento. El cambio se aplicará en salida y retorno.'
-      : 'Ahora seleccione el nuevo asiento en el mapa';
+    const mensajeSnack =
+      this.data.isStaff && this.tieneRetorno()
+        ? 'Seleccione el nuevo asiento. El cambio se aplicará en salida y retorno.'
+        : 'Ahora seleccione el nuevo asiento en el mapa';
 
     this.snackBar.open(mensajeSnack, 'Cerrar', { duration: 4000 });
     this.volverAlMapa();
@@ -520,9 +515,10 @@ export class SeatsDialog {
       return;
     }
 
-    const mensaje = this.tieneRetorno()
-      ? `¿Confirma cambiar del asiento ${pasajero.asiento} al asiento ${seat.num}? El cambio se aplicará en salida y retorno.`
-      : `¿Confirma cambiar del asiento ${pasajero.asiento} al asiento ${seat.num}?`;
+    const mensaje =
+      this.data.isStaff && this.tieneRetorno()
+        ? `¿Confirma cambiar del asiento ${pasajero.asiento} al asiento ${seat.num}? El cambio se aplicará en salida y retorno.`
+        : `¿Confirma cambiar del asiento ${pasajero.asiento} al asiento ${seat.num}?`;
 
     const dialogRef = this.dialog.open(ConfirmDialog, {
       data: {
@@ -575,7 +571,7 @@ export class SeatsDialog {
 
       await this.recargarYCerrar();
     } catch (error) {
-      console.error(' Error cambiando asiento:', error);
+      console.error('Error cambiando asiento:', error);
       this.cerrarLoading();
       this.snackBar.open(`Error al cambiar asiento: ${error}`, 'Cerrar', {
         duration: 4000,
@@ -585,7 +581,6 @@ export class SeatsDialog {
       this.pasajeroCambiando.set(null);
     }
   }
-
   async cancelarReserva(pasajero: ReservaPasajero) {
     if (!pasajero) return;
     if (this.loadingDialogRef) return;
@@ -607,12 +602,11 @@ export class SeatsDialog {
       this.mostrarLoading('Cancelando reserva...', 'Procesando');
 
       try {
-        // ✅ PASAR idusuario para cancelar notificación
         await this.reservaService.cancelarReserva(
           this.data.idplanificacion,
           pasajero.asiento,
           'visitante',
-          usuario.idusuario // 🔔 AGREGADO
+          usuario.idusuario
         );
 
         this.cerrarLoading();
@@ -633,7 +627,6 @@ export class SeatsDialog {
       return;
     }
 
-    // ... resto del código para staff permanece igual
     const { existe, idplanificacionRetorno } =
       await this.retornoService.tieneRetorno(this.data.idplanificacion);
 
@@ -862,8 +855,57 @@ export class SeatsDialog {
     pasajeros: ReservaPasajero[]
   ) {
     const ocupados = pasajeros.map((p) => p.asiento);
-    let numero = 1;
     const filasTemp: Fila[] = [];
+
+    if (totalAsientos === 15) {
+      const filasEspeciales = [
+        { hasPasillo: false, right: ['asiento', 'vacio'] },
+        { hasPasillo: true, right: ['vacio', 'asiento'] },
+        { hasPasillo: true, right: ['vacio', 'asiento'] },
+        { hasPasillo: false, right: ['asiento', 'asiento'] },
+      ];
+
+      filasTemp.push({
+        tipo: 'conductor',
+        asientos: [
+          { num: null, label: 'CONDUCTOR', tipo: 'conductor', ocupado: false },
+          this.crearAsiento(1, pasajeros, ocupados, totalAsientos),
+          this.crearAsiento(2, pasajeros, ocupados, totalAsientos),
+        ],
+      });
+
+      let numero = 3;
+
+      for (let index = 0; index < filasEspeciales.length; index++) {
+        const config = filasEspeciales[index];
+        const asientosFila: Asiento[] = [];
+
+        for (let i = 0; i < 2; i++) {
+          asientosFila.push(
+            this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+          );
+        }
+
+        if (config.hasPasillo) {
+          asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
+        }
+
+        for (let lado of config.right) {
+          if (lado === 'asiento') {
+            asientosFila.push(
+              this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
+            );
+          } else {
+            asientosFila.push({ num: null, tipo: 'vacio', ocupado: false });
+          }
+        }
+
+        filasTemp.push({ tipo: 'normal', asientos: asientosFila });
+      }
+
+      this.filasRetorno.set(filasTemp);
+      return;
+    }
 
     filasTemp.push({
       tipo: 'conductor',
@@ -873,6 +915,7 @@ export class SeatsDialog {
       ],
     });
 
+    let numero = 1;
     while (numero <= totalAsientos) {
       const restantes = totalAsientos - numero + 1;
       const asientosFila: Asiento[] = [];
@@ -883,9 +926,7 @@ export class SeatsDialog {
             this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
           );
         }
-        asientosFila.push(
-          this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
-        );
+        asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
         for (let i = 0; i < 2; i++) {
           asientosFila.push(
             this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
@@ -901,7 +942,9 @@ export class SeatsDialog {
             this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
           );
         }
+
         asientosFila.push({ num: null, tipo: 'pasillo', ocupado: false });
+
         for (let i = 0; i < rightSide; i++) {
           asientosFila.push(
             this.crearAsiento(numero++, pasajeros, ocupados, totalAsientos)
@@ -914,7 +957,6 @@ export class SeatsDialog {
 
     this.filasRetorno.set(filasTemp);
   }
-
   async reservarAsientoRetorno(seat: Asiento) {
     if (!seat || seat.ocupado || seat.tipo !== 'asiento') return;
 

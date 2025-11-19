@@ -21,7 +21,6 @@ export const firstLoginGuard: CanActivateFn = async (route, state) => {
     const needsPasswordChange =
       session.user?.user_metadata?.['needs_password_change'];
     if (needsPasswordChange === true) {
-      console.log('Usuario necesita cambiar contraseña, redirigiendo...');
       router.navigate(['/auth/change-password']);
       return false;
     }

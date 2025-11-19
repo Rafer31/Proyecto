@@ -111,8 +111,6 @@ export class AvailableTrips implements OnInit {
         : destinoInfo?.nomdestino;
       this.usuarioDestino.set(nombreDestino || asignacion.iddestino);
 
-      // Cargar reservas activas del usuario (personal)
-      // Primero obtener las asignaciones de destino del personal
       const { data: asignaciones, error: asignacionesError } =
         await this.supabaseService.supabase
           .from('asignacion_destino')
@@ -120,7 +118,9 @@ export class AvailableTrips implements OnInit {
           .eq('nroficha', personal.nroficha);
 
       if (!asignacionesError && asignaciones) {
-        const idsAsignaciones = asignaciones.map((a: any) => a.idasignaciondestino);
+        const idsAsignaciones = asignaciones.map(
+          (a: any) => a.idasignaciondestino
+        );
 
         if (idsAsignaciones.length > 0) {
           const { data: reservas, error: reservasError } =
@@ -145,7 +145,6 @@ export class AvailableTrips implements OnInit {
           asignacion.iddestino
         );
 
-      // Filtrar viajes que no hayan partido ni llegado
       const viajesSinPartir = viajesConRetorno.filter((viajeData: any) => {
         const viaje = viajeData.viaje;
         return !viaje.horarealpartida && !viaje.horareallegada;

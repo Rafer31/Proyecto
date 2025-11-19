@@ -69,7 +69,7 @@ export class DialogService {
       disableClose: true,
     });
 
-    // Inject data manually
+    
     if (dialogRef.componentInstance) {
       (dialogRef.componentInstance as any)['data'] = data;
     }

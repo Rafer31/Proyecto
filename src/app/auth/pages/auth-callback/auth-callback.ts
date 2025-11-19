@@ -3,7 +3,11 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { UserDataService } from '../../services/userdata.service';
 import { DialogService } from '../../../shared/services/dialog.service';
-import { withTimeout, isTimeoutError, isNetworkError } from '../../../shared/utils/timeout.util';
+import {
+  withTimeout,
+  isTimeoutError,
+  isNetworkError,
+} from '../../../shared/utils/timeout.util';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -25,7 +29,6 @@ export default class AuthCallback {
 
   private async handleAuthCallback(isRetry: boolean = false) {
     try {
-      // Obtener sesión con timeout
       const {
         data: { session },
       } = await withTimeout(
@@ -45,7 +48,6 @@ export default class AuthCallback {
         user.user_metadata?.['created_from_admin'] ||
         user.user_metadata?.['admin_created'];
 
-      // Verificar si necesita cambiar contraseña
       if (user.user_metadata?.['needs_password_change']) {
         this.router.navigate(['/auth/change-password']);
         return;
@@ -53,7 +55,6 @@ export default class AuthCallback {
 
       const authId = user.id;
 
-      // Buscar usuario en la base de datos con timeout
       let usuario;
       try {
         usuario = await withTimeout(
@@ -62,25 +63,20 @@ export default class AuthCallback {
           'No se pudo cargar la información del usuario'
         );
       } catch (error) {
-        // Si hay error al buscar usuario, puede ser que no exista en la BD
         console.error('Error buscando usuario:', error);
 
         if (isTimeoutError(error) || isNetworkError(error)) {
-          // Si es error de red/timeout, mostrar retry
           throw error;
         }
 
-        // Si no es error de red, asumir que el usuario no existe
         usuario = null;
       }
 
-      // Si no existe en la BD, redirigir a completar registro
       if (!usuario) {
         this.router.navigate(['/register-user']);
         return;
       }
 
-      // Redirigir según rol
       const userRoleObj = Array.isArray(usuario.roles)
         ? usuario.roles[0]
         : usuario.roles;
@@ -101,13 +97,11 @@ export default class AuthCallback {
           this.router.navigate(['/users/visitant']);
           break;
         default:
-          // Si no tiene rol válido, redirigir a completar registro
           this.router.navigate(['/register-user']);
       }
     } catch (error) {
       console.error('Error en auth callback:', error);
 
-      // Si es error de timeout o de red, mostrar diálogo de retry
       if (isTimeoutError(error) || isNetworkError(error)) {
         const dialogRef = this.dialogService.showRetryDialog({
           title: 'Conexión lenta',
@@ -127,7 +121,6 @@ export default class AuthCallback {
           this.router.navigate(['/login']);
         }
       } else {
-        // Para otros errores, mostrar mensaje genérico y redirigir
         this.dialogService.showErrorDialog(
           'Ocurrió un error al verificar tu sesión. Por favor intenta nuevamente.',
           'Error de autenticación'

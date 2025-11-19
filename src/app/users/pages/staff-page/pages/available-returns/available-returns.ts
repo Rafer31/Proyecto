@@ -144,7 +144,6 @@ export class AvailableReturns implements OnInit {
 
       const idsViajesConReserva = reservasActivas.map((r) => r.idplanificacion);
 
-      // Obtener IDs de los retornos con sus asientos reservados
       const { data: retornosConReserva, error: retornosReservaError } =
         await this.supabaseService.supabase
           .from('retorno_viaje')
@@ -153,8 +152,9 @@ export class AvailableReturns implements OnInit {
           .eq('estado', 'activo');
 
       if (!retornosReservaError && retornosConReserva) {
-        // Buscar reservas en los retornos
-        const idsRetornos = retornosConReserva.map((r: any) => r.idplanificacion_retorno);
+        const idsRetornos = retornosConReserva.map(
+          (r: any) => r.idplanificacion_retorno
+        );
 
         if (idsRetornos.length > 0) {
           const { data: reservasRetorno, error: reservasRetornoError } =
