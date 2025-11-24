@@ -1,6 +1,15 @@
 import { Component, Inject, inject } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule,
+} from '@angular/forms';
+import {
+  MAT_DIALOG_DATA,
+  MatDialogModule,
+  MatDialogRef,
+} from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,7 +30,7 @@ import { DestinyService } from '../../../../../../../shared/services/destiny.ser
     MatButtonModule,
     MatSelectModule,
     MatDatepickerModule,
-    MatDialogModule
+    MatDialogModule,
   ],
   templateUrl: './edit-trip-dialog.html',
   styleUrls: ['./edit-trip-dialog.scss'],
@@ -30,22 +39,38 @@ export class EditTripDialog {
   private fb = inject(FormBuilder);
   private dialogRef = inject(MatDialogRef<EditTripDialog>);
   private tripService = inject(TripPlanningService);
-  private destinyService = inject(DestinyService)
+  private destinyService = inject(DestinyService);
   destinos: any[] = [];
   formStep2!: FormGroup;
 
   constructor(@Inject(MAT_DIALOG_DATA) public data: any) {}
 
   async ngOnInit() {
-    this.formStep2 = this.fb.group({
-      fechapartida: [this.data?.viaje.fechapartida || '', Validators.required],
-      fechallegada: [this.data?.viaje.fechallegada || '', Validators.required],
-      horapartida: [this.data?.viaje.horapartida || '', Validators.required],
+    const fechaPartida = this.data?.viaje.fechapartida
+      ? this.parseLocalDate(this.data.viaje.fechapartida)
+      : '';
+    const fechaLlegada = this.data?.viaje.fechallegada
+      ? this.parseLocalDate(this.data.viaje.fechallegada)
+      : '';
 
-      iddestino: [this.data?.viaje.destino?.iddestino || '', Validators.required],
+    this.formStep2 = this.fb.group({
+      fechapartida: [fechaPartida, Validators.required],
+      fechallegada: [fechaLlegada, Validators.required],
+      horapartida: [this.data?.viaje.horapartida || '', Validators.required],
+      iddestino: [
+        this.data?.viaje.destino?.iddestino || '',
+        Validators.required,
+      ],
     });
 
     this.destinos = await this.destinyService.getDestinosParaViajes();
+  }
+
+  private parseLocalDate(dateString: string): Date {
+    // Si es formato ISO completo, extraer solo la fecha
+    const dateOnly = dateString.split('T')[0];
+    const [year, month, day] = dateOnly.split('-').map(Number);
+    return new Date(year, month - 1, day);
   }
 
   async onSubmit() {

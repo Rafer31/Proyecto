@@ -47,9 +47,11 @@ export class NotificationService {
   }
 
   needsPermission(): boolean {
-    return 'Notification' in window &&
-           Notification.permission !== 'granted' &&
-           Notification.permission !== 'denied';
+    return (
+      'Notification' in window &&
+      Notification.permission !== 'granted' &&
+      Notification.permission !== 'denied'
+    );
   }
 
   isPermissionDenied(): boolean {
@@ -95,31 +97,26 @@ export class NotificationService {
     idreserva: string
   ): Promise<void> {
     try {
-      
       const [year, month, day] = fechapartida.split('-').map(Number);
       const [hora, minuto] = horapartida.split(':').map(Number);
 
-      
       const departureDate = new Date(year, month - 1, day, hora, minuto, 0, 0);
 
-      
-      const notificationTime = new Date(departureDate.getTime() - 20 * 60 * 1000);
+      const notificationTime = new Date(
+        departureDate.getTime() - 20 * 60 * 1000
+      );
       const now = new Date();
 
-  
       const diffMinutes = (notificationTime.getTime() - now.getTime()) / 60000;
 
       const notificationId = `pre-trip-${idplanificacion}-${idusuario}`;
 
-      
       if (notificationTime <= now) {
-        
         if (departureDate > now) {
-          const minutosRestantes = Math.round((departureDate.getTime() - now.getTime()) / 60000);
+          const minutosRestantes = Math.round(
+            (departureDate.getTime() - now.getTime()) / 60000
+          );
 
-      
-
-          
           await this.showNotification('¡Tu viaje está próximo!', {
             body: `Tu viaje a ${destino} parte en ${minutosRestantes} minutos`,
             tag: notificationId,
@@ -129,27 +126,29 @@ export class NotificationService {
               idusuario,
               idreserva,
               type: 'pre-trip',
-              url: `/users/traveler/my-trips`
+              url: `/users/traveler/my-trips`,
             },
           });
 
-          
-          await this.saveScheduledNotification({
-            id: notificationId,
-            type: 'pre-trip',
-            idplanificacion,
-            idusuario,
-            scheduledTime: notificationTime.toISOString(),
-            title: '¡Tu viaje está próximo!',
-            body: `Tu viaje a ${destino} parte en ${minutosRestantes} minutos`,
-            data: {
+          await this.saveScheduledNotification(
+            {
+              id: notificationId,
+              type: 'pre-trip',
               idplanificacion,
               idusuario,
-              idreserva,
-              type: 'pre-trip',
-              destino
+              scheduledTime: notificationTime.toISOString(),
+              title: '¡Tu viaje está próximo!',
+              body: `Tu viaje a ${destino} parte en ${minutosRestantes} minutos`,
+              data: {
+                idplanificacion,
+                idusuario,
+                idreserva,
+                type: 'pre-trip',
+                destino,
+              },
             },
-          }, 'enviada'); 
+            'enviada'
+          );
 
           return;
         } else {
@@ -159,10 +158,8 @@ export class NotificationService {
 
       const delay = notificationTime.getTime() - now.getTime();
 
-      
       this.cancelScheduledNotification(notificationId);
 
-      
       if (delay <= 24 * 60 * 60 * 1000) {
         const timeoutId = setTimeout(() => {
           this.showNotification('¡Tu viaje está próximo!', {
@@ -174,7 +171,7 @@ export class NotificationService {
               idusuario,
               idreserva,
               type: 'pre-trip',
-              url: `/users/traveler/my-trips`
+              url: `/users/traveler/my-trips`,
             },
           });
           this.markNotificationAsSent(notificationId);
@@ -183,28 +180,29 @@ export class NotificationService {
         this.scheduledTimeouts.set(notificationId, timeoutId);
       }
 
-      
-      await this.saveScheduledNotification({
-        id: notificationId,
-        type: 'pre-trip',
-        idplanificacion,
-        idusuario,
-        scheduledTime: notificationTime.toISOString(),
-        title: '¡Tu viaje está próximo!',
-        body: `Tu viaje a ${destino} parte en 20 minutos`,
-        data: {
+      await this.saveScheduledNotification(
+        {
+          id: notificationId,
+          type: 'pre-trip',
           idplanificacion,
           idusuario,
-          idreserva,
-          type: 'pre-trip',
-          destino
+          scheduledTime: notificationTime.toISOString(),
+          title: '¡Tu viaje está próximo!',
+          body: `Tu viaje a ${destino} parte en 20 minutos`,
+          data: {
+            idplanificacion,
+            idusuario,
+            idreserva,
+            type: 'pre-trip',
+            destino,
+          },
         },
-      }, 'pendiente');
+        'pendiente'
+      );
     } catch (error) {
       console.error('❌ Error programando notificación pre-viaje:', error);
     }
   }
-
 
   async schedulePostTripNotification(
     idusuario: string,
@@ -221,7 +219,7 @@ export class NotificationService {
           idusuario,
           type: 'post-trip',
           destino,
-          url: `/users/traveler/rate-trip/${idplanificacion}`
+          url: `/users/traveler/rate-trip/${idplanificacion}`,
         },
       });
     } catch (error) {
@@ -243,11 +241,9 @@ export class NotificationService {
   ): Promise<void> {
     const notificationId = `pre-trip-${idplanificacion}-${idusuario}`;
 
-    
     this.cancelScheduledNotification(notificationId);
 
     try {
-      
       const { error } = await this.supabase
         .from('notificacion_programada')
         .delete()
@@ -291,7 +287,7 @@ export class NotificationService {
     try {
       await this.supabase
         .from('notificacion_programada')
-        .update({ estado: 'enviada', updatedat: new Date().toISOString() })
+        .update({ estado: 'enviada', updated_at: new Date().toISOString() })
         .eq('id', notificationId);
 
       this.scheduledTimeouts.delete(notificationId);
@@ -300,39 +296,42 @@ export class NotificationService {
     }
   }
 
-
   async loadPendingNotifications(idusuario?: string): Promise<void> {
     try {
-      const loadPromise = this.supabase
+      let query = this.supabase
         .from('notificacion_programada')
         .select('*')
         .eq('estado', 'pendiente')
-        .gte('fechahora_programada', new Date().toISOString())
-        .then(result => {
-          
-          if (idusuario && result.data) {
-            result.data = result.data.filter(n => n.idusuario === idusuario);
-          }
-          return result;
-        });
+        .gte('fechahora_programada', new Date().toISOString());
+
+      if (idusuario) {
+        query = query.eq('idusuario', idusuario);
+      }
+
+      const loadPromise = query;
 
       const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout')), this.LOAD_TIMEOUT)
       );
 
-      const { data, error } = await Promise.race([
+      const { data, error } = (await Promise.race([
         loadPromise,
         timeoutPromise,
-      ]) as any;
+      ])) as any;
 
       if (error) {
         console.error('❌ Error cargando notificaciones pendientes:', error);
         return;
       }
 
+
+
       if (!data || data.length === 0) {
+
         return;
       }
+
+
 
       const now = new Date();
       const expiredIds: string[] = [];
@@ -341,28 +340,39 @@ export class NotificationService {
       for (const notif of data) {
         const scheduledTime = new Date(notif.fechahora_programada);
         const delay = scheduledTime.getTime() - now.getTime();
+        const minutesUntil = Math.round(delay / 1000 / 60);
+
 
         if (delay <= 0) {
+
           expiredIds.push(notif.id);
           continue;
         }
 
-        
+        // Programar si falta menos de 24 horas
         if (delay <= 24 * 60 * 60 * 1000) {
           toSchedule.push({ notif, delay });
         }
       }
 
-      
+      // Marcar expiradas
       if (expiredIds.length > 0) {
-        await this.supabase
+
+        const { error: updateError } = await this.supabase
           .from('notificacion_programada')
           .update({ estado: 'expirada' })
           .in('id', expiredIds);
+
+        if (updateError) {
+          console.error('❌ Error marcando como expiradas:', updateError);
+        }
       }
 
-      
+      // Programar las pendientes
       for (const { notif, delay } of toSchedule) {
+        const minutesUntil = Math.round(delay / 1000 / 60);
+
+
         const timeoutId = setTimeout(() => {
           this.showNotification(notif.titulo, {
             body: notif.mensaje,
@@ -376,9 +386,12 @@ export class NotificationService {
         this.scheduledTimeouts.set(notif.id, timeoutId);
       }
 
+
     } catch (error) {
       if (error instanceof Error && error.message === 'Timeout') {
-        console.warn('⚠️ Timeout cargando notificaciones - continuando sin bloquear');
+        console.warn(
+          '⚠️ Timeout cargando notificaciones - continuando sin bloquear'
+        );
       } else {
         console.error('❌ Error en loadPendingNotifications:', error);
       }
@@ -391,14 +404,25 @@ export class NotificationService {
     }
 
     try {
+
       this.isInitialized = true;
+
+      // Cargar notificaciones pendientes
+      await this.loadPendingNotifications(idusuario);
+
+      // Verificar cada minuto por notificaciones pendientes
+      setInterval(() => {
+        this.loadPendingNotifications(idusuario);
+      }, 60000); // cada 60 segundos
+
     } catch (error) {
       console.error('❌ Error inicializando notificaciones:', error);
+      throw error;
     }
   }
 
   ngOnDestroy(): void {
-    this.scheduledTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    this.scheduledTimeouts.forEach((timeoutId) => clearTimeout(timeoutId));
     this.scheduledTimeouts.clear();
   }
 }

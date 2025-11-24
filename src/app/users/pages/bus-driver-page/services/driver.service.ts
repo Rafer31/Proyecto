@@ -6,7 +6,7 @@ export interface ViajeAsignado {
   idplanificacion: string;
   idconductorvehiculoempresa: string;
   horapartida: string;
-  fechallegada: string | null;
+  fechallegada: string;
   horarealpartida: string | null;
   horarealllegada: string | null;
   fechaplanificacion: string;
