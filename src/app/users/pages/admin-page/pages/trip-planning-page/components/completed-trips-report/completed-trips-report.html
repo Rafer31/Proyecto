@@ -1,0 +1,64 @@
+<div class="completed-trips-container">
+    <div class="header mt-6">
+        <h1 class="text-4xl font-bold">Reporte de Viajes Completados</h1>
+    </div>
+
+    <div class="filters-section">
+        <mat-form-field appearance="outline" class="date-field">
+            <mat-label>Fecha Desde</mat-label>
+            <input matInput [matDatepicker]="pickerDesde" [(ngModel)]="fechaDesde" placeholder="Seleccionar fecha">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerDesde"></mat-datepicker-toggle>
+            <mat-datepicker touchUi #pickerDesde></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="date-field">
+            <mat-label>Fecha Hasta</mat-label>
+            <input matInput [matDatepicker]="pickerHasta" [(ngModel)]="fechaHasta" placeholder="Seleccionar fecha">
+            <mat-datepicker-toggle matIconSuffix [for]="pickerHasta"></mat-datepicker-toggle>
+            <mat-datepicker touchUi #pickerHasta></mat-datepicker>
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" (click)="aplicarFiltros()">
+            <mat-icon>search</mat-icon>
+            Aplicar Filtros
+        </button>
+
+        <button mat-stroked-button (click)="limpiarFiltros()">
+            <mat-icon>clear</mat-icon>
+            Limpiar
+        </button>
+    </div>
+
+    @if (loading()) {
+    <div class="loading-container">
+        <mat-spinner diameter="48"></mat-spinner>
+        <p>Cargando viajes completados...</p>
+    </div>
+    } @else if (completedTrips().length === 0) {
+    <app-emptystate [imageSrc]="'no-trips.svg'" [title]="'No hay viajes completados'"
+        [description]="'Los viajes finalizados aparecerán aquí'" />
+    } @else {
+    <div class="stats-summary">
+        <div class="stat-card">
+            <mat-icon>event_available</mat-icon>
+            <div class="stat-info">
+                <span class="stat-label">Total de Viajes</span>
+                <span class="stat-value">{{ completedTrips().length }}</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <mat-icon>people</mat-icon>
+            <div class="stat-info">
+                <span class="stat-label">Total Pasajeros</span>
+                <span class="stat-value">{{ getTotalPasajeros() }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="cards-grid">
+        @for (trip of completedTrips(); track trip.idplanificacion) {
+        <app-completed-trip-card [viaje]="trip" (exportar)="exportarReporteViaje($event)"></app-completed-trip-card>
+        }
+    </div>
+    }
+</div>

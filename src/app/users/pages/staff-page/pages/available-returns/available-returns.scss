@@ -7,7 +7,7 @@
     margin-bottom: 40px;
 
     .title {
-      font-size: 2rem;
+      font-size: 3.5rem;
       font-weight: 500;
       margin: 0 0 8px 0;
       color: rgba(0, 0, 0, 0.87);
@@ -16,8 +16,7 @@
     .subtitle {
       font-size: 1rem;
       color: rgba(0, 0, 0, 0.6);
-      margin: 0;
-
+      margin-top: 30px;
       strong {
         color: rgba(0, 0, 0, 0.87);
         font-weight: 500;
@@ -67,11 +66,10 @@
       margin-bottom: 32px;
 
       .title {
-        font-size: 1.5rem;
+        font-size: 1.7rem;
       }
-
       .subtitle {
-        font-size: 0.9rem;
+        margin-top: -2px;
       }
     }
 
@@ -90,7 +88,10 @@
       margin-bottom: 28px;
 
       .title {
-        font-size: 1.25rem;
+        font-size: 1.7rem;
+      }
+      .subtitle {
+        margin-top: -2px;
       }
     }
 

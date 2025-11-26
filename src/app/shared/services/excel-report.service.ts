@@ -128,9 +128,8 @@ export class ExcelReportService {
         vehiculo?.nroasientos || 0
       );
 
-      const fileName = `Reporte_Viaje_${destino?.nomdestino || 'Destino'}_${
-        viaje.fechapartida
-      }.xlsx`;
+      const fileName = `Reporte_Viaje_${destino?.nomdestino || 'Destino'}_${viaje.fechapartida
+        }.xlsx`;
       XLSX.writeFile(wb, fileName);
     } catch (error) {
       console.error('Error generando reporte de viaje:', error);
@@ -207,9 +206,8 @@ export class ExcelReportService {
 
       this.addVisitantesSheet(wb, visitantes || []);
 
-      const fileName = `Reporte_Usuarios_${
-        new Date().toISOString().split('T')[0]
-      }.xlsx`;
+      const fileName = `Reporte_Usuarios_${new Date().toISOString().split('T')[0]
+        }.xlsx`;
       XLSX.writeFile(wb, fileName);
     } catch (error) {
       console.error('Error generando reporte de usuarios:', error);
@@ -564,5 +562,216 @@ export class ExcelReportService {
     ];
 
     XLSX.utils.book_append_sheet(wb, ws, 'Visitantes');
+  }
+
+  async generateCompletedTripsReport(viajes: any[]): Promise<void> {
+    try {
+      const wb = XLSX.utils.book_new();
+
+      // Hoja 1: Resumen de viajes completados
+      this.addCompletedTripsSummarySheet(wb, viajes);
+
+      // Hoja 2: Detalles de pasajeros por viaje
+      await this.addCompletedTripsPassengersSheet(wb, viajes);
+
+      const fileName = `Reporte_Viajes_Completados_${new Date().toISOString().split('T')[0]
+        }.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    } catch (error) {
+      console.error('Error generando reporte de viajes completados:', error);
+      throw error;
+    }
+  }
+
+  private addCompletedTripsSummarySheet(
+    wb: XLSX.WorkBook,
+    viajes: any[]
+  ): void {
+    const data = viajes.map((viaje, index) => {
+      const cve = Array.isArray(viaje.conductor_vehiculo_empresa)
+        ? viaje.conductor_vehiculo_empresa[0]
+        : viaje.conductor_vehiculo_empresa;
+
+      const vehiculo = Array.isArray(cve?.vehiculo)
+        ? cve?.vehiculo[0]
+        : cve?.vehiculo;
+
+      const conductor = Array.isArray(cve?.conductor)
+        ? cve?.conductor[0]
+        : cve?.conductor;
+
+      const usuarioConductor = Array.isArray(conductor?.usuario)
+        ? conductor?.usuario[0]
+        : conductor?.usuario;
+
+      const destino = Array.isArray(viaje.destino)
+        ? viaje.destino[0]
+        : viaje.destino;
+
+      return {
+        '#': index + 1,
+        Destino: destino?.nomdestino || 'Sin destino',
+        'Fecha Partida': viaje.fechapartida,
+        'Hora Planificada': viaje.horapartida,
+        'Hora Real Partida': viaje.horarealpartida || 'No registrada',
+        'Hora Real Llegada': viaje.horarealllegada || 'No registrada',
+        Conductor: usuarioConductor
+          ? `${usuarioConductor.nomusuario} ${usuarioConductor.patusuario}`
+          : 'Sin asignar',
+        Vehículo: vehiculo?.nroplaca || 'Sin asignar',
+        'Tipo Vehículo': vehiculo?.tipovehiculo || '',
+        Pasajeros: viaje.totalPasajeros || 0,
+      };
+    });
+
+    if (data.length === 0) {
+      data.push({
+        '#': 0,
+        Destino: 'No hay viajes completados',
+        'Fecha Partida': '',
+        'Hora Planificada': '',
+        'Hora Real Partida': '',
+        'Hora Real Llegada': '',
+        Conductor: '',
+        Vehículo: '',
+        'Tipo Vehículo': '',
+        Pasajeros: 0,
+      });
+    }
+
+    const ws = XLSX.utils.json_to_sheet(data);
+
+    ws['!cols'] = [
+      { wch: 5 }, // #
+      { wch: 25 }, // Destino
+      { wch: 15 }, // Fecha Partida
+      { wch: 15 }, // Hora Planificada
+      { wch: 18 }, // Hora Real Partida
+      { wch: 18 }, // Hora Real Llegada
+      { wch: 30 }, // Conductor
+      { wch: 12 }, // Vehículo
+      { wch: 15 }, // Tipo Vehículo
+      { wch: 10 }, // Pasajeros
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Resumen de Viajes');
+  }
+
+  private async addCompletedTripsPassengersSheet(
+    wb: XLSX.WorkBook,
+    viajes: any[]
+  ): Promise<void> {
+    const allPassengers: any[] = [];
+
+    for (const viaje of viajes) {
+      const { data: asientosPersonal } = await this.supabase
+        .from('asignaciondestino_planificacionviaje')
+        .select(
+          `
+        nroasiento,
+        estado,
+        asignacion_destino!inner(
+          personal!inner(
+            nroficha,
+            operacion,
+            usuario:usuario(
+              nomusuario,
+              patusuario,
+              matusuario,
+              ci,
+              numcelular
+            )
+          )
+        )
+      `
+        )
+        .eq('idplanificacion', viaje.idplanificacion);
+
+      const { data: asientosVisitantes } = await this.supabase
+        .from('visitante_planificacionviaje')
+        .select(
+          `
+        nroasiento,
+        estado,
+        visitante!inner(
+          informacion,
+          usuario:usuario(
+            nomusuario,
+            patusuario,
+            matusuario,
+            ci,
+            numcelular
+          )
+        )
+      `
+        )
+        .eq('idplanificacion', viaje.idplanificacion);
+
+      const destino = Array.isArray(viaje.destino)
+        ? viaje.destino[0]
+        : viaje.destino;
+
+      (asientosPersonal || []).forEach((a: any) => {
+        const usuario = a.asignacion_destino?.personal?.usuario;
+        allPassengers.push({
+          Viaje: `${destino?.nomdestino || 'Sin destino'} - ${viaje.fechapartida
+            }`,
+          'Nro Asiento': a.nroasiento,
+          Tipo: 'Personal',
+          Nombre: usuario?.nomusuario || '',
+          'Apellido Paterno': usuario?.patusuario || '',
+          'Apellido Materno': usuario?.matusuario || '',
+          CI: usuario?.ci || '',
+          Celular: usuario?.numcelular || '',
+          Estado: a.estado || '',
+        });
+      });
+
+      (asientosVisitantes || []).forEach((v: any) => {
+        const usuario = v.visitante?.usuario;
+        allPassengers.push({
+          Viaje: `${destino?.nomdestino || 'Sin destino'} - ${viaje.fechapartida
+            }`,
+          'Nro Asiento': v.nroasiento,
+          Tipo: 'Visitante',
+          Nombre: usuario?.nomusuario || '',
+          'Apellido Paterno': usuario?.patusuario || '',
+          'Apellido Materno': usuario?.matusuario || '',
+          CI: usuario?.ci || '',
+          Celular: usuario?.numcelular || '',
+          Estado: v.estado || '',
+        });
+      });
+    }
+
+    if (allPassengers.length === 0) {
+      allPassengers.push({
+        Viaje: 'No hay pasajeros registrados',
+        'Nro Asiento': 0,
+        Tipo: '',
+        Nombre: '',
+        'Apellido Paterno': '',
+        'Apellido Materno': '',
+        CI: '',
+        Celular: '',
+        Estado: '',
+      });
+    }
+
+    const ws = XLSX.utils.json_to_sheet(allPassengers);
+
+    ws['!cols'] = [
+      { wch: 35 }, // Viaje
+      { wch: 12 }, // Nro Asiento
+      { wch: 12 }, // Tipo
+      { wch: 20 }, // Nombre
+      { wch: 20 }, // Apellido Paterno
+      { wch: 20 }, // Apellido Materno
+      { wch: 12 }, // CI
+      { wch: 15 }, // Celular
+      { wch: 12 }, // Estado
+    ];
+
+    XLSX.utils.book_append_sheet(wb, ws, 'Detalle de Pasajeros');
   }
 }

@@ -20,6 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { UserService } from '../../../../services/user.service';
 import { Usuario } from '../../../../../shared/interfaces/user';
 import { SearchUsers } from '../search-users/search-users';
@@ -30,6 +31,7 @@ import { DialogService } from '../../../../../shared/services/dialog.service';
 import { ObservationDialog } from '../observation-dialog/observation-dialog';
 import { DeleteUsers } from '../delete-users/delete-users';
 import { Emptystate } from '../../../../components/emptystate/emptystate';
+import { DriverReportsDialog } from '../driver-reports-dialog/driver-reports-dialog';
 
 @Component({
   selector: 'app-list-users',
@@ -43,6 +45,7 @@ import { Emptystate } from '../../../../components/emptystate/emptystate';
     MatButtonModule,
     MatDialogModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
     SearchUsers,
     FilterUsers,
     Emptystate,
@@ -269,6 +272,28 @@ export default class ListUsers implements OnInit, AfterViewInit {
       if (result) {
         this.loadAllUsers();
       }
+    });
+  }
+
+  viewDriverReports(user: Usuario) {
+    if (!user.conductor?.idconductor) {
+      this.dialogService.showErrorDialog(
+        'Este usuario no tiene un registro de conductor asociado',
+        'Error'
+      );
+      return;
+    }
+
+    this.dialog.open(DriverReportsDialog, {
+      width: '900px',
+      maxWidth: '95vw',
+      height: 'auto',
+      maxHeight: '90vh',
+      data: {
+        idconductor: user.conductor.idconductor,
+        nombre: `${user.nomusuario} ${user.patusuario} ${user.matusuario || ''}`,
+        ci: user.ci,
+      },
     });
   }
 }

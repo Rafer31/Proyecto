@@ -1,22 +1,11 @@
 <div class="user-list-container">
   <div class="filters">
-    <app-search-users
-      (searchChange)="onSearchChange($event)"
-    ></app-search-users>
+    <app-search-users (searchChange)="onSearchChange($event)"></app-search-users>
 
-    <app-filter-users
-      [roles]="roles"
-      [selectedRole]="roleControlValue"
-      (roleChange)="onRoleChange($event)"
-    >
+    <app-filter-users [roles]="roles" [selectedRole]="roleControlValue" (roleChange)="onRoleChange($event)">
     </app-filter-users>
 
-    <button
-      mat-flat-button
-      color="primary"
-      (click)="openAddUserDialog()"
-      [disabled]="loading && initialLoad"
-    >
+    <button mat-flat-button color="primary" (click)="openAddUserDialog()" [disabled]="loading && initialLoad">
       <mat-icon>person_add</mat-icon> Nuevo Usuario
     </button>
   </div>
@@ -69,16 +58,13 @@
         <ng-container matColumnDef="rol">
           <th mat-header-cell *matHeaderCellDef>Rol</th>
           <td mat-cell *matCellDef="let user">
-            <span
-              class="role-badge"
-              [ngClass]="{
+            <span class="role-badge" [ngClass]="{
                   'role-personal': user.roles?.[0]?.nomrol === 'Personal',
                   'role-conductor': user.roles?.[0]?.nomrol === 'Conductor',
                   'role-visitante': user.roles?.[0]?.nomrol === 'Visitante',
                   'role-administrador': user.roles?.[0]?.nomrol === 'Administrador',
                   'role-sin-rol': !user.roles?.length
-                }"
-            >
+                }">
               {{ user.roles && user.roles.length > 0 ? user.roles[0].nomrol :
               'Sin rol' }}
             </span>
@@ -113,12 +99,14 @@
 
             @if (user.roles?.[0]?.nomrol === 'Personal' ||
             user.roles?.[0]?.nomrol === 'Administrador') {
-            <button
-              mat-icon-button
-              color="accent"
-              (click)="addObservation(user)"
-            >
+            <button mat-icon-button color="accent" (click)="addObservation(user)" matTooltip="Agregar Observación">
               <mat-icon>note_add</mat-icon>
+            </button>
+            }
+
+            @if (user.roles?.[0]?.nomrol === 'Conductor') {
+            <button mat-icon-button color="primary" (click)="viewDriverReports(user)" matTooltip="Ver Informes">
+              <mat-icon>assessment</mat-icon>
             </button>
             }
           </td>
@@ -130,19 +118,12 @@
 
       @if (!loading && dataSource.data.length === 0) {
       <div class="empty-state-container">
-        <app-emptystate
-          [imageSrc]="'no-users.svg'"
-          [title]="'No se encontraron usuarios'"
-          [description]="'Intenta ajustar los filtros de búsqueda o agrega un nuevo usuario'"
-        />
+        <app-emptystate [imageSrc]="'no-users.svg'" [title]="'No se encontraron usuarios'"
+          [description]="'Intenta ajustar los filtros de búsqueda o agrega un nuevo usuario'" />
       </div>
       }
 
-      <mat-paginator
-        [pageSizeOptions]="[5, 10, 25, 50]"
-        [disabled]="loading"
-        showFirstLastButtons="true"
-      >
+      <mat-paginator [pageSizeOptions]="[5, 10, 25, 50]" [disabled]="loading" showFirstLastButtons="true">
       </mat-paginator>
     </div>
     }

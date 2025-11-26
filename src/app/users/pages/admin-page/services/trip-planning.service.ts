@@ -378,4 +378,69 @@ export class TripPlanningService {
   async getViajesConRetorno() {
     return await this.retornoService.getViajesConRetorno();
   }
+
+  async getCompletedTrips(fechaDesde?: string, fechaHasta?: string) {
+    let query = this.supabase
+      .from('planificacion_viaje')
+      .select(
+        `
+        idplanificacion,
+        fechapartida,
+        fechallegada,
+        horapartida,
+        horarealpartida,
+        horarealllegada,
+        destino:destino(iddestino, nomdestino),
+        conductor_vehiculo_empresa!inner(
+          idconductorvehiculoempresa,
+          cantdisponibleasientos,
+          vehiculo:vehiculo(nroplaca, tipovehiculo, nroasientos),
+          empresa:empresa_contratista(nomempresa),
+          conductor:conductor(
+            idconductor,
+            usuario:usuario(nomusuario, patusuario, matusuario, ci, numcelular)
+          )
+        )
+      `
+      )
+      .not('horarealllegada', 'is', null)
+      .order('fechapartida', { ascending: false });
+
+    if (fechaDesde) {
+      query = query.gte('fechapartida', fechaDesde);
+    }
+
+    if (fechaHasta) {
+      query = query.lte('fechapartida', fechaHasta);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error obteniendo viajes completados:', error);
+      throw error;
+    }
+
+    // Obtener conteo de pasajeros para cada viaje
+    const viajesConConteo = await Promise.all(
+      (data || []).map(async (viaje: any) => {
+        const { count: countPersonal } = await this.supabase
+          .from('asignaciondestino_planificacionviaje')
+          .select('*', { count: 'exact', head: true })
+          .eq('idplanificacion', viaje.idplanificacion);
+
+        const { count: countVisitantes } = await this.supabase
+          .from('visitante_planificacionviaje')
+          .select('*', { count: 'exact', head: true })
+          .eq('idplanificacion', viaje.idplanificacion);
+
+        return {
+          ...viaje,
+          totalPasajeros: (countPersonal || 0) + (countVisitantes || 0),
+        };
+      })
+    );
+
+    return viajesConConteo;
+  }
 }

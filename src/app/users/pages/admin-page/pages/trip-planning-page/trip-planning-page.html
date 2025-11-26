@@ -1,8 +1,4 @@
-<mat-tab-group
-  class="mt-4"
-  [selectedIndex]="selectedTabIndex()"
-  (selectedIndexChange)="onTabChange($event)"
->
+<mat-tab-group class="mt-4" [selectedIndex]="selectedTabIndex()" (selectedIndexChange)="onTabChange($event)">
   <mat-tab>
     <ng-template mat-tab-label>
       <mat-icon class="tab-icon">event_note</mat-icon>
@@ -11,7 +7,7 @@
     </ng-template>
 
     <div class="header mt-6">
-      <h1 class="text-2xl font-bold">Planificación de los viajes</h1>
+      <h1 class="text-4xl font-bold ms-5">Planificación de los viajes</h1>
       <div class="header-actions">
         <button mat-stroked-button color="accent" (click)="openCreateFromTemplateDialog()">
           <mat-icon>bookmark</mat-icon>
@@ -30,35 +26,24 @@
       <p>Cargando planificaciones...</p>
     </div>
     } @else if (trips().length === 0) {
-    <app-emptystate
-      [imageSrc]="'no-trips.svg'"
-      [title]="'Aún no hay viajes planificados'"
-      [description]="'No se han planificado viajes aún'"
-    />
+    <app-emptystate [imageSrc]="'no-trips.svg'" [title]="'Aún no hay viajes planificados'"
+      [description]="'No se han planificado viajes aún'" />
     } @else {
     <div class="cards-grid">
       @for (trip of trips(); track trip.idviaje) {
-      <app-planning-card
-        [idviaje]="trip.idviaje"
-        [fechaViaje]="trip.fechaViaje"
-        [destino]="trip.destino"
-        [horaPartida]="trip.horapartida"
-        [cantdisponibleasientos]="trip.cantdisponibleasientos"
-        [tieneRetorno]="trip.tieneRetorno ?? false"
-        [esRetorno]="false"
-        (editar)="editarViaje(trip.idviaje)"
-        (eliminar)="eliminarViaje(trip.idviaje)"
-        (actualizarAsientos)="actualizarAsientosDisponibles($event)"
+      <app-planning-card [idviaje]="trip.idviaje" [fechaViaje]="trip.fechaViaje" [destino]="trip.destino"
+        [horaPartida]="trip.horapartida" [cantdisponibleasientos]="trip.cantdisponibleasientos"
+        [tieneRetorno]="trip.tieneRetorno ?? false" [esRetorno]="false" (editar)="editarViaje(trip.idviaje)"
+        (eliminar)="eliminarViaje(trip.idviaje)" (actualizarAsientos)="actualizarAsientosDisponibles($event)"
         (guardarPlantilla)="guardarComoPlantilla($event)"
-        (exportarReporte)="exportarReporteViaje($event)"
-      ></app-planning-card>
+        (exportarReporte)="exportarReporteViaje($event)"></app-planning-card>
       }
     </div>
     }
   </mat-tab>
 
   <mat-tab>
-    <h1 class="text-2xl font-bold">Planificación de los retornos</h1>
+    <h1 class="text-4xl font-bold ms-6 mt-5">Planificación de los retornos</h1>
     <ng-template mat-tab-label>
       <mat-icon class="tab-icon">keyboard_return</mat-icon>
       Retornos
@@ -71,31 +56,28 @@
       <p>Cargando retornos...</p>
     </div>
     } @else if (retornos().length === 0) {
-    <app-emptystate
-      [imageSrc]="'no-trips.svg'"
-      [title]="'No hay retornos programados'"
-      [description]="'Los retornos se mostrarán aquí una vez programados'"
-    />
+    <app-emptystate [imageSrc]="'no-trips.svg'" [title]="'No hay retornos programados'"
+      [description]="'Los retornos se mostrarán aquí una vez programados'" />
     } @else {
     <div class="cards-grid">
       @for (retorno of retornos(); track retorno.idviaje) {
-      <app-planning-card
-        [idviaje]="retorno.idviaje"
-        [fechaViaje]="retorno.fechaViaje"
-        [destino]="retorno.destino"
-        [horaPartida]="retorno.horapartida"
-        [cantdisponibleasientos]="retorno.cantdisponibleasientos"
-        [tieneRetorno]="false"
-        [esRetorno]="true"
-        [viajeIdaDestino]="retorno.viajeIdaDestino ?? ''"
-        (editar)="editarViaje(retorno.idviaje)"
-        (eliminar)="eliminarViaje(retorno.idviaje)"
-        (actualizarAsientos)="actualizarAsientosDisponibles($event)"
-        (guardarPlantilla)="guardarComoPlantilla($event)"
-        (exportarReporte)="exportarReporteViaje($event)"
-      ></app-planning-card>
+      <app-planning-card [idviaje]="retorno.idviaje" [fechaViaje]="retorno.fechaViaje" [destino]="retorno.destino"
+        [horaPartida]="retorno.horapartida" [cantdisponibleasientos]="retorno.cantdisponibleasientos"
+        [tieneRetorno]="false" [esRetorno]="true" [viajeIdaDestino]="retorno.viajeIdaDestino ?? ''"
+        (editar)="editarViaje(retorno.idviaje)" (eliminar)="eliminarViaje(retorno.idviaje)"
+        (actualizarAsientos)="actualizarAsientosDisponibles($event)" (guardarPlantilla)="guardarComoPlantilla($event)"
+        (exportarReporte)="exportarReporteViaje($event)"></app-planning-card>
       }
     </div>
     }
+  </mat-tab>
+
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <mat-icon class="tab-icon">assignment_turned_in</mat-icon>
+      Viajes Completados
+    </ng-template>
+
+    <app-completed-trips-report></app-completed-trips-report>
   </mat-tab>
 </mat-tab-group>

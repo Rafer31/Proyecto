@@ -1,0 +1,149 @@
+<div class="driver-reports-dialog">
+    <div class="dialog-header">
+        <div class="header-content">
+            <mat-icon class="header-icon">assignment</mat-icon>
+            <div class="header-text">
+                <h2 mat-dialog-title>Informes de Viajes</h2>
+                <p class="driver-info">
+                    <mat-icon class="info-icon">person</mat-icon>
+                    <span>{{ data.nombre }}</span>
+                    <span class="divider">•</span>
+                    <mat-icon class="info-icon">badge</mat-icon>
+                    <span>CI: {{ data.ci }}</span>
+                </p>
+            </div>
+        </div>
+        <button mat-icon-button (click)="close()" class="close-button">
+            <mat-icon>close</mat-icon>
+        </button>
+    </div>
+
+    <mat-dialog-content>
+        <div class="filters-section">
+            <mat-form-field appearance="outline" class="date-range-field">
+                <mat-label>Rango de Fechas</mat-label>
+                <mat-date-range-input [formGroup]="rangeForm" [rangePicker]="picker">
+                    <input matStartDate formControlName="start" placeholder="Fecha inicio" />
+                    <input matEndDate formControlName="end" placeholder="Fecha fin" />
+                </mat-date-range-input>
+                <mat-hint>DD/MM/YYYY – DD/MM/YYYY</mat-hint>
+                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-date-range-picker #picker></mat-date-range-picker>
+            </mat-form-field>
+
+            <div class="filter-actions">
+                <button mat-flat-button color="primary" (click)="applyDateFilter()" [disabled]="loading()">
+                    <mat-icon>search</mat-icon>
+                    Aplicar Filtro
+                </button>
+                <button mat-stroked-button (click)="clearFilters()" [disabled]="loading()">
+                    <mat-icon>clear</mat-icon>
+                    Limpiar
+                </button>
+            </div>
+        </div>
+
+        @if (loading()) {
+        <div class="loading-container">
+            <mat-spinner diameter="48"></mat-spinner>
+            <p>Cargando viajes...</p>
+        </div>
+        } @else if (trips().length === 0) {
+        <app-emptystate [imageSrc]="'no-trips.svg'" [title]="'No hay viajes registrados'"
+            [description]="'Este conductor no tiene viajes en el rango de fechas seleccionado'" />
+        } @else {
+        <div class="trips-summary">
+            <mat-icon>route</mat-icon>
+            <span><strong>{{ trips().length }}</strong> viajes encontrados</span>
+        </div>
+
+        <div class="table-container">
+            <table mat-table [dataSource]="trips()" class="trips-table">
+                <ng-container matColumnDef="fecha">
+                    <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                    <td mat-cell *matCellDef="let trip">
+                        <div class="fecha-cell">
+                            <mat-icon>calendar_today</mat-icon>
+                            <span>{{ trip.fechapartida }}</span>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="destino">
+                    <th mat-header-cell *matHeaderCellDef>Destino</th>
+                    <td mat-cell *matCellDef="let trip">
+                        <div class="destino-cell">
+                            <mat-icon>place</mat-icon>
+                            <span>{{ getDestinoNombre(trip.destino) }}</span>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="vehiculo">
+                    <th mat-header-cell *matHeaderCellDef>Vehículo</th>
+                    <td mat-cell *matCellDef="let trip">
+                        <div class="vehiculo-cell">
+                            <mat-icon>directions_bus</mat-icon>
+                            <span>{{ getVehiculoPlaca(trip.conductor_vehiculo_empresa) }}</span>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="tipo">
+                    <th mat-header-cell *matHeaderCellDef>Tipo</th>
+                    <td mat-cell *matCellDef="let trip">
+                        <span class="tipo-badge">
+                            <mat-icon>category</mat-icon>
+                            {{ getVehiculoTipo(trip.conductor_vehiculo_empresa) }}
+                        </span>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="empresa">
+                    <th mat-header-cell *matHeaderCellDef>Empresa</th>
+                    <td mat-cell *matCellDef="let trip">
+                        <div class="empresa-cell">
+                            <mat-icon>business</mat-icon>
+                            <span>{{ getEmpresaNombre(trip.conductor_vehiculo_empresa) }}</span>
+                        </div>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="horaPartida">
+                    <th mat-header-cell *matHeaderCellDef>H. Partida</th>
+                    <td mat-cell *matCellDef="let trip">
+                        <span class="hora-badge partida">
+                            <mat-icon>more_time</mat-icon>
+                            <span>{{ formatHora(trip.horapartida) }}</span>
+                        </span>
+                    </td>
+                </ng-container>
+
+                <ng-container matColumnDef="horaLlegada">
+                    <th mat-header-cell *matHeaderCellDef>H. Llegada</th>
+                    <td mat-cell *matCellDef="let trip">
+                        <span [class]="trip.horarealllegada ? 'hora-badge llegada' : 'hora-badge pendiente'">
+                            <mat-icon>{{ trip.horarealllegada ? 'flight_land' : 'schedule' }}</mat-icon>
+                            <span>{{ trip.horarealllegada ? formatHora(trip.horarealllegada) : 'Por definir' }}</span>
+                        </span>
+                    </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns" class="table-row"></tr>
+            </table>
+        </div>
+        }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+        <button mat-stroked-button (click)="close()">
+            <mat-icon>close</mat-icon>
+            Cerrar
+        </button>
+        <button mat-flat-button color="accent" (click)="exportToPDF()" [disabled]="trips().length === 0 || loading()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            Exportar PDF
+        </button>
+    </mat-dialog-actions>
+</div>

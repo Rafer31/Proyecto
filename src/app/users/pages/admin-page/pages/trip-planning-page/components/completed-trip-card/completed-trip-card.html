@@ -1,0 +1,69 @@
+<mat-card class="completed-trip-card">
+    <mat-card-header>
+        <div class="card-header-content">
+            <div class="destination-info">
+                <mat-icon class="destination-icon">place</mat-icon>
+                <div>
+                    <h3 class="destination-name">{{ getDestinoNombre() }}</h3>
+                    <p class="trip-date">{{ viaje().fechapartida }}</p>
+                </div>
+            </div>
+            <mat-chip class="status-chip completed">
+                <mat-icon>check_circle</mat-icon>
+                Completado
+            </mat-chip>
+        </div>
+    </mat-card-header>
+
+    <mat-card-content>
+        <div class="time-section">
+            <div class="time-row">
+                <mat-icon class="time-icon">schedule</mat-icon>
+                <div class="time-details">
+                    <span class="time-label">Hora Planificada</span>
+                    <span class="time-value planned">{{ formatearHora(viaje().horapartida) }}</span>
+                </div>
+            </div>
+
+            <div class="time-row">
+                <mat-icon class="time-icon">directions_bus</mat-icon>
+                <div class="time-details">
+                    <span class="time-label">Partida Real</span>
+                    <span class="time-value real">{{ formatearHora(viaje().horarealpartida) }}</span>
+                </div>
+            </div>
+
+            <div class="time-row">
+                <mat-icon class="time-icon">location_on</mat-icon>
+                <div class="time-details">
+                    <span class="time-label">Llegada Real</span>
+                    <span class="time-value real">{{ formatearHora(viaje().horarealllegada) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-row">
+                <mat-icon>person</mat-icon>
+                <span>{{ getConductorNombre() }}</span>
+            </div>
+
+            <div class="info-row">
+                <mat-icon>directions_bus</mat-icon>
+                <span>{{ getVehiculoInfo() }}</span>
+            </div>
+
+            <div class="info-row passengers">
+                <mat-icon>group</mat-icon>
+                <span>{{ viaje().totalPasajeros || 0 }} pasajeros</span>
+            </div>
+        </div>
+
+        <div class="card-actions">
+            <button mat-flat-button color="accent" (click)="onExportar()">
+                <mat-icon>description</mat-icon>
+                Exportar Reporte
+            </button>
+        </div>
+    </mat-card-content>
+</mat-card>

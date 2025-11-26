@@ -16,6 +16,7 @@ import { ConfirmDialog } from '../../../../components/confirm-dialog/confirm-dia
 import { SeatsDialog } from './components/seats-dialog/seats-dialog';
 import { SaveTemplateDialog } from './components/save-template-dialog/save-template-dialog';
 import { CreateFromTemplateDialog } from './components/create-from-template-dialog/create-from-template-dialog';
+import { CompletedTripsReportComponent } from './components/completed-trips-report/completed-trips-report';
 
 interface ViajeCard {
   idviaje: string;
@@ -37,6 +38,7 @@ interface ViajeCard {
     MatIconModule,
     MatProgressSpinnerModule,
     MatTabsModule,
+    CompletedTripsReportComponent,
   ],
   templateUrl: './trip-planning-page.html',
   styleUrl: './trip-planning-page.scss',
@@ -155,11 +157,9 @@ export class TripPlanningPage implements OnInit {
       viaje || this.retornos().find((r) => r.idviaje === idviaje);
     if (!viajeAEliminar) return;
 
-    let mensaje = `¿Seguro que deseas eliminar el ${
-      esViajeSalida ? 'viaje' : 'retorno'
-    } programado a "${viajeAEliminar.destino}" el día ${
-      viajeAEliminar.fechaViaje
-    }?`;
+    let mensaje = `¿Seguro que deseas eliminar el ${esViajeSalida ? 'viaje' : 'retorno'
+      } programado a "${viajeAEliminar.destino}" el día ${viajeAEliminar.fechaViaje
+      }?`;
 
     if (esViajeSalida && viaje?.tieneRetorno) {
       mensaje += ' También se eliminará el retorno asociado.';

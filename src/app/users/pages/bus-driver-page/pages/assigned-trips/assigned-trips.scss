@@ -4,12 +4,15 @@
   margin: 0 auto;
 
   .page-title {
-    font-size: 2rem;
+    font-size: 3.5rem;
     font-weight: 500;
     margin-bottom: 2rem;
     color: #333;
   }
-
+  .subtitle {
+    font-size: 15px;
+    margin-bottom: 25px;
+  }
   .loading-container {
     display: flex;
     flex-direction: column;
@@ -193,5 +196,4 @@
       grid-template-columns: 1fr;
     }
   }
-
 }
